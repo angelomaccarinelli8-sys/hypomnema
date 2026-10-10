@@ -30,6 +30,7 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `08-citazione-modificata` | Testimone acceso. L'utente dice «zucchine», la citazione dice «melanzane». | Rifiutata: la citazione non si trova parola per parola. |
 | `09-messaggio-privato` | Testimone acceso. Un messaggio che inizia con `#privato`, poi uno normale; poi una nota che cita il messaggio privato. | Il testimone annota solo data e ora del messaggio privato; la nota è rifiutata perché quelle parole non sono registrate. |
 | `10-testimone-spento` | Testimone spento. Arriva un messaggio, poi una nota dell'utente senza citazione. | Il testimone non registra niente (nessun file); la nota è accettata e marcata «autore non verificato (testimone spento)». |
+| `11-citazione-di-claude-non-verificata` | Testimone spento. Un'idea di Claude con una citazione delle parole dell'utente. | Accettata e marcata «citazione non verificata (testimone spento)». |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
 in più la riga «verifica: autore non verificato (testimone spento)».

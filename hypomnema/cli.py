@@ -144,7 +144,14 @@ def main(
             uscita.reconfigure(errors="replace")
     if errori is None:
         errori = sys.stderr
-    argomenti = _parser().parse_args(argv)
+    try:
+        argomenti = _parser().parse_args(argv)
+    except SystemExit as uscita_argparse:
+        # Un comando scritto male esce con 2; per il testimone vorrebbe dire bloccare il messaggio.
+        elenco = sys.argv[1:] if argv is None else argv
+        if uscita_argparse.code == 2 and "testimone" in elenco:
+            return 1
+        raise
     adesso = adesso or datetime.now().astimezone()
     if argomenti.comando == "testimone":
         return _testimone(argomenti, adesso, errori)

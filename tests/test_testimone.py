@@ -103,12 +103,33 @@ class TestRegistrazione(ConTestimone):
                 with self.assertRaises(testimone.ErroreTestimone):
                     testimone.registra(self.config, ADESSO, contenuto)
 
-    def test_riga_rovinata_segnalata(self):
-        self.dice("buono")
-        with open(self.config.file_testimone, "a", encoding="utf-8") as f:
-            f.write("rovinata\n")
-        with self.assertRaises(testimone.ErroreTestimone):
-            testimone.leggi_messaggi(self.config)
+    def test_righe_rovinate_segnalate(self):
+        for riga in (
+            "rovinata",
+            "[1, 2]",
+            '{"testo": "manca quando"}',
+            '{"quando": 1, "testo": "quando non è testo"}',
+            '{"quando": "2026-01-15T10:00:00+01:00", "testo": []}',
+            '{"quando": "2026-01-15T10:00:00+01:00"}',
+            '{"quando": "2026-01-15T10:00:00+01:00", "testo": "a", "privato": "b"}',
+            '{"quando": "2026-01-15T10:00:00+01:00", "privato": 3}',
+            '{"quando": "2026-01-15T10:00:00+01:00", "testo": "a", "altro": "b"}',
+        ):
+            with self.subTest(riga=riga):
+                self.config.file_testimone.parent.mkdir(parents=True, exist_ok=True)
+                self.config.file_testimone.write_text(riga + "\n", encoding="utf-8")
+                with self.assertRaises(testimone.ErroreTestimone):
+                    testimone.leggi_messaggi(self.config)
+
+    def test_file_non_utf8_segnalato_dallo_sportello(self):
+        self.config.file_testimone.parent.mkdir(parents=True, exist_ok=True)
+        self.config.file_testimone.write_bytes('{"quando": "x", "testo": "caffè"}\n'.encode("latin-1"))
+        uscita = io.StringIO()
+        file = self.cartella / "nota.json"
+        file.write_text(json.dumps(NOTA_BUONA), encoding="utf-8")
+        codice = main(["--config", str(self.file_config), "proponi", str(file)], uscita=uscita)
+        self.assertEqual(codice, 2)
+        self.assertIn("non è in UTF-8", uscita.getvalue())
 
 
 class TestTestimoneSpento(ConTestimone):
@@ -233,6 +254,10 @@ class TestComandoTestimone(ConTestimone):
         self.assertEqual(risultato.returncode, 1)
         self.assertEqual(risultato.stdout, b"")
         self.assertIn("NON è stato registrato", risultato.stderr.decode("utf-8"))
+
+    def test_comando_scritto_male_non_blocca(self):
+        self.assertEqual(main(["testimone", "--sconosciuto"], errori=io.StringIO()), 1)
+        self.assertEqual(main(["testimone", "a", "b"], errori=io.StringIO()), 1)
 
     def test_configurazione_mancante_non_blocca(self):
         risultato = self.lancia(messaggio("x"), "--config", "manca.toml")

@@ -58,25 +58,46 @@ def registra(config: Configurazione, adesso: datetime, contenuto: bytes) -> bool
     return True
 
 
+def _voce_valida(riga: str) -> Messaggio | None:
+    """La voce di una riga del testimone, oppure None se la riga non ha il formato previsto.
+
+    Una voce valida ha "quando" (testo) e esattamente uno tra "testo" e "privato" (testo).
+    """
+    try:
+        voce = json.loads(riga)
+    except json.JSONDecodeError:
+        return None
+    if not isinstance(voce, dict) or not isinstance(voce.get("quando"), str):
+        return None
+    altri = set(voce) - {"quando"}
+    if altri == {"testo"} and isinstance(voce["testo"], str):
+        return Messaggio(quando=voce["quando"], testo=voce["testo"])
+    if altri == {"privato"} and isinstance(voce["privato"], str):
+        return Messaggio(quando=voce["quando"], testo=None)
+    return None
+
+
 def leggi_messaggi(config: Configurazione) -> list[Messaggio]:
     """Tutti i messaggi registrati, nell'ordine in cui sono arrivati."""
     if not config.file_testimone.is_file():
         return []
     messaggi = []
-    righe = config.file_testimone.read_text(encoding="utf-8").split("\n")
+    try:
+        righe = config.file_testimone.read_text(encoding="utf-8").split("\n")
+    except UnicodeDecodeError:
+        raise ErroreTestimone(
+            "il file del testimone non è in UTF-8. Controlla se è stato modificato a mano."
+        )
     for numero, riga in enumerate(righe, start=1):
         if not riga.strip():
             continue
-        try:
-            voce = json.loads(riga)
-            quando = voce["quando"]
-            testo = voce.get("testo")
-        except (json.JSONDecodeError, TypeError, KeyError):
+        messaggio = _voce_valida(riga)
+        if messaggio is None:
             raise ErroreTestimone(
                 f"la riga {numero} del file del testimone non è valida. "
                 "Controlla se il file è stato modificato a mano."
             )
-        messaggi.append(Messaggio(quando=quando, testo=testo))
+        messaggi.append(messaggio)
     return messaggi
 
 
