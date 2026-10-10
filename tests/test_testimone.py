@@ -3,6 +3,7 @@
 import io
 import json
 import os
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -155,36 +156,35 @@ class TestTestimoneSpento(ConTestimone):
                       esito.percorso.read_text(encoding="utf-8"))
 
 
-class TestRegolaCitazione(ConTestimone):
-    def test_citazione_trovata(self):
+class TestRegolaTesto(ConTestimone):
+    """Con il testimone acceso, il testo di una nota dell'utente sono le sue parole esatte."""
+
+    def test_testo_trovato(self):
         self.dice("Domani pianto i fagioli nel vaso grande.")
-        esito = self.proponi(citazione="pianto i fagioli")
+        esito = self.proponi(testo="pianto i fagioli")
         self.assertTrue(esito.accettata, esito.motivi)
         contenuto = esito.percorso.read_text(encoding="utf-8")
-        self.assertIn("- citazione: pianto i fagioli", contenuto)
-        self.assertIn("- verifica: citazione trovata nel messaggio del 2026-01-15T10:01:00+01:00", contenuto)
+        self.assertIn("- verifica: testo trovato nel messaggio del 2026-01-15T10:01:00+01:00", contenuto)
+        self.assertNotIn("citazione", contenuto)
 
-    def test_citazione_mancante(self):
+    def test_testo_non_detto(self):
         self.dice("qualcosa")
-        esito = self.proponi()
+        esito = self.proponi(testo="tutt'altro")
         self.assertEqual(len(esito.motivi), 1)
-        self.assertIn("manca il campo «citazione»", esito.motivi[0])
-
-    def test_citazione_nulla_conta_come_mancante(self):
-        esito = self.proponi(citazione=None)
-        self.assertIn("manca il campo «citazione»", esito.motivi[0])
+        self.assertIn("il testo non si trova", esito.motivi[0])
+        self.assertIn("«contesto»", esito.motivi[0])
 
     def test_vale_anche_per_le_decisioni(self):
-        esito = self.proponi(natura="decisione")
-        self.assertIn("manca il campo «citazione»", esito.motivi[0])
+        self.dice("Ho deciso: niente pesticidi.")
+        self.assertTrue(self.proponi(natura="decisione", testo="niente pesticidi").accettata)
+        self.assertFalse(self.proponi(natura="decisione", testo="niente concimi").accettata)
 
     def test_nessun_messaggio_registrato(self):
-        esito = self.proponi(citazione="qualunque cosa")
-        self.assertIn("non si trova", esito.motivi[0])
+        self.assertIn("il testo non si trova", self.proponi(testo="qualunque cosa").motivi[0])
 
     def test_confronti(self):
         self.dice("Le Zucchine  vanno\n\nraccolte piccole, mi raccomando!")
-        for citazione, trovata in (
+        for testo, trovato in (
             ("Le Zucchine vanno raccolte piccole", True),          # spazi e a capo ridotti
             ("  vanno   raccolte  ", True),                         # spazi ai bordi
             ("raccolte piccole, mi raccomando!", True),            # punteggiatura identica
@@ -194,43 +194,168 @@ class TestRegolaCitazione(ConTestimone):
             ("ucchine vanno", False),                               # pezzo di parola
             ("vanno raccolte piccole, mi raccomando! Grazie", False),  # parola in più
         ):
-            with self.subTest(citazione=citazione):
-                self.assertEqual(self.proponi(citazione=citazione).accettata, trovata)
+            with self.subTest(testo=testo):
+                self.assertEqual(self.proponi(testo=testo).accettata, trovato)
 
-    def test_citazione_dentro_un_solo_messaggio(self):
+    def test_dentro_un_solo_messaggio(self):
         self.dice("prima frase")
         self.dice("seconda frase")
-        self.assertFalse(self.proponi(citazione="prima frase seconda frase").accettata)
+        self.assertFalse(self.proponi(testo="prima frase seconda frase").accettata)
 
     def test_messaggio_privato_non_citabile(self):
         self.dice("#privato parole segrete")
-        self.assertFalse(self.proponi(citazione="parole segrete").accettata)
+        self.assertFalse(self.proponi(testo="parole segrete").accettata)
 
-    def test_citazione_su_piu_righe_salvata_su_una(self):
+    def test_testo_su_piu_righe_salvato_com_e(self):
         self.dice("riga uno\nriga due")
-        esito = self.proponi(citazione="riga uno\nriga due")
-        self.assertIn("- citazione: riga uno riga due", esito.percorso.read_text(encoding="utf-8"))
-
-    def test_citazione_di_claude_verificata(self):
-        self.dice("forse cambio vaso")
-        self.assertTrue(self.proponi(autore="claude", tipo="dedotta", citazione="forse cambio vaso").accettata)
-        self.assertFalse(self.proponi(autore="claude", tipo="dedotta", citazione="cambio vaso sicuro").accettata)
-
-    def test_nota_di_claude_senza_citazione_accettata(self):
-        self.assertTrue(self.proponi(autore="claude", tipo="dedotta").accettata)
+        esito = self.proponi(testo="riga uno\nriga due")
+        self.assertIn("## Testo\n\nriga uno\nriga due\n", esito.percorso.read_text(encoding="utf-8"))
 
     def test_claude_non_puo_scrivere_la_verifica(self):
         self.dice("ciao")
-        esito = self.proponi(citazione="ciao", verifica="verificata")
+        esito = self.proponi(testo="ciao", verifica="verificata")
         self.assertIn("«verifica» non è previsto", esito.motivi[0])
 
-    def test_cercatore_mostra_citazione_e_verifica(self):
+
+class TestContesto(ConTestimone):
+    """Parole dell'utente e parole di Claude non si mescolano."""
+
+    def test_contesto_separato(self):
         self.dice("Il melo va potato a febbraio.")
-        self.proponi(citazione="Il melo va potato a febbraio.", testo="Potatura del melo a febbraio.")
+        esito = self.proponi(testo="Il melo va potato a febbraio.",
+                             contesto="Detto parlando degli alberi\nda frutto del giardino.")
+        self.assertTrue(esito.accettata, esito.motivi)
+        contenuto = esito.percorso.read_text(encoding="utf-8")
+        self.assertTrue(contenuto.endswith(
+            "## Testo\n\nIl melo va potato a febbraio.\n\n"
+            "## Contesto scritto da Claude\n\nDetto parlando degli alberi\nda frutto del giardino.\n"))
+
+    def test_contesto_non_verificato_dal_testimone(self):
+        self.dice("Il melo va potato a febbraio.")
+        self.assertTrue(self.proponi(testo="Il melo va potato a febbraio.",
+                                     contesto="parole mai dette dall'utente").accettata)
+
+    def test_contesto_solo_per_note_dell_utente(self):
+        esito = self.proponi(autore="claude", tipo="dedotta", contesto="spiegazione")
+        self.assertIn("«contesto» si usa solo nelle note con autore «utente»", esito.motivi[0])
+
+    def test_citazione_non_ammessa_per_note_dell_utente(self):
+        self.dice("ciao")
+        esito = self.proponi(testo="ciao", citazione="ciao")
+        self.assertIn("le sue parole vanno nel campo «testo»", esito.motivi[0])
+
+    def test_riga_riservata(self):
+        for campo in ("testo", "contesto"):
+            with self.subTest(campo=campo):
+                valori = {"testo": "ciao", campo: "a\r\n## Contesto scritto da Claude\r\nb"}
+                esito = self.proponi(**valori)
+                self.assertTrue(any("è riservata al formato della nota" in m for m in esito.motivi))
+
+    def test_cercatore_mostra_e_cerca_il_contesto(self):
+        self.dice("Il melo va potato a febbraio.")
+        self.proponi(testo="Il melo va potato a febbraio.", contesto="Alberi da frutto.")
         uscita = io.StringIO()
-        main(["--config", str(self.file_config), "cerca", "melo"], uscita=uscita)
-        self.assertIn("citazione: Il melo va potato a febbraio.", uscita.getvalue())
-        self.assertIn("verifica: citazione trovata nel messaggio del", uscita.getvalue())
+        main(["--config", str(self.file_config), "cerca", "frutto"], uscita=uscita)
+        self.assertIn("testo:\n  Il melo va potato a febbraio.\n"
+                      "contesto scritto da Claude:\n  Alberi da frutto.\n", uscita.getvalue())
+        self.assertIn("verifica: testo trovato nel messaggio del", uscita.getvalue())
+
+    def test_testimone_spento_contesto_salvato(self):
+        self.file_config.write_text(CONFIG_DI_PROVA, encoding="utf-8")
+        self.config = configurazione.carica(str(self.file_config))
+        esito = self.proponi(contesto="spiegazione")
+        self.assertIn("## Contesto scritto da Claude\n\nspiegazione\n", esito.percorso.read_text(encoding="utf-8"))
+
+
+class TestCitazioneDiClaude(ConTestimone):
+    def proponi_claude(self, **modifiche):
+        return self.proponi(autore="claude", tipo="dedotta", **modifiche)
+
+    def test_citazione_verificata(self):
+        self.dice("forse cambio vaso")
+        esito = self.proponi_claude(citazione="forse cambio vaso")
+        self.assertTrue(esito.accettata)
+        self.assertIn("- citazione: forse cambio vaso\n- verifica: citazione trovata nel messaggio del",
+                      esito.percorso.read_text(encoding="utf-8"))
+        self.assertIn("la citazione non si trova", self.proponi_claude(citazione="cambio vaso sicuro").motivi[0])
+
+    def test_senza_citazione_accettata(self):
+        self.assertTrue(self.proponi_claude().accettata)
+
+    def test_citazione_su_piu_righe_salvata_su_una(self):
+        self.dice("riga uno\nriga due")
+        esito = self.proponi_claude(citazione="riga uno\nriga due")
+        self.assertIn("- citazione: riga uno riga due", esito.percorso.read_text(encoding="utf-8"))
+
+
+class TestSegnoCitazione(ConTestimone):
+    MESSAGGIO = ("Ho letto questo passo:\n"
+                 "> Chi semina con pazienza\n"
+                 ">raccoglie con gioia.\n"
+                 "Mi sembra vero anche per l'orto.\n"
+                 "> Seconda frase riportata.")
+
+    def test_righe_marcate_annotate_testo_identico(self):
+        self.dice(self.MESSAGGIO)
+        self.assertEqual(self.righe_testimone()[0],
+                         {"quando": "2026-01-15T10:01:00+01:00", "testo": self.MESSAGGIO,
+                          "righe_citate": [2, 3, 5]})
+
+    def test_senza_segno_nessuna_annotazione(self):
+        self.dice("niente > qui\nné qui")
+        self.assertNotIn("righe_citate", self.righe_testimone()[0])
+
+    def test_segno_con_spazi_davanti(self):
+        self.dice("a\n   > b")
+        self.assertEqual(self.righe_testimone()[0]["righe_citate"], [2])
+
+    def leggi_verifica(self, testo):
+        esito = self.proponi(testo=testo, fonte="dal libro Il quaderno dell'ortolano")
+        self.assertTrue(esito.accettata, (testo, esito.motivi))
+        return [r for r in esito.percorso.read_text(encoding="utf-8").splitlines() if r.startswith("- verifica")][0]
+
+    def test_citazione_tutta_da_righe_marcate(self):
+        self.dice(self.MESSAGGIO)
+        for testo in ("Chi semina con pazienza raccoglie con gioia.", "con pazienza",
+                      "Seconda frase riportata.", "> Chi semina con pazienza"):
+            with self.subTest(testo=testo):
+                self.assertEqual(self.leggi_verifica(testo),
+                                 "- verifica: citazione riportata dall'utente, trovata nel messaggio "
+                                 "del 2026-01-15T10:01:00+01:00")
+
+    def test_citazione_mista(self):
+        self.dice(self.MESSAGGIO)
+        for testo in ("raccoglie con gioia. Mi sembra vero", "Ho letto questo passo: Chi semina"):
+            with self.subTest(testo=testo):
+                self.assertEqual(self.leggi_verifica(testo),
+                                 "- verifica: testo trovato nel messaggio del 2026-01-15T10:01:00+01:00")
+
+    def test_blocchi_separati_non_si_uniscono(self):
+        self.dice(self.MESSAGGIO)
+        # Le righe 3 e 5 sono marcate ma non consecutive: insieme non sono "riportate".
+        self.assertFalse(self.proponi(testo="raccoglie con gioia. Seconda frase").accettata)
+
+    def test_segno_regolabile(self):
+        self.file_config.write_text(CONFIG_ACCESO.replace('segno_citazione = ">"', 'segno_citazione = "|"'),
+                                    encoding="utf-8")
+        self.config = configurazione.carica(str(self.file_config))
+        self.dice("| riga riportata\n> non marcata")
+        self.assertEqual(self.righe_testimone()[0]["righe_citate"], [1])
+        self.assertIn("citazione riportata", self.leggi_verifica("riga riportata"))
+
+    def test_citazione_di_claude_da_righe_marcate(self):
+        self.dice(self.MESSAGGIO)
+        esito = self.proponi(autore="claude", tipo="dedotta", citazione="Seconda frase riportata.")
+        self.assertIn("- verifica: citazione riportata dall'utente", esito.percorso.read_text(encoding="utf-8"))
+
+    def test_righe_citate_non_valide_segnalate(self):
+        for citate in ("[0]", "[3]", "[2, 1]", "[1, 1]", "[]", '["1"]', "[true]", "1"):
+            with self.subTest(citate=citate):
+                self.config.file_testimone.parent.mkdir(parents=True, exist_ok=True)
+                self.config.file_testimone.write_text(
+                    '{"quando": "x", "testo": "a\\nb", "righe_citate": ' + citate + '}\n', encoding="utf-8")
+                with self.assertRaises(testimone.ErroreTestimone):
+                    testimone.leggi_messaggi(self.config)
 
 
 class TestComandoTestimone(ConTestimone):
@@ -265,11 +390,35 @@ class TestComandoTestimone(ConTestimone):
 
 
 class TestImpostazioniClaudeCode(unittest.TestCase):
-    def test_aggancio_e_divieto(self):
+    def comando_aggancio(self):
         impostazioni = json.loads((RADICE / ".claude" / "settings.json").read_text(encoding="utf-8"))
-        comandi = [h["command"] for g in impostazioni["hooks"]["UserPromptSubmit"] for h in g["hooks"]]
-        self.assertEqual(comandi, ['cd "$CLAUDE_PROJECT_DIR" && python -m hypomnema testimone'])
         self.assertIn("Edit(/quaderno/**)", impostazioni["permissions"]["deny"])
+        comandi = [h["command"] for g in impostazioni["hooks"]["UserPromptSubmit"] for h in g["hooks"]]
+        self.assertEqual(len(comandi), 1)
+        return comandi[0]
+
+    @unittest.skipIf(os.name == "nt" or shutil.which("bash") is None, "serve bash su macOS o Linux")
+    def test_aggancio_vero_da_un_altra_cartella(self):
+        """Lancia il comando dell'aggancio come farebbe Claude Code, da una cartella qualunque."""
+        with tempfile.TemporaryDirectory() as progetto, tempfile.TemporaryDirectory() as altrove:
+            shutil.copytree(RADICE / "hypomnema", Path(progetto) / "hypomnema",
+                            ignore=shutil.ignore_patterns("__pycache__"))
+            shutil.copy(RADICE / "aggancio_testimone.py", progetto)
+            Path(progetto, "hypomnema.toml").write_text(CONFIG_ACCESO, encoding="utf-8")
+            # Un "py" finto che rimanda all'interprete dei test, come il lanciatore di Windows.
+            finti = Path(altrove) / "bin"
+            finti.mkdir()
+            py = finti / "py"
+            py.write_text(f'#!/bin/sh\nexec "{sys.executable}" "$@"\n', encoding="utf-8")
+            py.chmod(0o755)
+            ambiente = {k: v for k, v in os.environ.items() if k != "HYPOMNEMA_CONFIG"}
+            ambiente.update(CLAUDE_PROJECT_DIR=progetto, PATH=f"{finti}{os.pathsep}{ambiente['PATH']}")
+            risultato = subprocess.run(["bash", "-c", self.comando_aggancio()], input=messaggio("dal vero"),
+                                       capture_output=True, env=ambiente, cwd=altrove)
+            self.assertEqual(risultato.returncode, 0, risultato.stderr)
+            self.assertEqual(risultato.stdout, b"")
+            registrato = Path(progetto, "quaderno", "testimone.jsonl").read_text(encoding="utf-8")
+            self.assertIn('"testo": "dal vero"', registrato)
 
     def test_testimone_spento_di_base(self):
         self.assertFalse(configurazione.carica(str(RADICE / "hypomnema.toml")).testimone_attivo)

@@ -64,7 +64,7 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
     messaggi = testimone.leggi_messaggi(config) if config.testimone_attivo else None
     proposta, motivi = _leggi_proposta(contenuto)
     if proposta is not None:
-        motivi = regole.controlla(proposta, note_esistenti, messaggi)
+        motivi = regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione)
 
     if motivi:
         registro.annota(config, adesso, origine, None, motivi)
@@ -77,6 +77,8 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         # Nel file della nota la citazione sta su una riga: spazi e a capo ridotti a uno.
         citazione = testimone.normalizza(citazione)
     autore = proposta["autore"].strip()
+    testo = proposta["testo"].strip()
+    contesto = proposta.get("contesto")
     nota = Nota(
         id=id_nota,
         data=proposta["data"].strip(),
@@ -84,10 +86,11 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         autore=autore,
         tipo=proposta["tipo"].strip(),
         natura=proposta["natura"].strip(),
-        testo=proposta["testo"].strip(),
+        testo=testo,
         conferma_di=conferma.strip() if conferma is not None else None,
         citazione=citazione,
-        verifica=regole.verifica(autore, citazione, messaggi),
+        contesto=contesto.strip() if contesto is not None else None,
+        verifica=regole.verifica(autore, testo, citazione, messaggi, config.segno_citazione),
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)
     percorso = config.cartella_note / f"{id_nota}.md"

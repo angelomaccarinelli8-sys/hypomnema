@@ -8,13 +8,13 @@ Per questo stanno nel codice e non nel file di configurazione.
 import re
 from datetime import date, datetime
 
-from hypomnema.nota import Nota
-from hypomnema.testimone import Messaggio, trova_citazione
+from hypomnema.nota import TITOLO_CONTESTO, Nota
+from hypomnema.testimone import Messaggio, Ritrovamento, trova_citazione
 
 CAMPI_OBBLIGATORI = ("data", "fonte", "autore", "tipo", "natura", "testo")
-CAMPI_FACOLTATIVI = ("conferma_di", "citazione")
+CAMPI_FACOLTATIVI = ("conferma_di", "citazione", "contesto")
 # Campi che possono andare a capo: tutti gli altri devono stare su una riga.
-CAMPI_SU_PIU_RIGHE = ("testo", "citazione")
+CAMPI_SU_PIU_RIGHE = ("testo", "citazione", "contesto")
 CAMPI_AMMESSI = CAMPI_OBBLIGATORI + CAMPI_FACOLTATIVI
 
 AUTORI = ("utente", "claude")
@@ -53,11 +53,12 @@ def _data_valida(valore: str) -> bool:
 
 
 def controlla(
-    proposta: dict, note_esistenti: list[Nota], messaggi: list[Messaggio] | None
+    proposta: dict, note_esistenti: list[Nota], messaggi: list[Messaggio] | None, segno: str
 ) -> list[str]:
     """Restituisce i motivi di rifiuto, in ordine fisso. Lista vuota = nota accettabile.
 
     ``messaggi`` sono i messaggi registrati dal testimone, oppure None se il testimone è spento.
+    ``segno`` è il segno di citazione del testimone.
     """
     motivi: list[str] = []
 
@@ -132,15 +133,38 @@ def controlla(
                 "si può confermare come decisione solo un'idea."
             )
 
-    # Regola del testimone: con il testimone acceso, una nota dell'utente deve citare
-    # parola per parola un messaggio registrato. Se c'è una citazione, va sempre trovata.
-    if messaggi is not None:
-        if valori.get("autore") == "utente" and proposta.get("citazione") is None:
+    # Parole dell'utente e parole di Claude non si mescolano: in una nota dell'utente
+    # il testo sono le sue parole e ciò che aggiunge Claude va in "contesto"; in una nota
+    # di Claude tutto è di Claude e le parole dell'utente su cui si basa vanno in "citazione".
+    autore = valori.get("autore")
+    if autore == "utente" and "citazione" in proposta:
+        motivi.append(
+            "in una nota con autore «utente» le sue parole vanno nel campo «testo»: "
+            "il campo «citazione» si usa solo nelle note di Claude."
+        )
+    if autore == "claude" and "contesto" in proposta:
+        motivi.append(
+            "il campo «contesto» si usa solo nelle note con autore «utente», per tenere le "
+            "spiegazioni di Claude separate dalle parole dell'utente: in una nota di Claude "
+            "tutto il testo è già di Claude."
+        )
+    for campo in ("testo", "contesto"):
+        if campo in valori and TITOLO_CONTESTO in (r.rstrip("\r") for r in valori[campo].split("\n")):
             motivi.append(
-                "manca il campo «citazione»: una nota con autore «utente» deve riportare, "
-                "parola per parola, le parole dell'utente registrate dal testimone."
+                f"il campo «{campo}» non può contenere la riga «{TITOLO_CONTESTO}»: "
+                "è riservata al formato della nota."
             )
-        if "citazione" in valori and trova_citazione(messaggi, valori["citazione"]) is None:
+
+    # Regola del testimone: con il testimone acceso, il testo di una nota dell'utente
+    # e la citazione di una nota di Claude devono comparire parola per parola in un messaggio.
+    if messaggi is not None:
+        if autore == "utente" and "testo" in valori and trova_citazione(messaggi, valori["testo"], segno) is None:
+            motivi.append(
+                "il testo non si trova, parola per parola, in nessun messaggio registrato dal "
+                "testimone: in una nota dell'utente il testo sono le sue parole esatte; "
+                "spiegazioni e riassunti di Claude vanno nel campo «contesto»."
+            )
+        if autore == "claude" and "citazione" in valori and trova_citazione(messaggi, valori["citazione"], segno) is None:
             motivi.append(
                 "la citazione non si trova, parola per parola, in nessun messaggio registrato "
                 "dal testimone: copia le parole esatte dell'utente, senza riassumerle o cambiarle."
@@ -149,7 +173,15 @@ def controlla(
     return motivi
 
 
-def verifica(autore: str, citazione: str | None, messaggi: list[Messaggio] | None) -> str | None:
+def _dicitura(cosa: str, trovato: Ritrovamento) -> str:
+    if trovato.riportata:
+        return f"citazione riportata dall'utente, trovata nel messaggio del {trovato.messaggio.quando}"
+    return f"{cosa} nel messaggio del {trovato.messaggio.quando}"
+
+
+def verifica(
+    autore: str, testo: str, citazione: str | None, messaggi: list[Messaggio] | None, segno: str
+) -> str | None:
     """La dicitura "verifica" da scrivere nella nota accettata (None = nessuna dicitura)."""
     if messaggi is None:
         if autore == "utente":
@@ -157,7 +189,8 @@ def verifica(autore: str, citazione: str | None, messaggi: list[Messaggio] | Non
         if citazione is not None:
             return "citazione non verificata (testimone spento)"
         return None
-    if citazione is None:
-        return None
-    trovato = trova_citazione(messaggi, citazione)
-    return f"citazione trovata nel messaggio del {trovato.quando}"
+    if autore == "utente":
+        return _dicitura("testo trovato", trova_citazione(messaggi, testo, segno))
+    if citazione is not None:
+        return _dicitura("citazione trovata", trova_citazione(messaggi, citazione, segno))
+    return None

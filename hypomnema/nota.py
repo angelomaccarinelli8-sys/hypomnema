@@ -13,11 +13,17 @@ Esempio di file di nota salvato nel quaderno::
     ## Testo
 
     Il testo della nota, anche su più righe.
+
+    ## Contesto scritto da Claude
+
+    Sezione facoltativa, solo nelle note dell'utente.
 """
 
 from dataclasses import dataclass
 
 TITOLO_TESTO = "## Testo"
+# Sezione facoltativa, dopo il testo: ciò che Claude aggiunge alle parole dell'utente.
+TITOLO_CONTESTO = "## Contesto scritto da Claude"
 
 # Ordine fisso dei campi di intestazione nel file Markdown.
 # "conferma_di", "citazione" e "verifica" compaiono solo se presenti.
@@ -40,6 +46,7 @@ class Nota:
     testo: str
     conferma_di: str | None = None
     citazione: str | None = None
+    contesto: str | None = None
     # Scritta dallo sportello, non da Claude: dice se l'autore è stato verificato dal testimone.
     verifica: str | None = None
 
@@ -50,6 +57,8 @@ class Nota:
             if valore is not None:
                 righe.append(f"- {campo}: {valore}")
         righe += ["", TITOLO_TESTO, "", self.testo, ""]
+        if self.contesto is not None:
+            righe += [TITOLO_CONTESTO, "", self.contesto, ""]
         return "\n".join(righe)
 
 
@@ -72,5 +81,11 @@ def da_markdown(id_nota: str, contenuto: str) -> Nota:
     if mancanti:
         raise NotaIlleggibile(f"nella nota {id_nota} mancano: {', '.join(mancanti)}")
 
-    testo = "\n".join(righe[inizio_testo + 1:]).strip()
-    return Nota(id=id_nota, testo=testo, **campi)
+    corpo = righe[inizio_testo + 1:]
+    contesto = None
+    if TITOLO_CONTESTO in corpo:
+        inizio_contesto = corpo.index(TITOLO_CONTESTO)
+        contesto = "\n".join(corpo[inizio_contesto + 1:]).strip()
+        corpo = corpo[:inizio_contesto]
+    testo = "\n".join(corpo).strip()
+    return Nota(id=id_nota, testo=testo, contesto=contesto, **campi)

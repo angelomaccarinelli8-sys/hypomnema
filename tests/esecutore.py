@@ -37,6 +37,7 @@ cifre_numero_nota = 4
 attivo = false
 file = "testimone.jsonl"
 prefisso_privato = "#privato"
+segno_citazione = ">"
 """
 
 

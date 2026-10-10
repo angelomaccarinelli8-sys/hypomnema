@@ -29,3 +29,9 @@ file = "testimone.jsonl"
 # I messaggi che iniziano con questo prefisso non vengono registrati:
 # il testimone annota solo data e ora con "messaggio privato, non registrato".
 prefisso_privato = "#privato"
+
+# Facoltativo: le righe di un messaggio che iniziano con questo segno sono parole riportate
+# da altri (per esempio un passo di un libro). Il testimone le registra come le altre e in più
+# annota quali righe erano marcate; una nota presa tutta da righe marcate viene salvata con
+# la dicitura "citazione riportata dall'utente".
+segno_citazione = ">"

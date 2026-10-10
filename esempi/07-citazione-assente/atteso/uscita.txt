@@ -1,17 +1,17 @@
 $ hypomnema testimone messaggio.json
 [codice di uscita: 0]
 
-$ hypomnema proponi 1-senza-citazione.json
+$ hypomnema proponi 1-riassunto-di-claude.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- manca il campo «citazione»: una nota con autore «utente» deve riportare, parola per parola, le parole dell'utente registrate dal testimone.
+- il testo non si trova, parola per parola, in nessun messaggio registrato dal testimone: in una nota dell'utente il testo sono le sue parole esatte; spiegazioni e riassunti di Claude vanno nel campo «contesto».
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
-$ hypomnema proponi 2-citazione-mai-detta.json
+$ hypomnema proponi 2-parole-mai-dette.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- la citazione non si trova, parola per parola, in nessun messaggio registrato dal testimone: copia le parole esatte dell'utente, senza riassumerle o cambiarle.
+- il testo non si trova, parola per parola, in nessun messaggio registrato dal testimone: in una nota dell'utente il testo sono le sue parole esatte; spiegazioni e riassunti di Claude vanno nel campo «contesto».
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
