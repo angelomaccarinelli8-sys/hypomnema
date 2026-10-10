@@ -1,0 +1,10 @@
+$ hypomnema testimone messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema proponi nota.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- la citazione non si trova, parola per parola, in nessun messaggio registrato dal testimone: copia le parole esatte dell'utente, senza riassumerle o cambiarle.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+

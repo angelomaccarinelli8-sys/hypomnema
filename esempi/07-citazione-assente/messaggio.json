@@ -1,0 +1,5 @@
+{
+  "session_id": "sessione-di-esempio",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "Il basilico sul balcone sta crescendo bene."
+}

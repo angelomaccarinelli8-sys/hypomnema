@@ -1,0 +1,5 @@
+{
+  "session_id": "sessione-di-esempio",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "Preferisco le zucchine ai peperoni."
+}

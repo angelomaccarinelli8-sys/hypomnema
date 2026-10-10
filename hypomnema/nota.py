@@ -20,8 +20,9 @@ from dataclasses import dataclass
 TITOLO_TESTO = "## Testo"
 
 # Ordine fisso dei campi di intestazione nel file Markdown.
-# "conferma_di" compare solo se presente.
-CAMPI_INTESTAZIONE = ("data", "fonte", "autore", "tipo", "natura", "conferma_di")
+# "conferma_di", "citazione" e "verifica" compaiono solo se presenti.
+CAMPI_SEMPRE_PRESENTI = ("data", "fonte", "autore", "tipo", "natura")
+CAMPI_INTESTAZIONE = CAMPI_SEMPRE_PRESENTI + ("conferma_di", "citazione", "verifica")
 
 
 class NotaIlleggibile(Exception):
@@ -38,6 +39,9 @@ class Nota:
     natura: str
     testo: str
     conferma_di: str | None = None
+    citazione: str | None = None
+    # Scritta dallo sportello, non da Claude: dice se l'autore è stato verificato dal testimone.
+    verifica: str | None = None
 
     def in_markdown(self) -> str:
         righe = [f"# Nota {self.id}", ""]
@@ -64,7 +68,7 @@ def da_markdown(id_nota: str, contenuto: str) -> Nota:
         if separatore and chiave in CAMPI_INTESTAZIONE:
             campi[chiave] = valore
 
-    mancanti = [c for c in CAMPI_INTESTAZIONE[:-1] if c not in campi]
+    mancanti = [c for c in CAMPI_SEMPRE_PRESENTI if c not in campi]
     if mancanti:
         raise NotaIlleggibile(f"nella nota {id_nota} mancano: {', '.join(mancanti)}")
 

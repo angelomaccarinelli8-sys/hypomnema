@@ -27,6 +27,7 @@ autore: utente
 tipo: dichiarata
 natura: decisione
 conferma di: nota 0001
+verifica: autore non verificato (testimone spento)
 testo:
   D'ora in poi annaffio l'orto la mattina presto invece che la sera.
 [codice di uscita: 0]
