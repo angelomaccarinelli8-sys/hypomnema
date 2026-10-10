@@ -9,9 +9,12 @@ import re
 from datetime import date, datetime
 
 from hypomnema.nota import Nota
+from hypomnema.testimone import Messaggio, trova_citazione
 
 CAMPI_OBBLIGATORI = ("data", "fonte", "autore", "tipo", "natura", "testo")
-CAMPI_FACOLTATIVI = ("conferma_di",)
+CAMPI_FACOLTATIVI = ("conferma_di", "citazione")
+# Campi che possono andare a capo: tutti gli altri devono stare su una riga.
+CAMPI_SU_PIU_RIGHE = ("testo", "citazione")
 CAMPI_AMMESSI = CAMPI_OBBLIGATORI + CAMPI_FACOLTATIVI
 
 AUTORI = ("utente", "claude")
@@ -49,8 +52,13 @@ def _data_valida(valore: str) -> bool:
     return True
 
 
-def controlla(proposta: dict, note_esistenti: list[Nota]) -> list[str]:
-    """Restituisce i motivi di rifiuto, in ordine fisso. Lista vuota = nota accettabile."""
+def controlla(
+    proposta: dict, note_esistenti: list[Nota], messaggi: list[Messaggio] | None
+) -> list[str]:
+    """Restituisce i motivi di rifiuto, in ordine fisso. Lista vuota = nota accettabile.
+
+    ``messaggi`` sono i messaggi registrati dal testimone, oppure None se il testimone è spento.
+    """
     motivi: list[str] = []
 
     for campo in proposta:
@@ -77,7 +85,7 @@ def controlla(proposta: dict, note_esistenti: list[Nota]) -> list[str]:
             else:
                 motivi.append(f"il campo «{campo}» è vuoto: se non serve, toglilo.")
             continue
-        if campo != "testo" and ("\n" in valore or "\r" in valore):
+        if campo not in CAMPI_SU_PIU_RIGHE and ("\n" in valore or "\r" in valore):
             motivi.append(f"il campo «{campo}» deve stare su una riga sola.")
             continue
         valori[campo] = valore
@@ -124,4 +132,32 @@ def controlla(proposta: dict, note_esistenti: list[Nota]) -> list[str]:
                 "si può confermare come decisione solo un'idea."
             )
 
+    # Regola del testimone: con il testimone acceso, una nota dell'utente deve citare
+    # parola per parola un messaggio registrato. Se c'è una citazione, va sempre trovata.
+    if messaggi is not None:
+        if valori.get("autore") == "utente" and proposta.get("citazione") is None:
+            motivi.append(
+                "manca il campo «citazione»: una nota con autore «utente» deve riportare, "
+                "parola per parola, le parole dell'utente registrate dal testimone."
+            )
+        if "citazione" in valori and trova_citazione(messaggi, valori["citazione"]) is None:
+            motivi.append(
+                "la citazione non si trova, parola per parola, in nessun messaggio registrato "
+                "dal testimone: copia le parole esatte dell'utente, senza riassumerle o cambiarle."
+            )
+
     return motivi
+
+
+def verifica(autore: str, citazione: str | None, messaggi: list[Messaggio] | None) -> str | None:
+    """La dicitura "verifica" da scrivere nella nota accettata (None = nessuna dicitura)."""
+    if messaggi is None:
+        if autore == "utente":
+            return "autore non verificato (testimone spento)"
+        if citazione is not None:
+            return "citazione non verificata (testimone spento)"
+        return None
+    if citazione is None:
+        return None
+    trovato = trova_citazione(messaggi, citazione)
+    return f"citazione trovata nel messaggio del {trovato.quando}"

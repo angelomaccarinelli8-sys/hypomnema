@@ -1,0 +1,3 @@
+testimone 1-privato.json
+testimone 2-normale.json
+proponi nota.json

@@ -1,0 +1,22 @@
+$ hypomnema testimone messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema proponi nota.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca compost
+Trovata 1 nota con «compost».
+
+--- Nota 0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sul progetto dell'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: autore non verificato (testimone spento)
+testo:
+  Il compost è pronto a fine marzo.
+[codice di uscita: 0]
+

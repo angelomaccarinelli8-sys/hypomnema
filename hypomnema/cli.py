@@ -3,8 +3,11 @@
     python -m hypomnema proponi proposta.json   # passa una nota allo sportello
     python -m hypomnema proponi -               # legge la nota dall'ingresso standard
     python -m hypomnema cerca parola            # cerca le note che contengono la parola
+    python -m hypomnema testimone               # registra un messaggio (lo lancia Claude Code)
 
 Codici di uscita: 0 = tutto bene, 1 = nota rifiutata, 2 = errore di uso o di configurazione.
+Il comando "testimone" non esce mai con 2: per Claude Code vorrebbe dire bloccare il
+messaggio dell'utente. In caso di errore esce con 1 e lo scrive sull'uscita degli errori.
 """
 
 import argparse
@@ -13,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TextIO
 
-from hypomnema import __version__, cercatore, configurazione, sportello
+from hypomnema import __version__, cercatore, configurazione, sportello, testimone
 from hypomnema.nota import Nota, NotaIlleggibile
 
 ORIGINE_DIRETTA = "(ingresso diretto)"
@@ -36,6 +39,14 @@ def _parser() -> argparse.ArgumentParser:
 
     cerca = comandi.add_parser("cerca", help="cerca le note che contengono una parola")
     cerca.add_argument("parola", help="la parola (o le parole) da cercare, così come sono")
+
+    registra = comandi.add_parser(
+        "testimone", help="registra un messaggio dell'utente (lo lancia Claude Code a ogni messaggio)"
+    )
+    registra.add_argument(
+        "file", nargs="?", default="-",
+        help="file JSON con il messaggio, come lo manda Claude Code (di base: ingresso standard)",
+    )
     return parser
 
 
@@ -50,6 +61,10 @@ def _descrivi(nota: Nota) -> list[str]:
     ]
     if nota.conferma_di is not None:
         righe.append(f"conferma di: nota {nota.conferma_di}")
+    if nota.citazione is not None:
+        righe.append(f"citazione: {nota.citazione}")
+    if nota.verifica is not None:
+        righe.append(f"verifica: {nota.verifica}")
     righe.append("testo:")
     righe += [f"  {riga}" if riga else "" for riga in nota.testo.split("\n")]
     return righe
@@ -101,13 +116,38 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
     return 0
 
 
-def main(argv: list[str] | None = None, adesso: datetime | None = None, uscita: TextIO | None = None) -> int:
-    """Punto d'ingresso. ``adesso`` e ``uscita`` servono ai test per avere risultati ripetibili."""
+def _testimone(argomenti, adesso: datetime, errori: TextIO) -> int:
+    # Su successo non scrive niente: per Claude Code, ciò che esce qui finirebbe nella chat.
+    try:
+        config = configurazione.carica(argomenti.config)
+        if argomenti.file == "-":
+            dati = sys.stdin.buffer.read()
+        else:
+            dati = Path(argomenti.file).read_bytes()
+        testimone.registra(config, adesso, dati)
+    except (configurazione.ErroreConfigurazione, testimone.ErroreTestimone, OSError) as errore:
+        print(f"ERRORE del testimone: {errore} Il messaggio NON è stato registrato.", file=errori)
+        return 1
+    return 0
+
+
+def main(
+    argv: list[str] | None = None,
+    adesso: datetime | None = None,
+    uscita: TextIO | None = None,
+    errori: TextIO | None = None,
+) -> int:
+    """Punto d'ingresso. ``adesso``, ``uscita`` ed ``errori`` servono ai test per avere risultati ripetibili."""
     if uscita is None:
         uscita = sys.stdout
         if hasattr(uscita, "reconfigure"):
             uscita.reconfigure(errors="replace")
+    if errori is None:
+        errori = sys.stderr
     argomenti = _parser().parse_args(argv)
+    adesso = adesso or datetime.now().astimezone()
+    if argomenti.comando == "testimone":
+        return _testimone(argomenti, adesso, errori)
     try:
         config = configurazione.carica(argomenti.config)
     except configurazione.ErroreConfigurazione as errore:
@@ -115,9 +155,12 @@ def main(argv: list[str] | None = None, adesso: datetime | None = None, uscita: 
         return 2
     try:
         if argomenti.comando == "proponi":
-            return _proponi(argomenti, config, adesso or datetime.now().astimezone(), uscita)
+            return _proponi(argomenti, config, adesso, uscita)
         return _cerca(argomenti, config, uscita)
     except NotaIlleggibile as errore:
         print(f"ERRORE: il quaderno contiene un file non valido: {errore}. "
               "Controlla se è stato modificato a mano.", file=uscita)
+        return 2
+    except testimone.ErroreTestimone as errore:
+        print(f"ERRORE: {errore}", file=uscita)
         return 2

@@ -9,7 +9,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 
-from hypomnema import quaderno, registro, regole
+from hypomnema import quaderno, registro, regole, testimone
 from hypomnema.configurazione import Configurazione
 from hypomnema.nota import Nota
 
@@ -61,9 +61,10 @@ def _leggi_proposta(contenuto: bytes) -> tuple[dict | None, list[str]]:
 def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datetime) -> Esito:
     """Esamina una proposta e restituisce l'esito. Annota sempre il passaggio nel registro."""
     note_esistenti = quaderno.leggi_note(config)
+    messaggi = testimone.leggi_messaggi(config) if config.testimone_attivo else None
     proposta, motivi = _leggi_proposta(contenuto)
     if proposta is not None:
-        motivi = regole.controlla(proposta, note_esistenti)
+        motivi = regole.controlla(proposta, note_esistenti, messaggi)
 
     if motivi:
         registro.annota(config, adesso, origine, None, motivi)
@@ -71,15 +72,22 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
 
     id_nota = quaderno.prossimo_id(note_esistenti, config.cifre_numero_nota)
     conferma = proposta.get("conferma_di")
+    citazione = proposta.get("citazione")
+    if citazione is not None:
+        # Nel file della nota la citazione sta su una riga: spazi e a capo ridotti a uno.
+        citazione = testimone.normalizza(citazione)
+    autore = proposta["autore"].strip()
     nota = Nota(
         id=id_nota,
         data=proposta["data"].strip(),
         fonte=proposta["fonte"].strip(),
-        autore=proposta["autore"].strip(),
+        autore=autore,
         tipo=proposta["tipo"].strip(),
         natura=proposta["natura"].strip(),
         testo=proposta["testo"].strip(),
         conferma_di=conferma.strip() if conferma is not None else None,
+        citazione=citazione,
+        verifica=regole.verifica(autore, citazione, messaggi),
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)
     percorso = config.cartella_note / f"{id_nota}.md"

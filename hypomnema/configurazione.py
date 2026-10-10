@@ -25,6 +25,9 @@ class Configurazione:
     cartella_note: Path
     file_registro: Path
     cifre_numero_nota: int
+    testimone_attivo: bool
+    file_testimone: Path
+    prefisso_privato: str
 
 
 def trova(percorso: str | None = None) -> Path:
@@ -54,8 +57,12 @@ def carica(percorso: str | None = None) -> Configurazione:
     if not isinstance(sezione, dict):
         raise ErroreConfigurazione(f"nel file «{file}» manca la sezione [quaderno].")
 
-    def testo(chiave: str) -> str:
-        valore = sezione.get(chiave)
+    testimone = dati.get("testimone")
+    if not isinstance(testimone, dict):
+        raise ErroreConfigurazione(f"nel file «{file}» manca la sezione [testimone].")
+
+    def testo(chiave: str, origine: dict = sezione) -> str:
+        valore = origine.get(chiave)
         if not isinstance(valore, str) or not valore.strip():
             raise ErroreConfigurazione(
                 f"nel file «{file}» manca l'impostazione «{chiave}» (deve essere un testo)."
@@ -68,6 +75,13 @@ def carica(percorso: str | None = None) -> Configurazione:
             f"nel file «{file}» l'impostazione «cifre_numero_nota» deve essere un numero intero maggiore di zero."
         )
 
+    attivo = testimone.get("attivo")
+    if not isinstance(attivo, bool):
+        raise ErroreConfigurazione(
+            f"nel file «{file}» l'impostazione «attivo» della sezione [testimone] "
+            "deve essere true (acceso) oppure false (spento)."
+        )
+
     base = file.resolve().parent
     quaderno = base / testo("cartella")
     return Configurazione(
@@ -75,4 +89,7 @@ def carica(percorso: str | None = None) -> Configurazione:
         cartella_note=quaderno / testo("cartella_note"),
         file_registro=quaderno / testo("file_registro"),
         cifre_numero_nota=cifre,
+        testimone_attivo=attivo,
+        file_testimone=quaderno / testo("file", testimone),
+        prefisso_privato=testo("prefisso_privato", testimone).strip(),
     )
