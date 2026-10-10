@@ -1,0 +1,16 @@
+# Impostazioni di Hypomnema.
+# I percorsi relativi partono dalla cartella che contiene questo file.
+
+[quaderno]
+# Cartella dove vivono le note e il registro.
+# Puoi mettere un percorso assoluto, per esempio "C:/Users/nome/Documenti/quaderno".
+cartella = "quaderno"
+
+# Sottocartella del quaderno con una nota per file.
+cartella_note = "note"
+
+# File del registro degli ingressi (si allunga soltanto).
+file_registro = "registro.md"
+
+# Quante cifre usare per il numero delle note (4 => 0001, 0002, ...).
+cifre_numero_nota = 4

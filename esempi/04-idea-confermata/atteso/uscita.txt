@@ -1,0 +1,33 @@
+$ hypomnema proponi 1-idea.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-conferma.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca orto
+Trovate 2 note con «orto».
+
+--- Nota 0001 ---
+data: 2026-01-15T10:00
+fonte: chat del 15 gennaio 2026 sul progetto dell'orto
+autore: claude
+tipo: dedotta
+natura: idea
+testo:
+  Si potrebbe annaffiare l'orto la mattina presto invece che la sera, per perdere meno acqua.
+
+--- Nota 0002 ---
+data: 2026-01-15T10:05
+fonte: chat del 15 gennaio 2026 sul progetto dell'orto
+autore: utente
+tipo: dichiarata
+natura: decisione
+conferma di: nota 0001
+testo:
+  D'ora in poi annaffio l'orto la mattina presto invece che la sera.
+[codice di uscita: 0]
+

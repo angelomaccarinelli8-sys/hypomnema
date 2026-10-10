@@ -1,0 +1,9 @@
+# Il quaderno personale non va mai nel repository pubblico.
+/quaderno/
+
+__pycache__/
+*.pyc
+*.egg-info/
+build/
+dist/
+.venv/
