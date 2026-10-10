@@ -70,16 +70,19 @@ Formato (JSON, UTF-8), con **tutti** questi campi:
 - `natura`: `fatto`, `idea`, `decisione` o `discorso aperto`.
   - Le tue proposte sono sempre `idea`.
   - `decisione` solo se l'utente ha deciso esplicitamente: `autore: utente`, `tipo: dichiarata`.
-- `testo`: frase chiara e autosufficiente, comprensibile anche fra mesi senza la chat.
-- `citazione`: **obbligatoria per ogni nota con `autore: utente`** (anche le decisioni).
-  Vedi sotto.
+- `testo`: **dipende dall'autore** (vedi sotto). Le parole dell'utente e le tue non si
+  mescolano mai nello stesso campo.
+- `contesto` (facoltativo, solo nelle note dell'utente): le tue spiegazioni.
+- `citazione` (facoltativo, solo nelle tue note): le parole dell'utente su cui ti basi.
 
-### La citazione
+### Note dell'utente: il testo sono le sue parole
 
-Quando una nota riporta qualcosa detto dall'utente, metti in `citazione` **le sue parole esatte**,
-copiate da un suo messaggio: un pezzo continuo di un solo messaggio, con le stesse maiuscole,
-accenti e punteggiatura. Puoi scegliere il pezzo più utile, ma **non riassumere, non correggere,
-non tradurre e non cambiare nemmeno una parola**. Il riassunto, se serve, va nel `testo`.
+In una nota con `autore: utente`, `testo` sono **le parole esatte dell'utente**, copiate da un suo
+messaggio: un pezzo continuo di un solo messaggio, con le stesse maiuscole, accenti e
+punteggiatura. Puoi scegliere il pezzo più utile, ma **non riassumere, non correggere, non
+tradurre e non cambiare nemmeno una parola**. Tutto ciò che aggiungi tu (di cosa si parlava, a
+cosa si riferisce, una spiegazione) va nel campo `contesto`, che verrà mostrato come
+"contesto scritto da Claude".
 
 ```json
 {
@@ -88,25 +91,48 @@ non tradurre e non cambiare nemmeno una parola**. Il riassunto, se serve, va nel
   "autore": "utente",
   "tipo": "dichiarata",
   "natura": "fatto",
-  "citazione": "il basilico sul balcone sta crescendo bene",
-  "testo": "Il basilico sul balcone cresce bene."
+  "testo": "il basilico sul balcone sta crescendo bene",
+  "contesto": "Detto parlando delle piante aromatiche dell'orto."
 }
 ```
 
-- Se lo sportello risponde che la citazione non si trova, ricopiala con più cura dal messaggio
-  dell'utente. Se l'utente quella cosa non l'ha detta con parole sue, **non è una nota dell'utente**:
-  al massimo è una nota tua (`autore: claude`, di solito `tipo: dedotta`).
-- Con il testimone spento la citazione non è obbligatoria, ma mettila comunque: la nota sarà
-  marcata "autore non verificato" in ogni caso.
-- Puoi aggiungere una citazione anche alle tue note, se si basano su parole dell'utente:
-  con il testimone acceso verrà controllata allo stesso modo.
+- Con il testimone acceso, lo sportello cerca il `testo` nei messaggi registrati. Se risponde
+  che non si trova, ricopialo con più cura. Se l'utente quella cosa non l'ha detta con parole
+  sue, **non è una nota dell'utente**: al massimo è una nota tua (`autore: claude`, di solito
+  `tipo: dedotta`).
+- Con il testimone spento la regola è la stessa (parole esatte nel `testo`), ma nessuno la
+  controlla: la nota sarà marcata "autore non verificato".
 - Non scrivere tu il campo `verifica`: lo aggiunge lo sportello.
+
+### Testo incollato e fonte
+
+Hypomnema è un quaderno di appunti: raccogliere passi letti altrove è proprio il suo scopo.
+Un testo che l'utente incolla in un messaggio conta come portato da lui nel quaderno: la nota è
+`autore: utente`. **Da dove viene lo dice la `fonte`**: per esempio "dal libro <titolo>",
+"dalla spiegazione di Claude del <data>", "mio pensiero". Non c'è bisogno di distinguere tra
+testo scritto e testo incollato.
+
+### Il segno `>` (facoltativo)
+
+Se l'utente inizia alcune righe del messaggio con `>` (il segno classico per riportare parole
+altrui), sta segnalando che quelle righe sono una citazione. Quando copi quelle righe nel `testo`,
+**togli il `>`** all'inizio di ogni riga e metti nella `fonte` da dove viene il passo, se l'utente
+lo dice. Se il testo viene tutto da righe marcate, lo sportello aggiunge da solo la dicitura
+"citazione riportata dall'utente". Senza il segno tutto funziona come sempre.
+
+### Le tue note
+
+In una nota con `autore: claude` il `testo` è tuo. Se si basa su parole dell'utente puoi mettere
+quelle parole esatte in `citazione`: con il testimone acceso viene controllata allo stesso modo.
+Non usare `contesto` nelle tue note: è già tutto tuo.
 
 ### Messaggi privati
 
 Un messaggio che inizia con `#privato` (o con il prefisso scelto dall'utente in `hypomnema.toml`)
-non viene registrato dal testimone. **Non proporre note su ciò che l'utente dice in un messaggio
-privato**, né sue né tue, a meno che non te lo chieda esplicitamente in un messaggio normale.
+**non finisce nel testimone, ma tu lo leggi comunque**: "privato" vuol dire che le sue parole non
+vengono registrate. **Non proporre note su ciò che l'utente dice in un messaggio privato**, né
+sue né tue, a meno che non te lo chieda esplicitamente in un messaggio normale (e anche allora le
+sue parole non si possono verificare, perché il testimone non le ha registrate).
 
 ## 3. Passa le note allo sportello
 
@@ -153,12 +179,12 @@ Quando l'utente conferma:
   "tipo": "dichiarata",
   "natura": "decisione",
   "conferma_di": "0001",
-  "citazione": "sì, da domani annaffio la mattina presto",
-  "testo": "D'ora in poi annaffio l'orto la mattina presto invece che la sera."
+  "testo": "sì, da domani annaffio la mattina presto",
+  "contesto": "Conferma dell'idea 0001: annaffiare la mattina presto invece che la sera."
 }
 ```
 
-   La `citazione` sono le parole con cui l'utente ha confermato.
+   Il `testo` sono le parole esatte con cui l'utente ha confermato.
 3. l'idea originale resta com'è: il quaderno conserva sia l'idea sia la decisione.
 
 L'utente può anche dire "ricorda che ho deciso ...": in quel caso proponi direttamente una

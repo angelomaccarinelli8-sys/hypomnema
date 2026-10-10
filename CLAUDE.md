@@ -27,6 +27,8 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 - **Niente si cancella e niente si riscrive**: note create con apertura esclusiva (`"x"`),
   registro aperto solo in aggiunta (`"a"`).
 - **Provenienza sempre**: data, fonte, autore (utente o claude) in ogni nota.
+- **Parole dell'utente e di Claude mai mescolate**: in una nota dell'utente `testo` = sue parole
+  esatte, `contesto` = aggiunte di Claude; in una nota di Claude `citazione` = parole dell'utente.
 - **L'incerto resta incerto**: tipo `osservata`, `dichiarata` o `dedotta`. Una nota di Claude
   non può mai essere una decisione dell'utente.
 - **Idee separate dalle decisioni**: un'idea diventa decisione solo con conferma esplicita
@@ -51,7 +53,8 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `hypomnema/registro.py` | Registro degli ingressi, solo aggiunta. |
 | `hypomnema/cercatore.py` | Ricerca per parola esatta, solo lettura. |
 | `hypomnema/testimone.py` | Registra i messaggi dell'utente (solo aggiunta, prefisso privato) e cerca le citazioni. |
-| `.claude/settings.json` | Aggancia il testimone a ogni messaggio (UserPromptSubmit) e vieta a Claude di modificare `quaderno/`. |
+| `aggancio_testimone.py` | Punto d'ingresso del testimone per l'aggancio: funziona da qualunque cartella e shell (Git Bash, PowerShell). |
+| `.claude/settings.json` | Aggancia il testimone a ogni messaggio (UserPromptSubmit, con `py` se c'è, altrimenti `python3`) e vieta a Claude di modificare `quaderno/`. |
 | `hypomnema/configurazione.py` | Lettura di `hypomnema.toml`. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |
