@@ -9,6 +9,11 @@ Hypomnema è un quaderno di note sul computer dell'utente. **Tu non scrivi mai d
 nei file del quaderno.** Proponi le note allo sportello, un programma che applica regole fisse
 e decide se entrano. Per leggere usi il cercatore.
 
+Se l'utente l'ha acceso, un altro programma, il **testimone**, registra le parole esatte di ogni
+suo messaggio prima che tu lo legga. Lo sportello lo usa per controllare che le note con
+`autore: utente` riportino parole che l'utente ha detto davvero. Non scrivere mai nel file del
+testimone, nemmeno tramite comandi o script: il suo valore sta proprio nel fatto che tu non lo tocchi.
+
 ## Come lanciare i programmi
 
 I comandi si lanciano dalla cartella di Hypomnema (quella che contiene `hypomnema.toml`):
@@ -66,6 +71,42 @@ Formato (JSON, UTF-8), con **tutti** questi campi:
   - Le tue proposte sono sempre `idea`.
   - `decisione` solo se l'utente ha deciso esplicitamente: `autore: utente`, `tipo: dichiarata`.
 - `testo`: frase chiara e autosufficiente, comprensibile anche fra mesi senza la chat.
+- `citazione`: **obbligatoria per ogni nota con `autore: utente`** (anche le decisioni).
+  Vedi sotto.
+
+### La citazione
+
+Quando una nota riporta qualcosa detto dall'utente, metti in `citazione` **le sue parole esatte**,
+copiate da un suo messaggio: un pezzo continuo di un solo messaggio, con le stesse maiuscole,
+accenti e punteggiatura. Puoi scegliere il pezzo più utile, ma **non riassumere, non correggere,
+non tradurre e non cambiare nemmeno una parola**. Il riassunto, se serve, va nel `testo`.
+
+```json
+{
+  "data": "2026-01-15",
+  "fonte": "chat del 15 gennaio 2026 sul progetto dell'orto",
+  "autore": "utente",
+  "tipo": "dichiarata",
+  "natura": "fatto",
+  "citazione": "il basilico sul balcone sta crescendo bene",
+  "testo": "Il basilico sul balcone cresce bene."
+}
+```
+
+- Se lo sportello risponde che la citazione non si trova, ricopiala con più cura dal messaggio
+  dell'utente. Se l'utente quella cosa non l'ha detta con parole sue, **non è una nota dell'utente**:
+  al massimo è una nota tua (`autore: claude`, di solito `tipo: dedotta`).
+- Con il testimone spento la citazione non è obbligatoria, ma mettila comunque: la nota sarà
+  marcata "autore non verificato" in ogni caso.
+- Puoi aggiungere una citazione anche alle tue note, se si basano su parole dell'utente:
+  con il testimone acceso verrà controllata allo stesso modo.
+- Non scrivere tu il campo `verifica`: lo aggiunge lo sportello.
+
+### Messaggi privati
+
+Un messaggio che inizia con `#privato` (o con il prefisso scelto dall'utente in `hypomnema.toml`)
+non viene registrato dal testimone. **Non proporre note su ciò che l'utente dice in un messaggio
+privato**, né sue né tue, a meno che non te lo chieda esplicitamente in un messaggio normale.
 
 ## 3. Passa le note allo sportello
 
@@ -90,6 +131,8 @@ Dopo ogni passaggio dallo sportello, dì all'utente in poche parole:
 - cosa è stato **rifiutato** e perché (con il motivo dato dallo sportello).
 
 Non dire mai che una cosa è stata salvata se lo sportello non ha risposto `ACCETTATA`.
+Quando usi una nota marcata "autore non verificato", ricorda che nessuno ha controllato
+che l'utente l'abbia detta davvero.
 
 ## 5. Da idea a decisione
 
@@ -110,10 +153,12 @@ Quando l'utente conferma:
   "tipo": "dichiarata",
   "natura": "decisione",
   "conferma_di": "0001",
+  "citazione": "sì, da domani annaffio la mattina presto",
   "testo": "D'ora in poi annaffio l'orto la mattina presto invece che la sera."
 }
 ```
 
+   La `citazione` sono le parole con cui l'utente ha confermato.
 3. l'idea originale resta com'è: il quaderno conserva sia l'idea sia la decisione.
 
 L'utente può anche dire "ricorda che ho deciso ...": in quel caso proponi direttamente una

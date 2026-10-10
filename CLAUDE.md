@@ -7,7 +7,8 @@ Leggi questo file all'inizio di ogni sessione.
 Hypomnema ("promemoria" in greco antico) dà a Claude una memoria permanente tra una chat e
 l'altra, in file Markdown sul computer dell'utente. È fatto di una skill (`skill/hypomnema/SKILL.md`)
 e di piccoli programmi Python (`hypomnema/`): lo **sportello** (`proponi`), il **registro degli
-ingressi** e il **cercatore** (`cerca`).
+ingressi**, il **cercatore** (`cerca`) e il **testimone** (`testimone`), che registra le parole
+esatte dell'utente perché lo sportello possa verificare le note con autore "utente".
 
 Divisione dei compiti, il cuore del progetto: **Claude propone le note, i programmi decidono
 se entrano.** Claude non scrive mai direttamente nei file del quaderno.
@@ -30,6 +31,8 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
   non può mai essere una decisione dell'utente.
 - **Idee separate dalle decisioni**: un'idea diventa decisione solo con conferma esplicita
   dell'utente (nuova nota con `conferma_di`).
+- **Il testimone non si fida di Claude**: il comando `testimone` non scrive mai a schermo (finirebbe
+  nella chat) e non esce mai con codice 2 (bloccherebbe il messaggio dell'utente).
 - **Niente internet** nei programmi.
 - **Impostazioni in `hypomnema.toml`**, mai valori fissi nel codice. I valori ammessi per
   autore/tipo/natura non sono impostazioni ma regole: stanno in `hypomnema/regole.py`.
@@ -47,10 +50,12 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `hypomnema/quaderno.py` | Elenco delle note salvate e numero della prossima. |
 | `hypomnema/registro.py` | Registro degli ingressi, solo aggiunta. |
 | `hypomnema/cercatore.py` | Ricerca per parola esatta, solo lettura. |
+| `hypomnema/testimone.py` | Registra i messaggi dell'utente (solo aggiunta, prefisso privato) e cerca le citazioni. |
+| `.claude/settings.json` | Aggancia il testimone a ogni messaggio (UserPromptSubmit) e vieta a Claude di modificare `quaderno/`. |
 | `hypomnema/configurazione.py` | Lettura di `hypomnema.toml`. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |
-| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole. |
+| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione. |
 
 ## Metodo di lavoro
 
