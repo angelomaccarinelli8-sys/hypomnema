@@ -1,0 +1,7 @@
+$ hypomnema proponi nota.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- manca il campo «fonte»: ogni nota deve dire da dove viene.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+

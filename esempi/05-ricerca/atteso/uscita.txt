@@ -1,0 +1,38 @@
+$ hypomnema proponi 1-colazione.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-pomeriggio.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 3-caffelatte.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca caffè
+Trovate 2 note con «caffè».
+
+--- Nota 0001 ---
+data: 2026-01-12
+fonte: chat del 12 gennaio 2026 sulle abitudini
+autore: utente
+tipo: dichiarata
+natura: fatto
+testo:
+  La mattina bevo un caffè prima di qualsiasi altra cosa.
+
+--- Nota 0002 ---
+data: 2026-01-13
+fonte: chat del 13 gennaio 2026 sulle abitudini
+autore: claude
+tipo: osservata
+natura: fatto
+testo:
+  Caffè nominato tre volte parlando del pomeriggio.
+  Ogni volta verso le 16.
+[codice di uscita: 0]
+

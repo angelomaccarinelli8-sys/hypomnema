@@ -1,0 +1,78 @@
+"""Lettura del file di configurazione ``hypomnema.toml``.
+
+Ordine di ricerca del file:
+1. il percorso passato con ``--config``;
+2. il percorso nella variabile d'ambiente ``HYPOMNEMA_CONFIG``;
+3. ``hypomnema.toml`` nella cartella corrente.
+"""
+
+import os
+import tomllib
+from dataclasses import dataclass
+from pathlib import Path
+
+NOME_FILE = "hypomnema.toml"
+VARIABILE_AMBIENTE = "HYPOMNEMA_CONFIG"
+
+
+class ErroreConfigurazione(Exception):
+    """La configurazione manca o non è valida."""
+
+
+@dataclass(frozen=True)
+class Configurazione:
+    cartella_quaderno: Path
+    cartella_note: Path
+    file_registro: Path
+    cifre_numero_nota: int
+
+
+def trova(percorso: str | None = None) -> Path:
+    if percorso:
+        return Path(percorso)
+    da_ambiente = os.environ.get(VARIABILE_AMBIENTE)
+    if da_ambiente:
+        return Path(da_ambiente)
+    return Path.cwd() / NOME_FILE
+
+
+def carica(percorso: str | None = None) -> Configurazione:
+    file = trova(percorso)
+    if not file.is_file():
+        raise ErroreConfigurazione(
+            f"non trovo il file di configurazione «{file}». "
+            f"Lancia il comando dalla cartella che contiene {NOME_FILE}, "
+            f"oppure indica il file con --config o con la variabile {VARIABILE_AMBIENTE}."
+        )
+    try:
+        with open(file, "rb") as f:
+            dati = tomllib.load(f)
+    except tomllib.TOMLDecodeError as errore:
+        raise ErroreConfigurazione(f"il file «{file}» non è scritto correttamente: {errore}")
+
+    sezione = dati.get("quaderno")
+    if not isinstance(sezione, dict):
+        raise ErroreConfigurazione(f"nel file «{file}» manca la sezione [quaderno].")
+
+    def testo(chiave: str) -> str:
+        valore = sezione.get(chiave)
+        if not isinstance(valore, str) or not valore.strip():
+            raise ErroreConfigurazione(
+                f"nel file «{file}» manca l'impostazione «{chiave}» (deve essere un testo)."
+            )
+        return valore
+
+    cifre = sezione.get("cifre_numero_nota")
+    if not isinstance(cifre, int) or isinstance(cifre, bool) or cifre < 1:
+        raise ErroreConfigurazione(
+            f"nel file «{file}» l'impostazione «cifre_numero_nota» deve essere un numero intero maggiore di zero."
+        )
+
+    base = file.resolve().parent
+    quaderno = base / testo("cartella")
+    return Configurazione(
+        cartella_quaderno=quaderno,
+        cartella_note=quaderno / testo("cartella_note"),
+        file_registro=quaderno / testo("file_registro"),
+        cifre_numero_nota=cifre,
+    )

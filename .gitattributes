@@ -1,0 +1,3 @@
+# Tutti i file di testo restano con fine riga LF anche su Windows:
+# così i risultati attesi degli esempi sono identici su ogni sistema.
+* text=auto eol=lf
