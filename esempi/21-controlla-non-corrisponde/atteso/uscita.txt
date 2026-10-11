@@ -1,0 +1,7 @@
+$ hypomnema controlla
+ATTENZIONE: note e registro non corrispondono.
+- nota 0002: la nota c'è, ma nel registro manca la sua riga ACCETTATA.
+- nota 0003: il registro dice ACCETTATA, ma la nota non c'è.
+Non è stato riparato niente: decide l'utente.
+[codice di uscita: 1]
+

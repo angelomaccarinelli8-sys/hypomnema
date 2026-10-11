@@ -38,6 +38,8 @@ class Configurazione:
     file_registro: Path
     cifre_numero_nota: int
     testimone_attivo: bool
+    # True nella configurazione per la chat di Claude, dove il testimone non esiste.
+    in_chat: bool
     file_testimone: Path
     prefisso_privato: str
     segno_citazione: str
@@ -117,6 +119,20 @@ def carica(percorso: str | None = None) -> Configurazione:
             "deve essere true (acceso) oppure false (spento)."
         )
 
+    # Facoltativa: c'è solo nella configurazione per la chat. Senza, tutto resta come prima.
+    modalita = testimone.get("modalita")
+    if modalita is not None and modalita != "chat":
+        raise ErroreConfigurazione(
+            f"nel file «{file}» l'impostazione «modalita» della sezione [testimone] può valere solo "
+            '"chat" (configurazione per la chat di Claude); altrimenti va tolta.'
+        )
+    in_chat = modalita == "chat"
+    if in_chat and attivo:
+        raise ErroreConfigurazione(
+            f"nel file «{file}» c'è modalita = \"chat\" ma il testimone è acceso: nella chat di Claude "
+            "il testimone non esiste, quindi serve attivo = false."
+        )
+
     base = file.resolve().parent
     quaderno = base / testo("cartella")
     return Configurazione(
@@ -125,6 +141,7 @@ def carica(percorso: str | None = None) -> Configurazione:
         file_registro=quaderno / dentro_il_quaderno("file_registro"),
         cifre_numero_nota=cifre,
         testimone_attivo=attivo,
+        in_chat=in_chat,
         file_testimone=quaderno / dentro_il_quaderno("file", testimone),
         prefisso_privato=testo("prefisso_privato", testimone).strip(),
         segno_citazione=testo("segno_citazione", testimone).strip(),

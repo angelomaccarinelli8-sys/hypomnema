@@ -1,0 +1,7 @@
+istantanea > prima.json
+proponi 1-accettata.json
+cambiati prima.json
+istantanea > prima.json
+proponi 2-rifiutata.json
+cambiati prima.json
+cambiati prima.json

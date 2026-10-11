@@ -16,6 +16,12 @@ INTESTAZIONE = (
 )
 
 
+# Le sole due forme di riga che "annota" scrive. Servono a "cambiati" e "controlla"
+# per riconoscere le righe dello sportello.
+_QUANDO = r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:[+-]\d{2}:\d{2}|Z)?"
+RIGA_ACCETTATA = re.compile(rf"- {_QUANDO} \| ACCETTATA \| nota (\d+) \| da: [^\n]*")
+RIGA_RIFIUTATA = re.compile(rf"- {_QUANDO} \| RIFIUTATA \| da: [^\n]* \| motivi: [^\n]*")
+
 # Tutti i caratteri che possono far andare a capo un testo.
 A_CAPO = re.compile(r"\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]")
 SEGNO_A_CAPO = "⏎"

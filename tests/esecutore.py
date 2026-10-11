@@ -5,9 +5,14 @@ dopo ``hypomnema``) e una cartella ``atteso/`` con:
 - ``uscita.txt``: ciò che il programma deve scrivere a schermo;
 - ``quaderno/``: come deve risultare il quaderno alla fine (note, registro, testimone).
 
+Se l'esempio ha una cartella ``quaderno-iniziale/``, il quaderno parte come quella copia
+(per esempio per mostrare un quaderno con una nota senza la sua riga nel registro).
+
 Se l'esempio ha un suo ``hypomnema.toml`` si usa quello (per esempio per accendere
 il testimone); altrimenti la configurazione di prova qui sotto, con il testimone spento.
-Nei comandi, ``proponi FILE`` e ``testimone FILE`` usano file della cartella dell'esempio:
+Nei comandi, ``istantanea > FILE`` salva l'uscita in un file della cartella di prova (come la
+shell) e ``cambiati FILE`` lo rilegge da lì. ``proponi FILE`` e ``testimone FILE`` usano file della
+cartella dell'esempio:
 ``testimone FILE`` simula un messaggio dell'utente come lo manderebbe Claude Code.
 
 I percorsi della cartella temporanea (che cambiano da computer a computer, per esempio
@@ -22,6 +27,7 @@ ogni comando successivo un minuto dopo.
 import io
 import re
 import shlex
+import shutil
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -65,21 +71,34 @@ def esegui(esempio: Path, lavoro: Path) -> str:
     proprio = esempio / "hypomnema.toml"
     testo_config = proprio.read_text(encoding="utf-8") if proprio.is_file() else CONFIG_DI_PROVA
     config.write_text(testo_config, encoding="utf-8")
+    iniziale = esempio / "quaderno-iniziale"
+    if iniziale.is_dir():
+        shutil.copytree(iniziale, lavoro / "quaderno")
     comandi = (esempio / "comandi.txt").read_text(encoding="utf-8").splitlines()
     uscita = io.StringIO()
     for numero, riga in enumerate(c for c in comandi if c.strip()):
         parti = shlex.split(riga)
+        destinazione = None
+        if ">" in parti:
+            # Come nella shell: l'uscita del comando va nel file, dentro la cartella di prova.
+            destinazione = lavoro / parti[parti.index(">") + 1]
+            parti = parti[:parti.index(">")]
         if parti[0] in ("proponi", "testimone"):
             argomenti = [parti[0], str(esempio / parti[1])]
+        elif parti[0] == "cambiati":
+            argomenti = [parti[0], str(lavoro / parti[1])]
         else:
             argomenti = parti
         uscita.write(f"$ hypomnema {riga}\n")
+        uscita_comando = io.StringIO() if destinazione else uscita
         codice = main(
             ["--config", str(config), *argomenti],
             adesso=ORA_DI_PARTENZA + timedelta(minutes=numero),
-            uscita=uscita,
+            uscita=uscita_comando,
             errori=uscita,
         )
+        if destinazione:
+            destinazione.write_text(uscita_comando.getvalue(), encoding="utf-8")
         uscita.write(f"[codice di uscita: {codice}]\n\n")
     return senza_cartella_di_prova(uscita.getvalue(), lavoro)
 
