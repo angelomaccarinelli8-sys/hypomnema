@@ -70,11 +70,16 @@ quaderno, sul tuo computer.
    quaderno nasce con la prima nota.
 3. Quando c'è qualcosa da ricordare, Claude propone la nota allo sportello, come sempre: le regole
    sono le stesse e Claude non salva mai una nota a mano. Poi riporta sul tuo computer **solo i
-   file che lo sportello ha creato o allungato** (la nota nuova e il registro). Lo scrive con un
-   controllo che rifiuta la scrittura se nel frattempo il file sul tuo computer è cambiato: in quel
-   caso Claude non forza, ricopia il quaderno, riprova e te lo dice. Anche le proposte rifiutate
-   finiscono nel registro, che quindi viene riportato anche dopo un rifiuto.
+   file che lo sportello ha creato o allungato**: prima il registro, poi la nota nuova. Lo scrive
+   con un controllo che rifiuta la scrittura se nel frattempo il file sul tuo computer è cambiato.
+   Il registro si allunga a ogni proposta, quindi se la sua scrittura riesce nessun'altra chat ha
+   scritto nel frattempo; se viene rifiutata, Claude non forza e non scrive la nota, ricopia il
+   quaderno, riprova e te lo dice. Anche le proposte rifiutate finiscono nel registro, che quindi
+   viene riportato anche dopo un rifiuto.
 4. Quando chiedi «cosa avevo deciso su…», Claude cerca nel quaderno con il cercatore.
+5. A inizio chat Claude controlla che ogni nota abbia la sua riga ACCETTATA nel registro, e
+   viceversa (`controlla`). Se qualcosa non corrisponde, per esempio per un salvataggio rimasto a
+   metà, te lo dice; non ripara niente da solo.
 
 **Il permesso richiesto.** Solo la cartella `Hypomnema`. In chat Claude non lancia comandi sul tuo
 computer: legge e scrive solo lì, e non copia il file del testimone (`testimone.jsonl`), se c'è.
@@ -101,9 +106,11 @@ percorso esatto nelle impostazioni lo verificheremo nella prima prova.
 **Come funziona dentro.** Claude usa la configurazione [`chat/hypomnema-chat.toml`](chat/hypomnema-chat.toml)
 (testimone spento e `modalita = "chat"`). Prima di ogni proposta fotografa il quaderno con
 `istantanea`; dopo, `cambiati` elenca i file da riportare e controlla che sia successo solo ciò che
-lo sportello sa fare (creare note annotate come ACCETTATA nel registro e allungare il registro).
-Se trova altro, per esempio una nota cambiata a mano, risponde con un errore e Claude non riporta
-niente.
+lo sportello sa fare: creare note annotate come ACCETTATA nel registro, e allungare il registro
+con righe nella forma dello sportello. Se trova altro, per esempio una nota cambiata a mano o del
+testo libero nel registro, risponde con un errore e Claude non riporta niente. Una riga scritta a
+mano ma con la forma giusta non si può distinguere da una vera: è un limite dichiarato.
+`controlla` confronta note e registro, in sola lettura.
 
 ## Usarlo con l'avviabile di Windows (funzionante, sviluppo in pausa)
 
@@ -268,6 +275,7 @@ python -m hypomnema testimone messaggio.json   # di solito lo lancia Claude Code
 python -m hypomnema stato                      # testimone acceso? ultimo messaggio registrato?
 python -m hypomnema istantanea > prima.json    # chat: fotografa il quaderno prima di una proposta
 python -m hypomnema cambiati prima.json        # chat: quali file riportare sul computer
+python -m hypomnema controlla                  # ogni nota ha la sua riga nel registro, e viceversa?
 ```
 
 Su Windows scrivi `py` al posto di `python`:

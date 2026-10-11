@@ -1,0 +1,20 @@
+$ hypomnema controlla
+Quaderno in ordine: nessuna nota.
+[codice di uscita: 0]
+
+$ hypomnema proponi 1-accettata.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-rifiutata.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- manca il campo «fonte»: ogni nota deve dire da dove viene.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema controlla
+Quaderno in ordine: 1 nota, con la sua riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

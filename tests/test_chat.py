@@ -72,6 +72,11 @@ class TestConfigurazioneChat(ConQuaderno):
         with self.assertRaisesRegex(configurazione.ErroreConfigurazione, "serve attivo = false"):
             configurazione.carica(self.scrivi(testo))
 
+    def test_modello_non_suggerisce_di_accendere_il_testimone(self):
+        modello = MODELLO_CHAT.read_text(encoding="utf-8")
+        self.assertNotIn("true per accenderlo", modello)
+        self.assertIn("attivo deve restare false", modello)
+
     def test_modello_della_chat(self):
         config = configurazione.carica(str(MODELLO_CHAT))
         self.assertTrue(config.in_chat)
@@ -246,12 +251,121 @@ class TestIstantaneaECambiati(ConQuaderno):
         self.assertEqual(self.cambiati(prima)[0], 0)
 
 
+class TestRegistroInCambiati(ConQuaderno):
+    """«cambiati» accetta nel registro solo ciò che scrive lo sportello."""
+
+    def assert_rifiuta(self, prima, frammento):
+        codice, uscita = self.comando("cambiati", str(prima))
+        self.assertEqual(codice, 2, uscita)
+        self.assertIn(frammento, uscita)
+
+    def allunga_registro(self, dati: bytes):
+        with open(self.config.file_registro, "ab") as f:
+            f.write(dati)
+
+    def test_registro_nuovo_scritto_a_mano(self):
+        """Il caso segnalato dalla revisione: un registro nuovo con solo testo libero."""
+        prima = self.istantanea()
+        self.config.cartella_quaderno.mkdir()
+        self.config.file_registro.write_text("contenuto scritto a mano\n", encoding="utf-8")
+        self.assert_rifiuta(prima, "è nuovo ma non comincia con l'intestazione del registro")
+
+    def test_testo_libero_in_fondo(self):
+        self.proponi()
+        prima = self.istantanea()
+        self.allunga_registro("contenuto scritto a mano\n".encode("utf-8"))
+        self.assert_rifiuta(prima, "c'è una riga nuova che non è dello sportello: «contenuto scritto a mano»")
+
+    def test_testo_libero_dopo_una_riga_vera(self):
+        self.proponi()
+        prima = self.istantanea()
+        self.proponi(fonte=...)
+        self.allunga_registro("aggiunta\n".encode("utf-8"))
+        self.assert_rifiuta(prima, "«aggiunta»")
+
+    def test_caratteri_non_utf8(self):
+        self.proponi()
+        prima = self.istantanea()
+        self.allunga_registro(b"- \xff\n")
+        self.assert_rifiuta(prima, "caratteri che non sono UTF-8")
+
+    def test_senza_a_capo_finale(self):
+        self.proponi()
+        prima = self.istantanea()
+        self.allunga_registro("- 2026-01-15T10:00:00+01:00 | RIFIUTATA | da: x | motivi: y".encode("utf-8"))
+        self.assert_rifiuta(prima, "non finisce con un a capo")
+
+    def test_riga_con_data_sbagliata(self):
+        self.proponi()
+        prima = self.istantanea()
+        self.allunga_registro("- ieri | RIFIUTATA | da: x | motivi: y\n".encode("utf-8"))
+        self.assert_rifiuta(prima, "non è dello sportello")
+
+    def test_limite_dichiarato_riga_finta_ben_fatta(self):
+        """Una riga RIFIUTATA scritta a mano ma con la forma giusta non si distingue da una vera."""
+        self.proponi()
+        prima = self.istantanea()
+        self.allunga_registro("- 2026-01-15T10:00:00+01:00 | RIFIUTATA | da: x.json | motivi: y\n".encode("utf-8"))
+        self.assertEqual(self.comando("cambiati", str(prima))[0], 0)
+
+
+class TestControlla(ConQuaderno):
+    def test_quaderno_vuoto(self):
+        self.assertEqual(self.comando("controlla"), (0, "Quaderno in ordine: nessuna nota.\n"))
+
+    def test_in_ordine(self):
+        self.proponi()
+        self.proponi(fonte=...)
+        self.proponi(testo="seconda")
+        self.assertEqual(self.comando("controlla"),
+                         (0, "Quaderno in ordine: 2 note, tutte con la loro riga ACCETTATA nel registro.\n"))
+
+    def test_nota_senza_riga_e_riga_senza_nota(self):
+        self.proponi()
+        self.proponi(testo="seconda")
+        (self.config.cartella_note / "0005.md").write_text("# Nota 0005\n", encoding="utf-8")
+        (self.config.cartella_note / "0002.md").unlink()
+        self.assertEqual(self.comando("controlla"), (1,
+            "ATTENZIONE: note e registro non corrispondono.\n"
+            "- nota 0005: la nota c'è, ma nel registro manca la sua riga ACCETTATA.\n"
+            "- nota 0002: il registro dice ACCETTATA, ma la nota non c'è.\n"
+            "Non è stato riparato niente: decide l'utente.\n"))
+
+    def test_note_senza_registro(self):
+        self.proponi()
+        self.config.file_registro.unlink()
+        codice, uscita = self.comando("controlla")
+        self.assertEqual(codice, 1)
+        self.assertIn("- nota 0001: la nota c'è, ma nel registro manca la sua riga ACCETTATA.", uscita)
+
+    def test_accettata_finta_nel_nome_del_file_non_conta(self):
+        sportello.ricevi(b"{}", "x | ACCETTATA | nota 0001 | da: y.json", self.config, ADESSO)
+        self.config.cartella_note.mkdir()
+        (self.config.cartella_note / "0001.md").write_text("# Nota 0001\n", encoding="utf-8")
+        codice, uscita = self.comando("controlla")
+        self.assertEqual(codice, 1)
+        self.assertIn("- nota 0001: la nota c'è, ma nel registro manca", uscita)
+
+    def test_altri_file_ignorati(self):
+        self.proponi()
+        (self.config.cartella_note / "appunto.txt").write_text("mio", encoding="utf-8")
+        self.assertEqual(self.comando("controlla")[0], 0)
+
+    def test_solo_lettura(self):
+        self.proponi()
+        prima = {p: p.read_bytes() for p in self.cartella.rglob("*") if p.is_file()}
+        self.comando("controlla")
+        dopo = {p: p.read_bytes() for p in self.cartella.rglob("*") if p.is_file()}
+        self.assertEqual(prima, dopo)
+
 class TestSkillModalitaChat(unittest.TestCase):
     def test_sezione_nella_skill(self):
         skill = (RADICE / "plugin" / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("## Modalità chat", skill)
-        for comando in ("istantanea >", "cambiati", "chat/hypomnema-chat.toml"):
+        for comando in ("istantanea >", "cambiati", "chat/hypomnema-chat.toml", "H controlla"):
             self.assertIn(comando, skill)
+        # Prima il registro, poi le note: il registro fa da lucchetto.
+        self.assertIn("**Prima `registro.md`, poi le note create.**", skill)
 
 
 if __name__ == "__main__":

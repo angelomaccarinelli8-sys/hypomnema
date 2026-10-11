@@ -8,6 +8,7 @@
     python -m hypomnema impostazioni-claude     # le regole che l'avviabile passa a Claude Code
     python -m hypomnema istantanea > prima.json # chat: fotografa il quaderno prima di una proposta
     python -m hypomnema cambiati prima.json     # chat: i file da riportare sul computer dell'utente
+    python -m hypomnema controlla               # ogni nota ha la sua riga nel registro, e viceversa?
 
 Codici di uscita: 0 = tutto bene, 1 = nota rifiutata, 2 = errore di uso o di configurazione.
 Il comando "testimone" non esce mai con 2: per Claude Code vorrebbe dire bloccare il
@@ -21,7 +22,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import TextIO
 
-from hypomnema import __version__, avvio, cambiamenti, cercatore, configurazione, registro, sportello, testimone
+from hypomnema import (
+    __version__, avvio, cambiamenti, cercatore, configurazione, controllo, registro, sportello, testimone,
+)
 from hypomnema.nota import Nota, NotaIlleggibile
 
 ORIGINE_DIRETTA = "(ingresso diretto)"
@@ -63,6 +66,9 @@ def _parser() -> argparse.ArgumentParser:
         "cambiati", help="elenca i file del quaderno creati o allungati rispetto a un'istantanea"
     )
     cambiati.add_argument("file", help="il file dell'istantanea fatta prima della proposta")
+    comandi.add_parser(
+        "controlla", help="controlla che ogni nota abbia la sua riga ACCETTATA nel registro, e viceversa"
+    )
     comandi.add_parser(
         "impostazioni-claude",
         help="scrive le regole che vietano a Claude di modificare quaderno e configurazione (per l'avviabile)",
@@ -208,6 +214,27 @@ def _cambiati(argomenti, config, uscita: TextIO) -> int:
     return 0
 
 
+def _controlla(config, uscita: TextIO) -> int:
+    """Solo lettura: segnala, non ripara. 0 = in ordine, 1 = qualcosa non corrisponde."""
+    esito = controllo.controlla(config)
+    if not esito.senza_riga and not esito.senza_nota:
+        if esito.note == 0:
+            print("Quaderno in ordine: nessuna nota.", file=uscita)
+        elif esito.note == 1:
+            print("Quaderno in ordine: 1 nota, con la sua riga ACCETTATA nel registro.", file=uscita)
+        else:
+            print(f"Quaderno in ordine: {esito.note} note, tutte con la loro riga ACCETTATA nel registro.",
+                  file=uscita)
+        return 0
+    print("ATTENZIONE: note e registro non corrispondono.", file=uscita)
+    for numero in esito.senza_riga:
+        print(f"- nota {numero}: la nota c'è, ma nel registro manca la sua riga ACCETTATA.", file=uscita)
+    for numero in esito.senza_nota:
+        print(f"- nota {numero}: il registro dice ACCETTATA, ma la nota non c'è.", file=uscita)
+    print("Non è stato riparato niente: decide l'utente.", file=uscita)
+    return 1
+
+
 def _impostazioni_claude(argomenti, config, uscita: TextIO) -> int:
     try:
         impostazioni = avvio.impostazioni_claude(config, configurazione.trova(argomenti.config))
@@ -277,6 +304,8 @@ def main(
             return _istantanea(config, uscita)
         if argomenti.comando == "cambiati":
             return _cambiati(argomenti, config, uscita)
+        if argomenti.comando == "controlla":
+            return _controlla(config, uscita)
         if argomenti.comando == "impostazioni-claude":
             return _impostazioni_claude(argomenti, config, uscita)
         return _cerca(argomenti, config, uscita)

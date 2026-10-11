@@ -21,8 +21,7 @@ cifre_numero_nota = 4
 # Il testimone registra le parole esatte di ogni tuo messaggio a Claude, con data e ora,
 # in un file dentro la cartella del quaderno. Serve allo sportello per controllare che
 # una nota con autore "utente" riporti parole che hai detto davvero.
-# Spento di base: scrivi true per accenderlo, false per spegnerlo.
-# Da spento, le note con autore "utente" vengono salvate come "autore non verificato".
+# In chat il testimone non esiste: attivo deve restare false.
 attivo = false
 
 # Nella chat il testimone non esiste: i messaggi arrivano solo a Claude.

@@ -63,6 +63,11 @@ Non provare a riparare il testimone da solo: non toccare configurazione, quadern
 
 ## 1. A inizio chat: rileggi
 
+Prima di tutto controlla che note e registro corrispondano: `py -m hypomnema controlla` (in chat:
+`H controlla`, punto C2). Se risponde «ATTENZIONE», di' all'utente quali note non corrispondono al
+registro e perché. **Non riparare niente**: il registro si allunga soltanto e la decisione è sua.
+Poi continua normalmente.
+
 1. Individua 1-3 parole chiave del primo messaggio dell'utente (argomento, progetto, nomi).
 2. Per ciascuna lancia `py -m hypomnema cerca <parola>`. La ricerca è per parola esatta,
    senza distinzione di maiuscole: prova anche il singolare/plurale se serve.
@@ -274,6 +279,8 @@ python3 --version
      massimo 50 file per volta. Poi controlla che il numero dei file copiati sia uguale a quello
      elencato. **Non copiare `testimone.jsonl`**: in chat non serve, e contiene parole private
      dell'utente.
+3. Controlla il quaderno copiato: `H controlla` (vedi la sezione 1). Serve ad accorgersi di un
+   salvataggio rimasto a metà in una chat precedente, o di un file toccato a mano.
 
 **Se non hai gli strumenti per il computer dell'utente** (chat sul web, app mobile): è la
 **modalità prova**. Prima di cominciare dillo chiaramente: «Qui non posso accedere al tuo
@@ -297,15 +304,20 @@ Per ogni nota, in quest'ordine:
 3. Chiedi quali file sono cambiati: `H cambiati ~/hypomnema-lavoro/prima.json`
    - Risponde con un elenco: **riporta sul computer dell'utente esattamente quei file**, allo stesso
      percorso sotto `Hypomnema/quaderno/` (per esempio `note/0007.md` va in
-     `Hypomnema/quaderno/note/0007.md`), usando il controllo sui file cambiati. Prima le note
-     create, poi `registro.md`. Anche una nota rifiutata allunga il registro: va riportato.
+     `Hypomnema/quaderno/note/0007.md`), usando il controllo sui file cambiati.
+     **Prima `registro.md`, poi le note create.** Ogni proposta allunga il registro: se la sua
+     scrittura riesce, vuol dire che nessun'altra chat ha scritto nel quaderno dopo la tua copia,
+     e puoi scrivere le note. Anche una nota rifiutata allunga il registro: va riportato.
    - Risponde «Nessun file del quaderno è cambiato»: non c'è niente da riportare.
    - Risponde `ERRORE`: **non riportare niente**. Dillo all'utente con il messaggio ricevuto,
      ricopia il quaderno dal suo computer (C2) e riparti dal punto 1.
-4. Se il controllo **rifiuta una scrittura** (il file sul computer dell'utente è cambiato nel
-   frattempo, per esempio da un'altra chat): **non forzare**. Dillo all'utente, ricopia il quaderno
-   (C2), controlla con `H cerca` se la nota è già arrivata (in quel caso non ripeterla) e ripeti
-   la proposta dal punto 1.
+4. Se il controllo **rifiuta la scrittura del registro** (il registro sul computer dell'utente è
+   cambiato nel frattempo, per esempio per un'altra chat): **non forzare e non scrivere le note**.
+   Sul computer dell'utente non è cambiato niente. Dillo all'utente, ricopia il quaderno (C2) e
+   ripeti la proposta dal punto 1.
+   Se invece il registro è stato scritto ma il controllo **rifiuta una nota** (succede solo se
+   qualcuno ha toccato il quaderno a mano): fermati e dillo all'utente. Dopo aver ricopiato il
+   quaderno, `H controlla` mostrerà la riga del registro senza la sua nota.
 5. Di' all'utente cosa è stato salvato e cosa è stato rifiutato (sezione 4). In modalità prova
    ricorda che il quaderno sparirà a fine chat.
 

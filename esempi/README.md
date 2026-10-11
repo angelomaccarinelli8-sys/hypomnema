@@ -10,6 +10,8 @@ Ogni cartella è un esempio:
 - `atteso/quaderno/`: come deve essere il quaderno alla fine (note, registro, testimone);
 - i percorsi della cartella temporanea in cui gira l'esempio compaiono come
   `<cartella di prova>/...` (per esempio nell'uscita di `stato`);
+- `quaderno-iniziale/` (solo in alcuni esempi): il quaderno da cui parte l'esempio, invece di
+  un quaderno vuoto;
 - `hypomnema.toml` (solo in alcuni esempi): la configurazione usata, per esempio con il
   testimone acceso. Se manca, l'esempio usa una configurazione con il testimone **spento**;
 - `messaggio*.json` / `1-privato.json` ecc.: un messaggio inventato dell'utente, come Claude Code
@@ -41,6 +43,8 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `17-stato-testimone-spento` | Testimone spento. Arriva un messaggio, poi `stato`. | «Testimone: SPENTO», con la spiegazione; nessun messaggio registrato. |
 | `18-chat-nota-utente` | Configurazione per la chat (`chat/hypomnema-chat.toml`). `stato`, poi una nota dell'utente con un contesto di Claude, poi la ricerca. | `stato` dice «Testimone: NON C'È»; la nota è accettata e marcata «autore non verificato (chat, senza testimone)». |
 | `19-chat-file-da-riportare` | Configurazione per la chat. `istantanea`, una nota accettata, `cambiati`; poi `istantanea`, una nota rifiutata, `cambiati` due volte. | Dopo la nota accettata: da riportare `note/0001.md` e `registro.md` (creati). Dopo quella rifiutata: solo `registro.md` (allungato), uguale anche la seconda volta perché `cambiati` non cambia niente. |
+| `20-controlla-in-ordine` | `controlla` sul quaderno vuoto, poi una nota accettata e una rifiutata, poi di nuovo `controlla`. | Prima «nessuna nota», poi «1 nota, con la sua riga ACCETTATA nel registro»: la riga RIFIUTATA non conta. |
+| `21-controlla-non-corrisponde` | Parte da un quaderno già pronto con le note 0001 e 0002 e un registro con ACCETTATA 0001, una riga RIFIUTATA e ACCETTATA 0003. | «ATTENZIONE»: la nota 0002 non ha la sua riga nel registro, e il registro dice ACCETTATA per la 0003 che non c'è. Codice di uscita 1; il quaderno resta identico. |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
 in più la riga «verifica: autore non verificato (testimone spento)».

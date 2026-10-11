@@ -9,21 +9,20 @@ cambiati. Si usa così:
     hypomnema cambiati prima.json          # dopo: i file da riportare
 
 "cambiati" controlla anche che sia successo solo ciò che lo sportello sa fare: creare note
-nuove, annotate come ACCETTATA nelle righe nuove del registro, e allungare il registro.
+nuove, annotate come ACCETTATA nelle righe nuove del registro, e allungare il registro con righe
+nella forma dello sportello (e con la sua intestazione, se il registro è nuovo). Una riga scritta
+a mano ma con la forma giusta non si può distinguere: il controllo esclude il testo libero.
 Qualunque altro cambiamento (un file sparito, riscritto, o scritto a mano) è un errore, e
 allora non si riporta niente.
 """
 
 import hashlib
 import json
-import re
 from dataclasses import dataclass
 
 from hypomnema.configurazione import Configurazione
 from hypomnema.quaderno import NOME_FILE_NOTA
-
-# Una riga del registro per una nota accettata (vedi registro.py).
-RIGA_ACCETTATA = re.compile(r"^- \S+ \| ACCETTATA \| nota (\d+) \| da: ", re.MULTILINE)
+from hypomnema.registro import INTESTAZIONE, RIGA_ACCETTATA, RIGA_RIFIUTATA
 
 
 class ErroreCambiamenti(Exception):
@@ -87,6 +86,36 @@ def leggi_istantanea(contenuto: bytes) -> dict[str, tuple[int, str]]:
     return file
 
 
+def _accettate_nel_registro(
+    registro: str, aggiunte: dict[str, bytes], cambiamenti: list[Cambiamento], problemi: list[str]
+) -> set[str]:
+    """Controlla il pezzo aggiunto al registro; restituisce i numeri delle note accettate."""
+    if registro not in aggiunte:
+        return set()
+    try:
+        testo = aggiunte[registro].decode("utf-8")
+    except UnicodeDecodeError:
+        problemi.append(f"il file «{registro}» è stato allungato con caratteri che non sono UTF-8.")
+        return set()
+    creato = any(c.percorso == registro and c.tipo == "creato" for c in cambiamenti)
+    if creato:
+        if not testo.startswith(INTESTAZIONE):
+            problemi.append(f"il file «{registro}» è nuovo ma non comincia con l'intestazione del registro.")
+            return set()
+        testo = testo[len(INTESTAZIONE):]
+    if not testo.endswith("\n"):
+        problemi.append(f"il file «{registro}» non finisce con un a capo, come fa lo sportello.")
+        return set()
+    accettate = set()
+    for riga in testo[:-1].split("\n"):
+        accettata = RIGA_ACCETTATA.fullmatch(riga)
+        if accettata:
+            accettate.add(accettata.group(1))
+        elif not RIGA_RIFIUTATA.fullmatch(riga):
+            problemi.append(f"nel file «{registro}» c'è una riga nuova che non è dello sportello: «{riga}».")
+    return accettate
+
+
 def cambiati(config: Configurazione, prima: dict[str, tuple[int, str]]) -> list[Cambiamento]:
     """I file creati o allungati rispetto all'istantanea; ErroreCambiamenti se è successo altro."""
     dopo = _file_del_quaderno(config)
@@ -111,8 +140,7 @@ def cambiati(config: Configurazione, prima: dict[str, tuple[int, str]]) -> list[
     quaderno = config.cartella_quaderno
     registro = config.file_registro.relative_to(quaderno).as_posix()
     cartella_note = config.cartella_note.relative_to(quaderno).as_posix()
-    righe_nuove = aggiunte.get(registro, b"").decode("utf-8", errors="replace")
-    accettate = set(RIGA_ACCETTATA.findall(righe_nuove))
+    accettate = _accettate_nel_registro(registro, aggiunte, cambiamenti, problemi)
 
     note_create = set()
     for cambiamento in cambiamenti:

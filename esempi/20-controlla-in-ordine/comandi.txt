@@ -1,0 +1,4 @@
+controlla
+proponi 1-accettata.json
+proponi 2-rifiutata.json
+controlla
