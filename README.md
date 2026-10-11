@@ -164,14 +164,39 @@ quaderno, sul tuo computer.
 5. A inizio chat Claude controlla che ogni nota abbia la sua riga ACCETTATA nel registro, e
    viceversa, e che nel registro non ci siano righe estranee (`controlla`). Se qualcosa non corrisponde, per esempio per un salvataggio rimasto a
    metà, te lo dice; non ripara niente da solo.
+6. **L'archivio della chat.** Se nelle impostazioni di Claude è attivo il permesso per cercare e
+   consultare le chat passate, Claude rilegge la conversazione dall'archivio di Anthropic e la copia
+   nel quaderno con il comando `archivio`: i tuoi messaggi in `archivio-chat.jsonl`, le sue risposte
+   in `diario-chat.jsonl`, con la data, l'ora, il numero del turno e l'indirizzo della chat. Lo
+   strumento dà al massimo 50 turni per volta: Claude legge a pezzi. I doppioni si riconoscono dal
+   numero del turno (l'ora arriva solo al minuto), e dai tuoi messaggi si tolgono gli avvisi tecnici
+   che l'app inserisce tra `<system-reminder>` e `</system-reminder>`. Lo fa ogni 5 scambi (si
+   regola con `copia_ogni`), prima di salvare una nota e quando dici che chiudi. Così la
+   conversazione finisce nel quaderno da sola, e all'inizio di una chat nuova Claude ti dice in tre
+   righe dove eravate rimasti.
+
+**Tre livelli di fiducia.** Ogni nota tua dice quanto è sicuro che quelle parole siano tue:
+
+| Livello | Dove | Cosa c'è scritto nella nota |
+|---|---|---|
+| **Verificato** | Claude Code, con il testimone | `testo trovato nel messaggio del <data e ora>` |
+| **Riscontrato sull'archivio della chat** | Chat, con l'archivio | `testo riscontrato sull'archivio della chat <indirizzo>, messaggio del turno <numero> (<data e ora>, copiato da Claude)` |
+| **Non verificato** | Chat senza archivio, o testo che non si trova | `autore non verificato (chat, senza testimone)` |
+
+In chat una nota con parole che nell'archivio non ci sono **non viene rifiutata**: resta «non
+verificata», perché l'archivio può non essere disponibile o non ancora copiato. Nel diario
+(`diario`) le righe copiate dall'archivio dicono «archivio della chat …, copiato da Claude»; quelle
+senza indicazione vengono dai testimoni di Claude Code.
 
 **Il permesso richiesto.** Solo la cartella `Hypomnema`. In chat Claude non lancia comandi sul tuo
 computer: legge e scrive solo lì, e non copia il file del testimone (`testimone.jsonl`), se c'è.
 
 **I limiti.**
 
-- **Niente testimoni e niente diario.** In chat i tuoi messaggi e le risposte di Claude arrivano
-  solo a Claude: nessun programma li registra. Le tue note sono salvate come «autore non verificato (chat, senza testimone)», così si
+- **Niente testimoni.** In chat i tuoi messaggi e le risposte di Claude arrivano solo a Claude:
+  nessun programma li registra mentre scrivi. Al loro posto c'è la copia dall'archivio della chat
+  (punto 6), che però **passa da Claude**: Claude potrebbe alterarla. Per questo le note
+  riscontrate così portano l'indirizzo della chat, e chiunque può aprirla per controllare. Le tue note sono salvate come «autore non verificato (chat, senza testimone)», così si
   distinguono da quelle dell'avviabile con il testimone spento («testimone spento»).
 - **Dal telefono o da un altro computer** Hypomnema funziona solo se la chat è collegata al tuo PC,
   con il PC acceso e l'app desktop di Claude aperta; altrimenti è la modalità prova.

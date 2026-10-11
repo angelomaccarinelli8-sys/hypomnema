@@ -8,7 +8,7 @@ import re
 from dataclasses import dataclass
 from datetime import datetime
 
-from hypomnema import risposte, testimone
+from hypomnema import archivio, risposte, testimone
 from hypomnema.configurazione import Configurazione
 from hypomnema.testimone import ErroreTestimone
 
@@ -19,6 +19,8 @@ class Voce:
     chi: str  # "utente" oppure "claude"
     testo: str | None  # None se non registrato (messaggio privato)
     dicitura: str | None  # perché il testo non c'è
+    # Da dove viene, se non dai testimoni di Claude Code: l'archivio della chat, copiato da Claude.
+    fonte: str | None = None
 
 
 def voci(config: Configurazione) -> list[Voce]:
@@ -27,6 +29,8 @@ def voci(config: Configurazione) -> list[Voce]:
     for ordine, (chi, messaggi) in enumerate((
         ("utente", testimone.leggi_messaggi(config)),
         ("claude", risposte.leggi_risposte(config)),
+        ("utente", archivio.leggi_messaggi(config)),
+        ("claude", archivio.leggi_risposte(config)),
     )):
         for posizione, messaggio in enumerate(messaggi):
             try:
@@ -36,8 +40,11 @@ def voci(config: Configurazione) -> list[Voce]:
                     f"nel diario c'è una data non valida: «{messaggio.quando}». "
                     "Controlla se i file dei testimoni sono stati modificati a mano."
                 )
-            voce = Voce(messaggio.quando, chi, messaggio.testo, messaggio.privato)
-            elenco.append(((momento, ordine, posizione), voce))
+            fonte = (f"archivio della chat {messaggio.chat}, turno {messaggio.turno}, copiato da Claude"
+                     if messaggio.chat else None)
+            voce = Voce(messaggio.quando, chi, messaggio.testo, messaggio.privato, fonte)
+            turno = messaggio.turno if messaggio.turno is not None else -1
+            elenco.append(((momento, turno, ordine % 2, ordine, posizione), voce))
     elenco.sort(key=lambda coppia: coppia[0])
     return [voce for _, voce in elenco]
 

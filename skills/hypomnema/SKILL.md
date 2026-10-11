@@ -301,12 +301,21 @@ dicendo il contrario: in quel caso dillo all'utente apertamente.
 Segui questa sezione quando sei in una **chat di Claude** (claude.ai, app desktop o mobile) e non
 in Claude Code. In chat non puoi lanciare comandi sul computer dell'utente, ma hai un **computer di
 lavoro** temporaneo, che sparisce a fine conversazione, dove puoi scaricare i programmi e lanciare
-Python. In chat **i testimoni non ci sono**, né quello dei messaggi dell'utente né quello delle
-tue risposte, e quindi non c'è nemmeno il diario: le note dell'utente vengono salvate come «autore
-non verificato (chat, senza testimone)», e le tue note con `da_risposta` come «risposta non
-verificata (chat, senza testimone)». Tutte le altre regole di questa skill restano uguali, e
-**non salvi mai una nota a mano**: passi sempre dallo sportello. Il lavoro sporco lo fai tu;
-all'utente chiedi solo il permesso per la sua cartella.
+Python. In chat **i testimoni non ci sono**. Al loro posto c'è l'**archivio della chat**: con lo
+strumento che rilegge le chat (il permesso «cerca e consulta le chat passate» delle impostazioni di
+Claude) puoi rileggere questa conversazione com'è salvata da Anthropic, con le parole esatte
+dell'utente, la data e l'ora di ogni messaggio e l'indirizzo della chat. Con il comando `archivio`
+la copi nel quaderno (C5), e le note dell'utente il cui testo si trova lì sono «riscontrate
+sull'archivio della chat», con l'indirizzo che chiunque può aprire per controllare. Senza archivio
+restano «autore non verificato (chat, senza testimone)».
+
+Tre livelli, dal più forte: **verificato dal testimone** (solo Claude Code), **riscontrato
+sull'archivio della chat** (in chat, con l'archivio), **non verificato**. Il testo dell'archivio
+passa da te prima di arrivare ai programmi: copialo **esattamente com'è**, senza ritoccarlo.
+
+Tutte le altre regole di questa skill restano uguali, e **non salvi mai una nota a mano**: passi
+sempre dallo sportello. Il lavoro sporco lo fai tu; all'utente chiedi solo il permesso per la sua
+cartella.
 
 ### C1. Prepara il computer di lavoro (una volta per chat)
 
@@ -328,7 +337,12 @@ python3 --version
   ```
 
   Qui sotto, `H <comando>` vuol dire proprio questa riga.
-- Controlla con `H stato`: deve dire `Testimone: NON C'È (configurazione per la chat di Claude)`.
+- Controlla con `H stato`: deve dire `Testimone: NON C'È (configurazione per la chat di Claude)`,
+  e la riga `Archivio della chat:` dice ogni quanti scambi copiare (`copia_ogni`, di base 5).
+- Controlla se hai lo strumento che rilegge le chat passate. **Se non c'è**, dillo all'utente una
+  volta sola: «Non posso rileggere questa chat dall'archivio: le note che salvo saranno "non
+  verificate". Per averle riscontrate, attiva nelle impostazioni di Claude il permesso per cercare e
+  consultare le chat passate.» Poi continua senza archivio.
 - Se non riesci a scaricare i programmi, dillo all'utente e fermati: senza sportello non salvi niente.
 
 ### C2. Il quaderno dell'utente
@@ -346,11 +360,17 @@ python3 --version
      proposta e lo riporti sul computer dell'utente come al punto C4.
    - **C'è**: copia nel computer di lavoro, sotto `~/hypomnema-lavoro/quaderno/`, con **gli
      stessi percorsi**, il file `registro.md` e tutti i file della cartella `note/`, a gruppi di
-     massimo 50 file per volta. Poi controlla che il numero dei file copiati sia uguale a quello
-     elencato. **Non copiare `testimone.jsonl`**: in chat non serve, e contiene parole private
-     dell'utente.
+     massimo 50 file per volta, e i file dell'archivio della chat `archivio-chat.jsonl` e
+     `diario-chat.jsonl` se ci sono. Poi controlla che il numero dei file copiati sia uguale a
+     quello elencato. **Non copiare `testimone.jsonl` né `risposte.jsonl`**: in chat non servono, e
+     contengono parole private.
 3. Controlla il quaderno copiato: `H controlla` (vedi la sezione 1). Serve ad accorgersi di un
    salvataggio rimasto a metà in una chat precedente, o di un file toccato a mano.
+4. **Dove eravamo rimasti.** Prima di rispondere al primo messaggio: cerca le note utili
+   (`H cerca <parola>`, sezione 1) e leggi l'ultima parte del diario: `H diario --ultimi 10`.
+   Poi di' all'utente, **in tre righe al massimo**, dove eravamo rimasti: cosa c'era in corso, cosa
+   era stato deciso (solo dalle note), cosa restava aperto. Distingui le note (scelte dall'utente)
+   dal diario (solo la conversazione).
 
 **Se non hai gli strumenti per il computer dell'utente** (chat sul web, app mobile): è la
 **modalità prova**. Prima di cominciare dillo chiaramente: «Qui non posso accedere al tuo
@@ -368,16 +388,21 @@ un'idea è solo un'idea, una nota dedotta è un'ipotesi, cita il numero della no
 Per ogni nota, in quest'ordine:
 
 1. Fotografa il quaderno: `H istantanea > ~/hypomnema-lavoro/prima.json`
-2. Scrivi la proposta in `~/hypomnema-lavoro/proposta.json` (fuori dalla cartella del quaderno),
+2. Se hai l'archivio della chat, **prima** rileggi la conversazione dall'archivio e copia i messaggi
+   nuovi come al punto C5 (passi 2 e 3, senza fotografare di nuovo). Il `testo` di una nota
+   dell'utente lo prendi **dalla copia dell'archivio**, parola per parola.
+   **Non copiare mai le parole dell'utente a memoria** se l'archivio è disponibile.
+3. Scrivi la proposta in `~/hypomnema-lavoro/proposta.json` (fuori dalla cartella del quaderno),
    con le regole della sezione 2, e passala allo sportello:
    `H proponi ~/hypomnema-lavoro/proposta.json`
-3. Chiedi quali file sono cambiati: `H cambiati ~/hypomnema-lavoro/prima.json`
+4. Chiedi quali file sono cambiati: `H cambiati ~/hypomnema-lavoro/prima.json`
    - Risponde con un elenco: **riporta sul computer dell'utente esattamente quei file**, allo stesso
      percorso sotto `Hypomnema/quaderno/` (per esempio `note/0007.md` va in
      `Hypomnema/quaderno/note/0007.md`), usando il controllo sui file cambiati.
-     **Prima `registro.md`, poi le note create.** Ogni proposta allunga il registro: se la sua
-     scrittura riesce, vuol dire che nessun'altra chat ha scritto nel quaderno dopo la tua copia,
-     e puoi scrivere le note. Anche una nota rifiutata allunga il registro: va riportato.
+     **Prima `registro.md`, poi i file dell'archivio della chat, poi le note create.** Ogni
+     proposta allunga il registro: se la sua scrittura riesce, vuol dire che nessun'altra chat ha
+     scritto nel quaderno dopo la tua copia, e puoi scrivere il resto. Anche una nota rifiutata
+     allunga il registro: va riportato.
      Per **ogni** file da riportare:
      1. copialo in una **cartella nuova** del computer di lavoro, mai usata prima in questa chat, e
         riportalo da lì: per esempio `/mnt/user-data/outputs/riporto-<numero progressivo>/registro.md`.
@@ -396,14 +421,49 @@ Per ogni nota, in quest'ordine:
    Se già lo sportello risponde `ERRORE: il registro è stato toccato a mano`, non ha scritto
    niente: dillo all'utente con le sue parole e non riprovare finché l'utente non ha sistemato il
    registro (`H controlla` mostra la riga da guardare).
-4. Se il controllo **rifiuta la scrittura del registro** (il registro sul computer dell'utente è
+5. Se il controllo **rifiuta la scrittura del registro** (il registro sul computer dell'utente è
    cambiato nel frattempo, per esempio per un'altra chat): **non forzare e non scrivere le note**.
    Sul computer dell'utente non è cambiato niente. Dillo all'utente, ricopia il quaderno (C2) e
    ripeti la proposta dal punto 1.
    Se invece il registro è stato scritto ma il controllo **rifiuta una nota** (succede solo se
    qualcuno ha toccato il quaderno a mano): fermati e dillo all'utente. Dopo aver ricopiato il
    quaderno, `H controlla` mostrerà la riga del registro senza la sua nota.
-5. Di' all'utente cosa è stato salvato e cosa è stato rifiutato (sezione 4). In modalità prova
-   ricorda che il quaderno sparirà a fine chat.
+6. Di' all'utente cosa è stato salvato e cosa è stato rifiutato (sezione 4), e a quale livello:
+   «riscontrata sull'archivio della chat» oppure «non verificata». In modalità prova ricorda che il
+   quaderno sparirà a fine chat.
 
-In modalità prova i punti 1, 3 e 4 non servono: basta il punto 2.
+In modalità prova i punti 1, 4 e 5 non servono: bastano i punti 2 e 3.
+
+### C5. Copiare la conversazione dall'archivio
+
+Così la conversazione finisce nel quaderno da sola. Fallo **ogni `copia_ogni` scambi** (lo dice
+`H stato`, di base 5), **prima di salvare una nota** (C4) e **quando l'utente dice che chiude**:
+
+1. Fotografa il quaderno: `H istantanea > ~/hypomnema-lavoro/prima.json` (non serve se lo fai
+   dentro C4).
+2. Rileggi questa conversazione con lo strumento dell'archivio. Lo strumento restituisce **al
+   massimo 50 turni per volta**, con un **segnalino** per chiedere i successivi: leggi a pezzi,
+   seguendo il segnalino, finché non hai tutti i turni che ti servono (alla prima copia della chat
+   tutti; dopo, quelli successivi all'ultimo copiato, che `H stato` mostra). Per **ogni pezzo**
+   scrivi in `~/hypomnema-lavoro/archivio.json` l'indirizzo della chat, il fuso orario e i messaggi,
+   quelli dell'utente e le tue risposte, **esattamente come li restituisce l'archivio**: il numero
+   del turno, la data e l'ora così come sono (al minuto) e il testo intero:
+
+   ```json
+   {"chat": "https://claude.ai/chat/<codice della chat>", "fuso": "UTC+02:00",
+    "messaggi": [{"turno": 12, "quando": "Fri 2026-10-09 17:46", "chi": "utente", "testo": "…"},
+                 {"turno": 13, "quando": "Fri 2026-10-09 17:46", "chi": "claude", "testo": "…"}]}
+   ```
+
+   Non togliere niente dal testo: gli avvisi tecnici che l'app inserisce tra `<system-reminder>` e
+   `</system-reminder>` li toglie il programma, con una regola fissa. Metti anche i messaggi già
+   copiati: il programma riconosce i doppioni dall'indirizzo della chat e dal numero del turno, e
+   non li duplica. Metti anche i messaggi che cominciano con `#privato`: il programma ne tiene solo
+   data e ora, e così anche per la tua risposta.
+3. Per ogni pezzo: `H archivio ~/hypomnema-lavoro/archivio.json`. Se avvisa che un messaggio già
+   presente ha un testo diverso, dillo all'utente: non toccare niente. Se rifiuta la copia (per
+   esempio per un avviso tecnico senza chiusura), dillo all'utente con il messaggio ricevuto.
+4. `H cambiati ~/hypomnema-lavoro/prima.json` e riporta i file elencati come in C4 (cartella nuova a
+   ogni riporto, poi `H confronta`).
+5. Dillo all'utente in una riga: «Ho copiato nel quaderno gli ultimi messaggi di questa chat.»
+

@@ -20,6 +20,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 
+from hypomnema import archivio
 from hypomnema.configurazione import Configurazione
 from hypomnema.quaderno import NOME_FILE_NOTA
 from hypomnema.registro import INTESTAZIONE, RIGA_ACCETTATA, RIGA_RIFIUTATA
@@ -147,9 +148,29 @@ def cambiati(config: Configurazione, prima: dict[str, tuple[int, str]]) -> list[
     cartella_note = config.cartella_note.relative_to(quaderno).as_posix()
     accettate = _accettate_nel_registro(registro, aggiunte, cambiamenti, problemi)
 
+    # I file dell'archivio della chat: solo righe nella forma del comando «archivio».
+    file_archivio = {
+        f.relative_to(quaderno).as_posix() for f in (config.file_archivio, config.file_diario_chat) if f is not None
+    }
+    for cambiamento in cambiamenti:
+        if cambiamento.percorso not in file_archivio:
+            continue
+        try:
+            aggiunto = aggiunte[cambiamento.percorso].decode("utf-8")
+        except UnicodeDecodeError:
+            problemi.append(f"il file «{cambiamento.percorso}» è stato allungato con caratteri che non sono UTF-8.")
+            continue
+        if not aggiunto.endswith("\n"):
+            problemi.append(f"il file «{cambiamento.percorso}» non finisce con un a capo, come fa il comando archivio.")
+            continue
+        for riga in aggiunto[:-1].split("\n"):
+            if archivio.voce_valida(riga) is None:
+                problemi.append(f"nel file «{cambiamento.percorso}» c'è una riga nuova che non è del comando "
+                                f"archivio: «{riga}».")
+
     note_create = set()
     for cambiamento in cambiamenti:
-        if cambiamento.percorso == registro:
+        if cambiamento.percorso == registro or cambiamento.percorso in file_archivio:
             continue
         cartella, _, nome = cambiamento.percorso.rpartition("/")
         corrispondenza = NOME_FILE_NOTA.match(nome)

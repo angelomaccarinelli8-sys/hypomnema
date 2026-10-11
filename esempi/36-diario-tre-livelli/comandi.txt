@@ -1,0 +1,5 @@
+archivio copia.json
+proponi 1-nota-riscontrata.json
+proponi 2-nota-non-verificata.json
+cerca fragole
+diario fragole

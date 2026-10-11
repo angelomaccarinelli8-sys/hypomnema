@@ -1,0 +1,2 @@
+archivio copia.json
+diario --ultimi 4

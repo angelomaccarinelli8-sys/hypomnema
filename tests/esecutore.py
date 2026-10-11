@@ -90,7 +90,7 @@ def esegui(esempio: Path, lavoro: Path) -> str:
             # Come nella shell: l'uscita del comando va nel file, dentro la cartella di prova.
             destinazione = lavoro / parti[parti.index(">") + 1]
             parti = parti[:parti.index(">")]
-        if parti[0] in ("proponi", "testimone", "risposte", "impronta"):
+        if parti[0] in ("proponi", "testimone", "risposte", "impronta", "archivio"):
             argomenti = [parti[0], str(esempio / parti[1])]
         elif parti[0] == "cambiati":
             argomenti = [parti[0], str(lavoro / parti[1])]

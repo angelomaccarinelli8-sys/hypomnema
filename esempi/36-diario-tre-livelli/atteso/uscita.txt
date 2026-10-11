@@ -1,0 +1,61 @@
+$ hypomnema archivio copia.json
+Copiati dall'archivio della chat: 1 messaggio dell'utente, 1 risposta di Claude.
+[codice di uscita: 0]
+
+$ hypomnema proponi 1-nota-riscontrata.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-nota-non-verificata.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca fragole
+Trovate 3 note con «fragole».
+
+--- Nota 0001 ---
+data: 2026-01-14
+fonte: sessione di Claude Code del 14 gennaio 2026
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: testo trovato nel messaggio del 2026-01-14T18:00:00+01:00
+testo:
+  Le fragole le copro con la paglia d'inverno.
+
+--- Nota 0002 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sul balcone
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, messaggio del turno 0 (2026-01-15T09:00:00+01:00, copiato da Claude)
+testo:
+  Le fragole in vaso vogliono un terriccio acido.
+
+--- Nota 0003 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sul balcone
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: autore non verificato (chat, senza testimone)
+testo:
+  Le fragole vanno raccolte la mattina.
+[codice di uscita: 0]
+
+$ hypomnema diario fragole
+Trovati 3 messaggi con «fragole» nel diario (la conversazione registrata, non le note).
+
+--- 2026-01-14T18:00:00+01:00 · utente ---
+  Le fragole le copro con la paglia d'inverno.
+
+--- 2026-01-15T09:00:00+01:00 · utente · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, turno 0, copiato da Claude ---
+  Le fragole in vaso vogliono un terriccio acido.
+
+--- 2026-01-15T09:00:00+01:00 · claude · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, turno 1, copiato da Claude ---
+  Sì: per le fragole va bene un terriccio per acidofile.
+[codice di uscita: 0]
+
