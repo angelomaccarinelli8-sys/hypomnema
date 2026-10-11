@@ -207,7 +207,7 @@ Claude Code lanci i testimoni. Dove provato, l'ho provato su Windows 11 con Clau
 
 | Dove | Funziona? | Come lo so |
 |---|---|---|
-| Claude Code nel terminale, con il plugin installato | **Sì** | **Provato** il 11/10/2026 su Windows 11 con Claude Code 2.1.274: installazione dal catalogo e sessione non interattiva (`claude -p`) con una cartella dei dati temporanea. Vedi la pull request del compito 8. |
+| Claude Code nel terminale, con il plugin installato | **Sì** | **Provato** il 11/10/2026 su Windows 11 con Claude Code 2.1.274: installazione dal catalogo su GitHub (con una configurazione di Claude temporanea) e sessioni non interattive (`claude -p`) con la copia installata e una cartella dei dati temporanea: prima volta, testimoni, skill, scrittura nel quaderno bloccata, pausa e ripresa con i comandi. |
 | App desktop di Claude, scheda Code, con il plugin installato | **Sì**, come nel terminale | **Dalla documentazione** di Claude Code: nella scheda Code i plugin si installano dal pulsante **+**, e impostazioni, agganci e skill valgono come nel terminale. Non provato. |
 | Claude Code nel terminale (PowerShell), aperto con l'avviabile | **Sì** | **Provato** con dati inventati e una sessione non interattiva (`claude -p`): il testimone ha registrato il messaggio, la skill era disponibile, la scrittura nel quaderno è stata bloccata. Il doppio clic con una sessione normale lo prova Angelo. |
 | Claude Code senza il plugin installato e senza l'avviabile | **No, resta spento** | **Provato**: nessuna skill, niente registrato. |
