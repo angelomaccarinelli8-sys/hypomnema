@@ -1,0 +1,5 @@
+{"quando": "2026-01-15T10:01:00+01:00", "testo": "Bene: tienili al caldo per una settimana.", "prompt_id": "turno-1"}
+{"quando": "2026-01-15T10:03:00+01:00", "privato": "risposta a un comando di pausa o di ripresa, non registrata", "prompt_id": "turno-2"}
+{"quando": "2026-01-15T10:05:00+01:00", "privato": "risposta durante la pausa, non registrata", "prompt_id": "turno-3"}
+{"quando": "2026-01-15T10:09:00+01:00", "privato": "risposta a un comando di pausa o di ripresa, non registrata", "prompt_id": "turno-4"}
+{"quando": "2026-01-15T10:11:00+01:00", "testo": "Annaffiali al mattino presto.", "prompt_id": "turno-5"}

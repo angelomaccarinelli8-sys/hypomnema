@@ -68,6 +68,9 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
     note_esistenti = quaderno.leggi_note(config)
     messaggi = testimone.leggi_messaggi(config) if config.testimone_attivo else None
     risposte = testimone_risposte.leggi_risposte(config) if config.risposte_attive else None
+    if messaggi is not None and testimone.in_pausa(messaggi) is not None:
+        # In pausa i testimoni non registrano: si fa come con il testimone spento.
+        messaggi = risposte = None
     proposta, motivi = _leggi_proposta(contenuto)
     if proposta is not None:
         motivi = regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte)

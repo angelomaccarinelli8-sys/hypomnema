@@ -1,7 +1,0 @@
-{
-  "name": "hypomnema",
-  "description": "Memoria permanente in file Markdown: la skill di Hypomnema e il testimone. Si carica solo dall'avviabile, con --plugin-dir.",
-  "author": {
-    "name": "Angelo Maccarinelli"
-  }
-}

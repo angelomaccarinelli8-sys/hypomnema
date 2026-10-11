@@ -10,14 +10,18 @@ cosa entra**: lo decide un piccolo programma con regole fisse, che dà sempre lo
 
 > Claude propone le note, i programmi decidono se entrano.
 
-> **Provalo in 2 minuti**
+Hypomnema è un **plugin per Claude Code** (nel terminale o nell'app desktop), con i testimoni che
+registrano la conversazione; nella **chat di claude.ai** funziona con la sola skill.
+
+> **Provalo in 2 minuti, nella chat**
 >
-> 1. Scarica [`hypomnema-skill.zip`](https://github.com/angelomaccarinelli8-sys/hypomnema/releases/download/v0.1.0/hypomnema-skill.zip).
+> 1. Scarica [`hypomnema-skill.zip`](https://github.com/angelomaccarinelli8-sys/hypomnema/releases/latest/download/hypomnema-skill.zip).
 > 2. Caricalo tra le skill nelle impostazioni di Claude.
 > 3. Apri una chat e scrivi «Usiamo Hypomnema».
 >
 > Con l'app desktop di Claude collegata al computer il quaderno resta salvato; senza, è una prova
-> che sparisce a fine chat.
+> che sparisce a fine chat. Per usarlo ogni giorno, con i testimoni, installa il plugin in Claude Code
+> (vedi «Installa il plugin in Claude Code»).
 
 ## Da dove viene il nome
 
@@ -54,12 +58,79 @@ Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
 | **Cercatore** (`cerca`) | Trova le note che contengono una parola. Solo lettura. |
 | **Testimone** (`testimone`) | Se lo accendi, registra le parole esatte dei tuoi messaggi, così lo sportello può controllare che una nota "dell'utente" riporti parole che hai detto davvero. |
 | **Stato** (`stato`) | Dice se il testimone è acceso, dov'è il quaderno e quale messaggio ha registrato per ultimo. Solo lettura. |
-| **Skill** (`plugin/skills/hypomnema/SKILL.md`) | Le istruzioni per Claude: quando leggere, come controllare il testimone, come preparare le note, come confermare una decisione. |
-| **Plugin** (`plugin/`) | La skill e l'aggancio del testimone, che Claude Code carica solo quando lo apri con l'avviabile. |
+| **Skill** (`skills/hypomnema/SKILL.md`) | Le istruzioni per Claude: quando leggere, come controllare il testimone, come preparare le note, come confermare una decisione. |
+| **Plugin** (`.claude-plugin/`, `hooks/`, `commands/`, `programma.py`) | Il repository stesso è un plugin di Claude Code: la skill, i programmi, gli agganci dei testimoni e i comandi `/hypomnema:pausa` e `/hypomnema:riprendi`. Vedi «Installa il plugin in Claude Code». |
 | **Modalità chat** (`chat/`, `istantanea`, `cambiati`) | La configurazione per la chat di Claude e i due comandi, in sola lettura, che dicono quali file del quaderno riportare sul tuo computer dopo una proposta. Vedi «Usarlo nella chat di Claude». |
-| **Avviabile** (`windows/Hypomnema.cmd`) | Un doppio clic per aprire Claude Code con Hypomnema acceso. Vedi «Usarlo con l'avviabile di Windows». |
+| **Avviabile** (`windows/Hypomnema.cmd`) | Alternativa al plugin installato, solo Windows: un doppio clic per aprire Claude Code con Hypomnema acceso. Vedi «Alternativa: l'avviabile di Windows». |
 
 Il formato delle note e le regole dello sportello sono descritti in [FORMATO.md](FORMATO.md).
+
+## Installa il plugin in Claude Code (consigliato)
+
+Si installa una volta; da quel momento **ogni sessione di Claude Code** ha la skill e i testimoni,
+in ogni progetto.
+
+**Prima di tutto servono:** Claude Code; Python 3.12 o più recente (su Windows il comando `py`, da
+[python.org](https://www.python.org/downloads/)); su Windows anche **Git per Windows**
+([git-scm.com](https://git-scm.com/download/win)), perché Claude Code lancia gli agganci con Git Bash.
+
+**Installazione**, in un terminale (PowerShell va bene):
+
+```
+claude plugin marketplace add angelomaccarinelli8-sys/hypomnema
+claude plugin install hypomnema@hypomnema
+```
+
+La prima riga aggiunge il catalogo di questo repository, la seconda installa il plugin. Dentro una
+sessione di Claude Code puoi fare lo stesso con `/plugin marketplace add angelomaccarinelli8-sys/hypomnema`
+e `/plugin install hypomnema@hypomnema`; da Claude Code 2.1.275 basta
+`/plugin install hypomnema --marketplace angelomaccarinelli8-sys/hypomnema`. Nell'app desktop,
+scheda Code: pulsante **+** accanto al riquadro del messaggio → **Plugins** → **Add plugin**.
+
+**La prima sessione.** All'avvio Hypomnema crea la configurazione `~/Hypomnema/hypomnema.toml` (su
+Windows `%USERPROFILE%\Hypomnema\hypomnema.toml`) con il testimone dei messaggi e quello delle
+risposte **accesi**, e te lo dice con un avviso. Il quaderno nasce accanto, in `~/Hypomnema/quaderno`.
+Configurazione e quaderno stanno **fuori dal plugin**: un aggiornamento non li tocca mai. Se il
+quaderno finisse dentro il plugin, i testimoni non registrano; se finisse in OneDrive, l'avviso te
+lo dice a ogni sessione.
+
+**Pausa.** Con il plugin installato i testimoni registrano tutto quello che scrivi in Claude Code,
+anche negli altri progetti. Quando non vuoi:
+
+- `/hypomnema:pausa` mette in pausa i testimoni: da lì in poi annotano solo data e ora, senza testo,
+  finché non scrivi `/hypomnema:riprendi`;
+- le note che salvi in pausa sono marcate «autore non verificato (testimone spento)»;
+- `stato` dice «IN PAUSA dal …», e a ogni nuova sessione un avviso te lo ricorda;
+- per un solo messaggio basta cominciarlo con `#privato`;
+- per spegnerli del tutto: `attivo = false` nella configurazione.
+
+**Aggiornare**, quando su GitHub viene unita una nuova versione:
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+La nuova versione vale dalla sessione successiva (o dopo `/reload-plugins`).
+
+**Disinstallare:** `claude plugin uninstall hypomnema@hypomnema`. La cartella `~/Hypomnema` resta
+dov'è: decidi tu se tenerla.
+
+**Il quaderno protetto.** Un plugin non può portare con sé regole di permesso, quindi la protezione
+la fa un aggancio (`PreToolUse`): quando Claude prova a modificare con i suoi strumenti (Edit, Write,
+NotebookEdit) un file del quaderno o la configurazione, l'aggancio lo ferma. Non ferma un comando o
+uno script lanciato da Claude: per un divieto in più sui comandi più comuni puoi aggiungere a mano,
+in `~/.claude/settings.json`, le regole che stampa `py "<cartella del plugin>/programma.py" impostazioni-claude`.
+
+**Claude può mettere in pausa i testimoni da solo?** Non con gli strumenti normali: i comandi di
+pausa e ripresa li riconosce il testimone solo nei messaggi che arrivano come tuoi, i due comandi
+con la barra non possono essere lanciati da Claude (`disable-model-invocation`), e i file del
+testimone sono protetti dall'aggancio. Restano due vie, e la skill le vieta a Claude: scrivere nei
+file con uno script, oppure creare un'attività programmata che manda «/hypomnema:pausa» come
+messaggio (Claude Code tratta anche quelle come messaggi). In ogni caso **la pausa si vede**: resta
+nel testimone con data e ora, `stato` la mostra, e l'avviso d'inizio sessione la ricorda.
+
+**Non usare insieme** il plugin installato e l'avviabile di Windows: gli agganci partirebbero due volte.
 
 ## Usarlo nella chat di Claude
 
@@ -102,6 +173,8 @@ computer: legge e scrive solo lì, e non copia il file del testimone (`testimone
 - **Niente testimoni e niente diario.** In chat i tuoi messaggi e le risposte di Claude arrivano
   solo a Claude: nessun programma li registra. Le tue note sono salvate come «autore non verificato (chat, senza testimone)», così si
   distinguono da quelle dell'avviabile con il testimone spento («testimone spento»).
+- **Dal telefono o da un altro computer** Hypomnema funziona solo se la chat è collegata al tuo PC,
+  con il PC acceso e l'app desktop di Claude aperta; altrimenti è la modalità prova.
 - **Serve l'app desktop di Claude aperta e collegata al computer**: è lei che dà a Claude gli
   strumenti per la tua cartella.
 - **Senza computer collegato è solo una prova** (sito, app mobile): il quaderno vive nella chat e
@@ -112,7 +185,9 @@ computer: legge e scrive solo lì, e non copia il file del testimone (`testimone
   file cambiati ferma la seconda, che deve ricominciare.
 
 **Come aggiungere la skill.** La skill è la cartella
-[`plugin/skills/hypomnema`](plugin/skills/hypomnema/SKILL.md). Nella chat di Claude le skill
+[`skills/hypomnema`](skills/hypomnema/SKILL.md), già pronta nella release come
+[`hypomnema-skill.zip`](https://github.com/angelomaccarinelli8-sys/hypomnema/releases/latest/download/hypomnema-skill.zip).
+Nella chat di Claude le skill
 personali si aggiungono dalle impostazioni, caricando la cartella compressa in un file `.zip`: il
 percorso esatto nelle impostazioni lo verificheremo nella prima prova.
 
@@ -125,133 +200,18 @@ testo libero nel registro, risponde con un errore e Claude non riporta niente. U
 mano ma con la forma giusta non si può distinguere da una vera: è un limite dichiarato.
 `controlla` confronta note e registro, in sola lettura.
 
-## Usarlo con l'avviabile di Windows (funzionante, sviluppo in pausa)
-
-**L'avviabile per Windows funziona, ma il suo sviluppo è in pausa**: da ottobre 2026 Hypomnema si
-sviluppa nella chat di Claude (vedi sopra). L'idea di un'interfaccia propria tornerà più avanti
-come ramo a sé. L'avviabile resta l'unico modo per avere il testimone.
-
-Questa parte è per chi vuole usare Hypomnema davvero, sul proprio computer, mentre il
-programma continua a essere sviluppato su GitHub.
-
-### Due copie: una in uso, una per lo sviluppo
-
-- La **copia in uso** è quella con cui lavori ogni giorno. Si aggiorna solo con la versione
-  principale (`main`), cioè con le modifiche già controllate e unite su GitHub.
-- La **copia di sviluppo** (se ne hai una) serve a provare le modifiche nuove. Ha il suo
-  `hypomnema.toml`, con il testimone spento e un quaderno di prova.
-
-Le note vere non stanno in nessuna delle due: stanno in una cartella tua, fuori dal programma.
-
-| Cartella | Cosa contiene | Chi la cambia |
-|---|---|---|
-| `%USERPROFILE%\Hypomnema\programma` | La copia in uso del programma | Solo l'aggiornamento (`aggiorna-hypomnema.cmd`) |
-| `%USERPROFILE%\Hypomnema\hypomnema.toml` | La configurazione in uso, con il testimone acceso | Tu; l'avviabile la crea la prima volta e poi non la tocca più |
-| `%USERPROFILE%\Hypomnema\quaderno` | Note, registro e testimone | Solo i programmi di Hypomnema, che aggiungono e non cancellano mai |
-
-`%USERPROFILE%` è la tua cartella utente, per esempio `C:\Users\nome`.
-
-**Perché non in Documenti.** Su molti computer Windows la cartella Documenti è sincronizzata con
-OneDrive: il quaderno e il testimone verrebbero copiati su internet. Per questo la cartella dei dati
-è `%USERPROFILE%\Hypomnema`, che OneDrive di base non sincronizza. Se vuoi il quaderno altrove,
-cambia `cartella` nella configurazione in uso; evita le cartelle sincronizzate.
-
-### Installazione, passo per passo
-
-Una volta sola. Servono tre programmi:
-
-1. **Python 3.12 o più recente**, da [python.org](https://www.python.org/downloads/). Durante
-   l'installazione lascia attivo il "Python Launcher" (il comando `py`).
-2. **Git per Windows**, da [git-scm.com](https://git-scm.com/download/win): serve per scaricare e
-   aggiornare il programma, e porta con sé Git Bash, che Claude Code usa per il testimone.
-3. **Claude Code** (il comando `claude`), seguendo le istruzioni sul sito di Claude.
-
-Poi, in PowerShell:
-
-```
-mkdir $env:USERPROFILE\Hypomnema
-git clone --branch main https://github.com/angelomaccarinelli8-sys/hypomnema.git $env:USERPROFILE\Hypomnema\programma
-cd $env:USERPROFILE\Hypomnema\programma
-py -m unittest
-```
-
-L'ultimo comando deve finire con `OK`.
-
-`--branch main` è importante: la copia in uso deve stare sulla versione principale, l'unica che
-l'aggiornamento accetta.
-
-**Il collegamento sul desktop.** Apri la cartella `%USERPROFILE%\Hypomnema\programma\windows`
-con Esplora file, fai clic con il tasto destro su **`Hypomnema.cmd`**, poi *Mostra altre opzioni* →
-*Invia a* → *Desktop (crea collegamento)*. Se vuoi, rinomina il collegamento in "Hypomnema".
-
-### Ogni giorno
-
-1. **Doppio clic** sul collegamento "Hypomnema". Si apre una finestra che:
-   - la prima volta crea `%USERPROFILE%\Hypomnema\hypomnema.toml` (copiandolo da
-     `windows\hypomnema-uso.toml`);
-   - mostra lo stato del testimone (`stato`);
-   - avvia Claude Code nella cartella del programma, con la skill di Hypomnema e il testimone
-     acceso, collegati al quaderno in uso.
-2. Scrivi a Claude come sempre. All'inizio Claude controlla il testimone e rilegge le note utili.
-3. Per chiudere, esci da Claude Code (`/exit`) o chiudi la finestra.
-
-**Fuori dall'avviabile Hypomnema è spento**: se apri Claude Code in un altro modo, anche nella
-stessa cartella, non c'è né la skill né il testimone, e non viene registrato niente.
-
-**Per controllare a mano il testimone**, in PowerShell:
-
-```
-cd $env:USERPROFILE\Hypomnema\programma
-$env:HYPOMNEMA_CONFIG = "$env:USERPROFILE\Hypomnema\hypomnema.toml"
-py -m hypomnema stato
-```
-
-Dice se il testimone è acceso, dov'è il quaderno, quanti messaggi ha registrato e data, ora e testo
-dell'ultimo. Non cambia niente.
-
-### Aggiornare la copia in uso
-
-Quando su GitHub viene unita una nuova pull request, fai **doppio clic su
-`windows\aggiorna-hypomnema.cmd`** nella cartella del programma (o crea anche per lui un
-collegamento sul desktop). Il comando:
-
-- controlla che la copia sia sulla versione principale (`main`), altrimenti non fa niente;
-- scarica le novità con `git pull --ff-only`: se qualcosa non torna si ferma senza cambiare niente;
-- lancia i test per controllare che la nuova versione funzioni sul tuo computer.
-
-Tocca solo i file del programma: il quaderno e la configurazione in uso stanno fuori dalla sua
-cartella e non vengono mai toccati.
-
-### Cosa fa l'avviabile, e perché è fatto così
-
-`Hypomnema.cmd` lancia lo script PowerShell `avvia-hypomnema.ps1`. Windows di solito blocca gli
-script PowerShell aperti con un doppio clic; il file `.cmd` li avvia con `-ExecutionPolicy Bypass`,
-che vale **solo per quella esecuzione** e non cambia le impostazioni di sicurezza del computer.
-L'avviabile:
-
-- non cancella niente e non tocca altre cartelle: crea solo la cartella dei dati e la
-  configurazione in uso, e solo se mancano;
-- si ferma con un messaggio chiaro se mancano `py` o `claude`, se la configurazione non va bene, o
-  se il quaderno è dentro la cartella del programma;
-- avvia Claude Code con il plugin di Hypomnema (`plugin/`: la skill e l'aggancio del testimone) e
-  con le regole che vietano a Claude di modificare il quaderno e la configurazione in uso. Plugin e
-  regole valgono solo per quella sessione.
-
-Per smettere di usarlo: cancella il collegamento sul desktop e, se vuoi, la cartella `programma`.
-Il quaderno resta dov'è: decidi tu se tenerlo.
-
 ## Dove funziona davvero
 
 Hypomnema ha bisogno di due cose: che Claude possa lanciare i programmi sul tuo computer, e che
-Claude Code lanci il testimone a ogni messaggio. Dove provato, l'ho provato su Windows 11 con
-Claude Code 2.1.274.
+Claude Code lanci i testimoni. Dove provato, l'ho provato su Windows 11 con Claude Code 2.1.274.
 
 | Dove | Funziona? | Come lo so |
 |---|---|---|
+| Claude Code nel terminale, con il plugin installato | **Sì** | **Provato** il 11/10/2026 su Windows 11 con Claude Code 2.1.274: installazione dal catalogo e sessione non interattiva (`claude -p`) con una cartella dei dati temporanea. Vedi la pull request del compito 8. |
+| App desktop di Claude, scheda Code, con il plugin installato | **Sì**, come nel terminale | **Dalla documentazione** di Claude Code: nella scheda Code i plugin si installano dal pulsante **+**, e impostazioni, agganci e skill valgono come nel terminale. Non provato. |
 | Claude Code nel terminale (PowerShell), aperto con l'avviabile | **Sì** | **Provato** con dati inventati e una sessione non interattiva (`claude -p`): il testimone ha registrato il messaggio, la skill era disponibile, la scrittura nel quaderno è stata bloccata. Il doppio clic con una sessione normale lo prova Angelo. |
-| Claude Code nel terminale, aperto senza l'avviabile | **No, resta spento** (voluto) | **Provato**: nessuna skill, niente registrato. |
-| Claude Code in VS Code (pannello dell'estensione) | **No, resta spento** | **Non provato.** Ricavato da come funziona l'avviabile: il pannello di VS Code non passa per l'avviabile, quindi non riceve il plugin, le regole e la configurazione in uso. |
-| App desktop di Claude, sezione Claude Code | **No** (avviabile) | **Dalla documentazione** di Claude Code: l'app non riceve gli argomenti con cui l'avviabile carica plugin e regole (`claude --desktop` non accetta altri argomenti). |
+| Claude Code senza il plugin installato e senza l'avviabile | **No, resta spento** | **Provato**: nessuna skill, niente registrato. |
+| Claude Code in VS Code (pannello dell'estensione) | Probabilmente sì, con il plugin installato | **Non provato.** Il pannello usa le stesse impostazioni di Claude Code; i plugin installati dovrebbero valere anche lì. |
 | Chat di Claude nell'app desktop, collegata al computer | **Sì, in modalità chat**, senza testimone | **Non ancora provato**: i programmi sono provati dai test; gli strumenti dell'app no. Vedi «Usarlo nella chat di Claude». |
 | Chat di Claude sul sito o nell'app mobile | **Solo come prova**: il quaderno sparisce a fine chat | **Non ancora provato**, come sopra. |
 
@@ -388,16 +348,9 @@ come sempre. Il segno si può cambiare in `hypomnema.toml` (`segno_citazione`).
 
 ### Con Claude
 
-La skill (`plugin/skills/hypomnema/SKILL.md`) spiega a Claude come usare il quaderno. Su Windows
-la carica l'avviabile (vedi «Usarlo con l'avviabile di Windows»). Su macOS e Linux, dalla cartella
-del programma:
-
-```
-HYPOMNEMA_CONFIG=/percorso/della/configurazione/in/uso/hypomnema.toml claude --plugin-dir plugin
-```
-
-Così Claude Code carica la skill e il testimone solo per quella sessione. Il divieto di modificare
-il quaderno, che su Windows aggiunge l'avviabile, qui va aggiunto a mano (vedi «Come è collegato»).
+La skill (`skills/hypomnema/SKILL.md`) spiega a Claude come usare il quaderno. In Claude Code la
+porta il plugin installato (vedi «Installa il plugin in Claude Code»); per una sola sessione, senza
+installarlo, dalla cartella del programma: `claude --plugin-dir .`
 
 ## Il testimone
 
@@ -419,8 +372,8 @@ da git (`.gitignore`) e i programmi non si collegano a internet: **non lasciano 
 
 **Come si accende e si spegne.** In `hypomnema.toml`, sezione `[testimone]`:
 `attivo = true` per accenderlo, `attivo = false` per spegnerlo. Nel file del repository (copia di
-sviluppo) **è spento**; nella configurazione in uso creata dall'avviabile è acceso, ma registra
-**solo nelle sessioni aperte con l'avviabile**.
+sviluppo) **è spento**; nella configurazione in uso (`~/Hypomnema/hypomnema.toml`, creata la prima
+volta dal plugin o dall'avviabile) è acceso. Per fermarlo per un po': `/hypomnema:pausa`.
 Da spento non registra niente, e le note con `autore: utente` vengono salvate con la scritta
 ben visibile "autore non verificato (testimone spento)".
 
@@ -431,15 +384,16 @@ testo: annota solo data e ora con "messaggio privato, non registrato". Il prefis
 ogni altro messaggio. "Privato" vuol dire solo che le sue parole non vengono registrate; la skill
 chiede a Claude di non farne note.
 
-**Come è collegato.** L'aggancio (`UserPromptSubmit`) sta nel plugin, in
-`plugin/hooks/hooks.json`: a ogni messaggio lancia `aggancio_testimone.py` con `py` se esiste
-(Windows), altrimenti con `python3` (macOS e Linux). Il plugin si carica solo con
-`claude --plugin-dir plugin`, cioè di solito solo dall'avviabile. Il testimone usa la
-configurazione indicata dalla variabile `HYPOMNEMA_CONFIG`, che l'avviabile imposta.
+**Come è collegato.** Gli agganci stanno nel plugin, in `hooks/hooks.json`: all'avvio della sessione
+(`SessionStart`), a ogni messaggio (`UserPromptSubmit`), alla fine di ogni risposta (`Stop`) e prima
+che Claude modifichi un file (`PreToolUse`). Lanciano `programma.py` dalla cartella del plugin
+(`${CLAUDE_PLUGIN_ROOT}`) con `py` se esiste (Windows), altrimenti con `python3` (macOS e Linux).
+La configurazione è `~/Hypomnema/hypomnema.toml`, oppure quella indicata dalla variabile
+`HYPOMNEMA_CONFIG` (la imposta l'avviabile).
 
-Le regole che vietano a Claude di modificare il quaderno e la configurazione in uso le calcola
-`py -m hypomnema impostazioni-claude` dalla configurazione, e l'avviabile le passa a Claude Code con
-`--settings`. Nella copia di sviluppo il file `.claude/settings.json` vieta in più di modificare la
+Con l'avviabile, le regole che vietano a Claude di modificare il quaderno e la configurazione le
+calcola `impostazioni-claude` e l'avviabile le passa a Claude Code con `--settings`; con il plugin
+installato lo fa l'aggancio `PreToolUse`. Nella copia di sviluppo il file `.claude/settings.json` vieta in più di modificare la
 cartella `quaderno/` di prova.
 
 ### Il testimone su Windows
@@ -450,30 +404,29 @@ Git Bash e il comando `py`. Per controllare:
 
 1. In PowerShell: `py --version` deve rispondere Python 3.12 o più recente.
 2. `Test-Path "C:\Program Files\Git\bin\bash.exe"`: `True` vuol dire che Git Bash c'è.
-3. Apri Hypomnema con l'avviabile e scrivi un messaggio, per esempio "prova del testimone".
-4. Chiedi a Claude di lanciare `py -m hypomnema stato`, oppure lancialo tu come in «Ogni giorno»:
-   l'ultimo messaggio registrato deve essere "prova del testimone".
+3. Con il plugin installato, apri Claude Code e scrivi un messaggio, per esempio "prova del testimone".
+4. Chiedi a Claude di lanciare `stato`: l'ultimo messaggio registrato deve essere "prova del testimone".
 
 **Se Git Bash non c'è** (il punto 2 risponde `False`), hai due strade:
 - installare Git per Windows (consigliato: serve anche per gli aggiornamenti), oppure
-- in `plugin/hooks/hooks.json`, sostituire la riga `"command": ...` dell'aggancio con queste due:
+- nel file `hooks/hooks.json` del plugin, sostituire ogni riga `"command": ...` con due righe come
+  queste (al posto di `testimone` il comando di quell'aggancio: `avvio`, `risposte`, `protezione`):
 
   ```json
   "command": "py",
-  "args": ["${CLAUDE_PLUGIN_ROOT}/../aggancio_testimone.py"]
+  "args": ["${CLAUDE_PLUGIN_ROOT}/programma.py", "testimone"]
   ```
 
-  Così Claude Code lancia `py` direttamente, senza passare da nessuna shell. Ricorda che hai
-  modificato un file del programma: se una nuova versione cambia lo stesso file, l'aggiornamento
-  si ferma finché non lo rimetti com'era (`git checkout plugin/hooks/hooks.json`).
+  Così Claude Code lancia `py` direttamente, senza passare da nessuna shell. Un aggiornamento del
+  plugin rimette il file com'era: va rifatto dopo ogni aggiornamento.
 
 Se il messaggio non viene registrato, in Claude Code il comando `/hooks` mostra gli agganci
 attivi; un errore del testimone compare come avviso nella chat, ma non blocca mai il messaggio.
 
 **I limiti, detti onestamente.**
-- Il divieto di modificare il quaderno vale solo nelle sessioni aperte con l'avviabile, che lo
-  passa a Claude Code: in una sessione aperta in un altro modo Hypomnema è spento, ma il divieto
-  sul quaderno in uso non c'è.
+- Il divieto di modificare il quaderno vale nelle sessioni con il plugin installato (aggancio
+  `PreToolUse`) o aperte con l'avviabile (regole di permesso): in una sessione senza nessuno dei
+  due Hypomnema è spento, e il divieto sul quaderno in uso non c'è.
 - Il divieto vale per gli strumenti di Claude, non per il computer: tu, o chiunque abbia accesso al
   tuo computer, può aprire e modificare il file del testimone. Anche un programma lanciato da
   Claude (per esempio uno script Python) non è fermato dal divieto: lo impedisce solo la skill, che
@@ -502,10 +455,10 @@ nuova, Claude può rileggere cosa ti aveva consigliato e accorgersi se si contra
 - **Quaderno** = le note scelte.
 
 **Come funziona.** Quando Claude ha finito di rispondere, Claude Code lancia l'aggancio `Stop` del
-plugin (`plugin/hooks/hooks.json`), che passa al programma il testo dell'ultima risposta. Il
+plugin (`hooks/hooks.json`), che passa al programma il testo dell'ultima risposta. Il
 programma lo aggiunge in fondo al file `risposte.jsonl` del quaderno. Non scrive niente a schermo e
-non blocca mai la sessione. Funziona solo in Claude Code, aperto con l'avviabile; **in chat non
-esiste**, come il primo testimone.
+non blocca mai la sessione. Funziona solo in Claude Code, con il plugin installato (o
+dall'avviabile); **in chat non esiste**, come il primo testimone. In pausa non registra.
 
 **Come si accende.** Nella configurazione, sezione `[risposte]`: `attivo = true` per accenderlo,
 `false` per spegnerlo, separatamente dal testimone dei tuoi messaggi. Se la sezione manca, è
@@ -539,6 +492,122 @@ data, ora e chi parla. Con `--intorno` mostra anche il messaggio subito prima e 
 - Il programma lega la risposta al tuo messaggio con il codice del turno che Claude Code gli passa
   (`prompt_id`); se manca, usa l'ultimo messaggio registrato. Provato con Claude Code 2.1.274: il
   codice è lo stesso per il messaggio e per la sua risposta.
+
+## Alternativa: l'avviabile di Windows (funzionante, non più consigliato)
+
+**L'avviabile per Windows funziona ancora, ma non è più la via consigliata**: con il plugin
+installato (vedi «Installa il plugin in Claude Code») ogni sessione di Claude Code ha già la skill e
+i testimoni. L'avviabile resta per chi vuole Hypomnema acceso solo in una finestra. Non usarlo
+insieme al plugin installato.
+
+Questa parte è per chi vuole usare Hypomnema davvero, sul proprio computer, mentre il
+programma continua a essere sviluppato su GitHub.
+
+### Due copie: una in uso, una per lo sviluppo
+
+- La **copia in uso** è quella con cui lavori ogni giorno. Si aggiorna solo con la versione
+  principale (`main`), cioè con le modifiche già controllate e unite su GitHub.
+- La **copia di sviluppo** (se ne hai una) serve a provare le modifiche nuove. Ha il suo
+  `hypomnema.toml`, con il testimone spento e un quaderno di prova.
+
+Le note vere non stanno in nessuna delle due: stanno in una cartella tua, fuori dal programma.
+
+| Cartella | Cosa contiene | Chi la cambia |
+|---|---|---|
+| `%USERPROFILE%\Hypomnema\programma` | La copia in uso del programma | Solo l'aggiornamento (`aggiorna-hypomnema.cmd`) |
+| `%USERPROFILE%\Hypomnema\hypomnema.toml` | La configurazione in uso, con il testimone acceso | Tu; l'avviabile la crea la prima volta e poi non la tocca più |
+| `%USERPROFILE%\Hypomnema\quaderno` | Note, registro e testimone | Solo i programmi di Hypomnema, che aggiungono e non cancellano mai |
+
+`%USERPROFILE%` è la tua cartella utente, per esempio `C:\Users\nome`.
+
+**Perché non in Documenti.** Su molti computer Windows la cartella Documenti è sincronizzata con
+OneDrive: il quaderno e il testimone verrebbero copiati su internet. Per questo la cartella dei dati
+è `%USERPROFILE%\Hypomnema`, che OneDrive di base non sincronizza. Se vuoi il quaderno altrove,
+cambia `cartella` nella configurazione in uso; evita le cartelle sincronizzate.
+
+### Installazione, passo per passo
+
+Una volta sola. Servono tre programmi:
+
+1. **Python 3.12 o più recente**, da [python.org](https://www.python.org/downloads/). Durante
+   l'installazione lascia attivo il "Python Launcher" (il comando `py`).
+2. **Git per Windows**, da [git-scm.com](https://git-scm.com/download/win): serve per scaricare e
+   aggiornare il programma, e porta con sé Git Bash, che Claude Code usa per il testimone.
+3. **Claude Code** (il comando `claude`), seguendo le istruzioni sul sito di Claude.
+
+Poi, in PowerShell:
+
+```
+mkdir $env:USERPROFILE\Hypomnema
+git clone --branch main https://github.com/angelomaccarinelli8-sys/hypomnema.git $env:USERPROFILE\Hypomnema\programma
+cd $env:USERPROFILE\Hypomnema\programma
+py -m unittest
+```
+
+L'ultimo comando deve finire con `OK`.
+
+`--branch main` è importante: la copia in uso deve stare sulla versione principale, l'unica che
+l'aggiornamento accetta.
+
+**Il collegamento sul desktop.** Apri la cartella `%USERPROFILE%\Hypomnema\programma\windows`
+con Esplora file, fai clic con il tasto destro su **`Hypomnema.cmd`**, poi *Mostra altre opzioni* →
+*Invia a* → *Desktop (crea collegamento)*. Se vuoi, rinomina il collegamento in "Hypomnema".
+
+### Ogni giorno
+
+1. **Doppio clic** sul collegamento "Hypomnema". Si apre una finestra che:
+   - la prima volta crea `%USERPROFILE%\Hypomnema\hypomnema.toml` (copiandolo da
+     `windows\hypomnema-uso.toml`);
+   - mostra lo stato del testimone (`stato`);
+   - avvia Claude Code nella cartella del programma, con la skill di Hypomnema e il testimone
+     acceso, collegati al quaderno in uso.
+2. Scrivi a Claude come sempre. All'inizio Claude controlla il testimone e rilegge le note utili.
+3. Per chiudere, esci da Claude Code (`/exit`) o chiudi la finestra.
+
+**Fuori dall'avviabile Hypomnema è spento**: se apri Claude Code in un altro modo, anche nella
+stessa cartella, non c'è né la skill né il testimone, e non viene registrato niente.
+
+**Per controllare a mano il testimone**, in PowerShell:
+
+```
+cd $env:USERPROFILE\Hypomnema\programma
+$env:HYPOMNEMA_CONFIG = "$env:USERPROFILE\Hypomnema\hypomnema.toml"
+py -m hypomnema stato
+```
+
+Dice se il testimone è acceso, dov'è il quaderno, quanti messaggi ha registrato e data, ora e testo
+dell'ultimo. Non cambia niente.
+
+### Aggiornare la copia in uso
+
+Quando su GitHub viene unita una nuova pull request, fai **doppio clic su
+`windows\aggiorna-hypomnema.cmd`** nella cartella del programma (o crea anche per lui un
+collegamento sul desktop). Il comando:
+
+- controlla che la copia sia sulla versione principale (`main`), altrimenti non fa niente;
+- scarica le novità con `git pull --ff-only`: se qualcosa non torna si ferma senza cambiare niente;
+- lancia i test per controllare che la nuova versione funzioni sul tuo computer.
+
+Tocca solo i file del programma: il quaderno e la configurazione in uso stanno fuori dalla sua
+cartella e non vengono mai toccati.
+
+### Cosa fa l'avviabile, e perché è fatto così
+
+`Hypomnema.cmd` lancia lo script PowerShell `avvia-hypomnema.ps1`. Windows di solito blocca gli
+script PowerShell aperti con un doppio clic; il file `.cmd` li avvia con `-ExecutionPolicy Bypass`,
+che vale **solo per quella esecuzione** e non cambia le impostazioni di sicurezza del computer.
+L'avviabile:
+
+- non cancella niente e non tocca altre cartelle: crea solo la cartella dei dati e la
+  configurazione in uso, e solo se mancano;
+- si ferma con un messaggio chiaro se mancano `py` o `claude`, se la configurazione non va bene, o
+  se il quaderno è dentro la cartella del programma;
+- avvia Claude Code con il plugin di Hypomnema (la cartella del programma: skill e agganci) e
+  con le regole che vietano a Claude di modificare il quaderno e la configurazione in uso. Plugin e
+  regole valgono solo per quella sessione.
+
+Per smettere di usarlo: cancella il collegamento sul desktop e, se vuoi, la cartella `programma`.
+Il quaderno resta dov'è: decidi tu se tenerlo.
 
 ## Esempi
 

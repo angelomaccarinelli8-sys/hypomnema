@@ -1,0 +1,45 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" avvio; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" avvio; fi"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" testimone; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" testimone; fi"
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" risposte; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" risposte; fi"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" protezione; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" protezione; fi"
+          }
+        ]
+      }
+    ]
+  }
+}

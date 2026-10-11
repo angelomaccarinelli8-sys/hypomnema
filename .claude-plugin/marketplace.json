@@ -1,0 +1,14 @@
+{
+  "name": "hypomnema",
+  "description": "Catalogo di Hypomnema: memoria permanente per Claude in file Markdown.",
+  "owner": {
+    "name": "Angelo Maccarinelli"
+  },
+  "plugins": [
+    {
+      "name": "hypomnema",
+      "source": "./",
+      "description": "Memoria permanente in file Markdown, con i testimoni dei messaggi e delle risposte."
+    }
+  ]
+}

@@ -277,21 +277,21 @@ class TestComandoRisposte(ConQuaderno):
         risultato = self.lancia(b"rotto", "risposte")
         self.assertIn("La risposta NON è stata registrata.", risultato.stderr.decode("utf-8"))
 
-    def test_aggancio_con_argomento_risposte(self):
+    def test_programma_del_plugin_con_risposte(self):
         self.dice("domanda")
-        risultato = self.lancia(risposta("dall'aggancio"), "risposte", comando=(str(RADICE / "aggancio_testimone.py"),))
+        risultato = self.lancia(risposta("dall'aggancio"), "risposte", comando=(str(RADICE / "programma.py"),))
         self.assertEqual(risultato.returncode, 0, risultato.stderr)
         self.assertEqual(self.righe_risposte()[0]["testo"], "dall'aggancio")
 
-    def test_aggancio_con_argomento_sconosciuto(self):
-        risultato = self.lancia(b"", "altro", comando=(str(RADICE / "aggancio_testimone.py"),))
+    def test_programma_del_plugin_scritto_male_non_blocca(self):
+        risultato = self.lancia(b"", "risposte", "--sconosciuto", comando=(str(RADICE / "programma.py"),))
         self.assertEqual(risultato.returncode, 1)
 
     def test_plugin_aggancia_stop(self):
-        agganci = json.loads((RADICE / "plugin" / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
+        agganci = json.loads((RADICE / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
         comandi = [h["command"] for g in agganci["Stop"] for h in g["hooks"]]
         self.assertEqual(len(comandi), 1)
-        self.assertIn('aggancio_testimone.py" risposte;', comandi[0])
+        self.assertIn('programma.py" risposte;', comandi[0])
 
 
 class TestImpronta(unittest.TestCase):
@@ -454,9 +454,9 @@ class TestNoteDaRisposta(ConQuaderno):
 
 class TestSkillDiario(unittest.TestCase):
     def test_skill(self):
-        skill = (RADICE / "plugin" / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("## 6. Cosa ci eravamo detti: quaderno e diario (Claude Code)", skill)
-        self.assertIn("py -m hypomnema diario <parola>", skill)
+        self.assertIn("`P diario <parola>`", skill)
         self.assertIn('`da_risposta: "sì"`', skill)
         self.assertIn("**i testimoni non ci sono**", skill)
 
