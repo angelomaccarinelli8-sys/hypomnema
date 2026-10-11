@@ -34,6 +34,7 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `12-contesto-di-claude` | Testimone acceso. Nota dell'utente con le sue parole nel `testo` e una spiegazione di Claude su due righe nel `contesto`; poi la ricerca di una parola che c'è solo nel contesto. | Accettata; testo e «Contesto scritto da Claude» separati nel file e nella ricerca. |
 | `13-citazione-riportata` | Testimone acceso. L'utente incolla un passo di un libro (inventato) marcandolo con `>`, più un suo commento; la nota prende solo il passo, con la fonte del libro. | Il testimone annota `righe_citate: [2, 3]`; nota accettata con «citazione riportata dall'utente». |
 | `14-citazione-mista` | Stesso messaggio; la nota prende l'ultima riga del passo e il commento non marcato. | Accettata con «testo trovato nel messaggio del ...», senza la dicitura «riportata». |
+| `15-a-capo-nel-registro` | Una proposta con un nome di campo inventato che contiene degli «a capo» e, in mezzo, una finta riga «ACCETTATA \| nota 0099». | Rifiutata per il campo non previsto. Nel registro e a schermo il motivo resta su una riga, con il segno ⏎ al posto degli a capo: nessuna riga falsa. |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
 in più la riga «verifica: autore non verificato (testimone spento)».

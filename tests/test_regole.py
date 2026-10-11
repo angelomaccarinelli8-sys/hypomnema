@@ -9,8 +9,9 @@ import tempfile
 import unittest
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
+from unittest import mock
 
-from hypomnema import cercatore, configurazione, sportello
+from hypomnema import cercatore, configurazione, quaderno, sportello
 from hypomnema.cli import main
 from tests.esecutore import CONFIG_DI_PROVA, RADICE
 
@@ -136,6 +137,19 @@ class TestSportello(ConQuaderno):
         ids = [self.proponi(NOTA_BUONA).id_nota for _ in range(3)]
         self.assertEqual(ids, ["0001", "0002", "0003"])
 
+    def test_numero_appena_preso_si_usa_il_successivo(self):
+        # Simula un altro passaggio che salva la nota 0001 tra la lettura del quaderno
+        # e la scrittura: lo sportello deve usare 0002 e annotare comunque il passaggio.
+        altra = self.proponi(self.con(testo="nota dell'altro passaggio")).percorso
+        prima = altra.read_text(encoding="utf-8")
+        with mock.patch.object(quaderno, "prossimo_id", return_value="0001"):
+            esito = self.proponi(NOTA_BUONA)
+        self.assertTrue(esito.accettata)
+        self.assertEqual(esito.id_nota, "0002")
+        self.assertIn("# Nota 0002", (self.config.cartella_note / "0002.md").read_text(encoding="utf-8"))
+        self.assertEqual(altra.read_text(encoding="utf-8"), prima)
+        self.assertIn("| ACCETTATA | nota 0002 |", self.config.file_registro.read_text(encoding="utf-8"))
+
     def test_nota_esistente_mai_sovrascritta(self):
         self.config.cartella_note.mkdir(parents=True)
         # Un file con nome non numerico non conta come nota e non viene toccato.
@@ -200,6 +214,26 @@ class TestRegistro(ConQuaderno):
         self.assertIn("manca il campo «fonte»", nuove[0])
 
 
+    def test_a_capo_non_creano_righe_false(self):
+        riga_falsa = "- 2026-01-15T10:00:00+01:00 | ACCETTATA | nota 0099 | da: falso.json"
+        self.proponi(NOTA_BUONA)  # il registro esiste già, con la sua intestazione
+        for a_capo in ("\n", "\r\n", "\r", "\u2028", "\x85"):
+            with self.subTest(a_capo=repr(a_capo)):
+                prima = self.config.file_registro.read_text(encoding="utf-8").splitlines()
+                proposta = dict(NOTA_BUONA, **{f"a{a_capo}{riga_falsa}{a_capo}b": "x"})
+                sportello.ricevi(json.dumps(proposta).encode("utf-8"), f"nome{a_capo}{riga_falsa}.json",
+                                 self.config, ADESSO)
+                dopo = self.config.file_registro.read_text(encoding="utf-8").splitlines()
+                # Un passaggio = una riga in più, qualunque "a capo" contenga la proposta.
+                self.assertEqual(dopo[:len(prima)], prima)
+                nuove = dopo[len(prima):]
+                self.assertEqual(len(nuove), 1, nuove)
+                self.assertIn("RIFIUTATA", nuove[0])
+                self.assertIn("⏎- 2026-01-15T10:00:00+01:00 | ACCETTATA | nota 0099", nuove[0])
+        righe = self.config.file_registro.read_text(encoding="utf-8").splitlines()
+        self.assertFalse(any(r.startswith(riga_falsa) for r in righe))
+
+
 class TestCercatore(ConQuaderno):
     def test_parola_esatta_senza_maiuscole(self):
         self.proponi(self.con(testo="Bevo un Caffè."))
@@ -248,6 +282,64 @@ class TestConfigurazione(unittest.TestCase):
             with self.assertRaises(configurazione.ErroreConfigurazione):
                 configurazione.carica(str(file))
 
+    def test_file_con_bom_accettato(self):
+        # PowerShell 5.1 con "Set-Content -Encoding utf8" salva il file con il BOM.
+        with tempfile.TemporaryDirectory() as tmp:
+            file = Path(tmp) / "hypomnema.toml"
+            file.write_bytes(b"\xef\xbb\xbf" + CONFIG_DI_PROVA.encode("utf-8"))
+            self.assertEqual(configurazione.carica(str(file)).cifre_numero_nota, 4)
+
+    def test_file_non_utf8_segnalato(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            file = Path(tmp) / "hypomnema.toml"
+            file.write_bytes(CONFIG_DI_PROVA.replace("quaderno", "quadernò").encode("latin-1"))
+            with self.assertRaisesRegex(configurazione.ErroreConfigurazione, "UTF-8"):
+                configurazione.carica(str(file))
+
+    def scrivi_config(self, cartella, testo):
+        file = Path(cartella) / "hypomnema.toml"
+        file.write_text(testo, encoding="utf-8")
+        return str(file)
+
+    def test_percorsi_fuori_dal_quaderno_rifiutati(self):
+        for chiave, valore in (
+            ("cartella_note", "C:/altrove/note"),
+            ("cartella_note", "C:note"),
+            ("cartella_note", "/tmp/note"),
+            ("cartella_note", "\\\\server\\note"),
+            ("cartella_note", "../fuori"),
+            ("file_registro", "note/../../registro.md"),
+            ("file", "/tmp/testimone.jsonl"),
+        ):
+            with self.subTest(chiave=chiave, valore=valore), tempfile.TemporaryDirectory() as tmp:
+                riga = f'{chiave} = "{configurazione.RIGHE_DI_ESEMPIO[chiave].split(" = ")[1][1:-1]}"'
+                testo = CONFIG_DI_PROVA.replace(riga, f"{chiave} = '{valore}'")
+                self.assertNotEqual(testo, CONFIG_DI_PROVA)
+                with self.assertRaisesRegex(configurazione.ErroreConfigurazione,
+                                            f"«{chiave}» deve indicare un posto dentro la cartella del quaderno"):
+                    configurazione.carica(self.scrivi_config(tmp, testo))
+
+    def test_sottocartelle_ammesse(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            testo = CONFIG_DI_PROVA.replace('cartella_note = "note"', 'cartella_note = "archivio/note"')
+            config = configurazione.carica(self.scrivi_config(tmp, testo))
+            self.assertEqual(config.cartella_note, config.cartella_quaderno / "archivio" / "note")
+
+    def test_impostazione_mancante_dice_la_riga_da_aggiungere(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            testo = CONFIG_DI_PROVA.replace('segno_citazione = ">"\n', "")
+            with self.assertRaises(configurazione.ErroreConfigurazione) as errore:
+                configurazione.carica(self.scrivi_config(tmp, testo))
+            messaggio = str(errore.exception)
+            self.assertIn("manca l'impostazione «segno_citazione» della sezione [testimone]", messaggio)
+            self.assertIn('segno_citazione = ">"', messaggio)
+
+    def test_righe_di_esempio_uguali_al_file_del_repository(self):
+        righe = (RADICE / "hypomnema.toml").read_text(encoding="utf-8").splitlines()
+        for chiave, riga in configurazione.RIGHE_DI_ESEMPIO.items():
+            with self.subTest(chiave=chiave):
+                self.assertIn(riga, righe)
+
     def test_file_del_repository_valido(self):
         config = configurazione.carica(str(RADICE / "hypomnema.toml"))
         self.assertEqual(config.cifre_numero_nota, 4)
@@ -282,6 +374,15 @@ class TestRigaDiComando(ConQuaderno):
         risultato = self.lancia("proponi", "-", ingresso=dati)
         self.assertEqual(risultato.returncode, 1)
         self.assertIn("(ingresso diretto)", self.config.file_registro.read_text(encoding="utf-8"))
+
+    def test_uscita_sempre_in_utf8(self):
+        ambiente = {k: v for k, v in os.environ.items() if k not in ("PYTHONIOENCODING", "PYTHONUTF8")}
+        ambiente["PYTHONPATH"] = str(RADICE)
+        risultato = subprocess.run(
+            [sys.executable, "-m", "hypomnema", "--config", str(self.file_config), "cerca", "caffè"],
+            capture_output=True, env=ambiente, cwd=self.cartella,
+        )
+        self.assertEqual(risultato.stdout.decode("utf-8").strip(), "Nessuna nota contiene «caffè».")
 
     def test_file_inesistente(self):
         risultato = self.lancia("proponi", "manca.json")

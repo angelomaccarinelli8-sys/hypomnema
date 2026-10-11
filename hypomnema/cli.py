@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TextIO
 
-from hypomnema import __version__, cercatore, configurazione, sportello, testimone
+from hypomnema import __version__, cercatore, configurazione, registro, sportello, testimone
 from hypomnema.nota import Nota, NotaIlleggibile
 
 ORIGINE_DIRETTA = "(ingresso diretto)"
@@ -94,7 +94,9 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     print("RIFIUTATA: la nota non è stata salvata.", file=uscita)
     print("Motivi:", file=uscita)
     for motivo in esito.motivi:
-        print(f"- {motivo}", file=uscita)
+        # Come nel registro: un motivo sta su una riga, così nessuna riga falsa
+        # (per esempio un finto "ACCETTATA") può comparire nella risposta che legge Claude.
+        print(f"- {registro.su_una_riga(motivo)}", file=uscita)
     print("Il passaggio è annotato nel registro.", file=uscita)
     return 1
 
@@ -141,12 +143,17 @@ def main(
     errori: TextIO | None = None,
 ) -> int:
     """Punto d'ingresso. ``adesso``, ``uscita`` ed ``errori`` servono ai test per avere risultati ripetibili."""
+    # Sempre UTF-8: chi legge l'uscita (Claude, Git Bash) si aspetta UTF-8, anche su Windows
+    # dove Python userebbe altrimenti la vecchia codifica di sistema. Nella finestra della
+    # console non cambia niente: lì Python scrive già correttamente.
     if uscita is None:
         uscita = sys.stdout
         if hasattr(uscita, "reconfigure"):
-            uscita.reconfigure(errors="replace")
+            uscita.reconfigure(encoding="utf-8", errors="replace")
     if errori is None:
         errori = sys.stderr
+        if hasattr(errori, "reconfigure"):
+            errori.reconfigure(encoding="utf-8", errors="replace")
     try:
         argomenti = _parser().parse_args(argv)
     except SystemExit as uscita_argparse:

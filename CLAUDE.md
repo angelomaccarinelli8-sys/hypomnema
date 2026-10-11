@@ -88,3 +88,11 @@ Scelte fatte da confermare:
 Errori / dubbi:
 Prossimo passo proposto:
 ```
+
+## Da ricordare per i compiti futuri
+
+- **Versioni delle note** (segnalato dalla revisione della PR #3): il formato della nota non ha
+  un numero di versione. Una nota salvata prima del compito 3 che contenesse nel testo la riga
+  esatta `## Contesto scritto da Claude` verrebbe riletta come se da lì in poi ci fosse il
+  contesto. Caso improbabile; da risolvere quando si affrontano le versioni, con un formato
+  versionato o una migrazione.

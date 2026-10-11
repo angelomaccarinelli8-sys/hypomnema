@@ -19,6 +19,21 @@ from tests.test_regole import ADESSO, NOTA_BUONA
 CONFIG_ACCESO = CONFIG_DI_PROVA.replace("attivo = false", "attivo = true")
 
 
+def _bash() -> str | None:
+    """La bash con cui Claude Code lancia gli agganci: su Windows quella di Git (Git Bash)."""
+    if os.name != "nt":
+        return shutil.which("bash")
+    git = shutil.which("git")
+    if git is None:
+        return None
+    # git.exe sta in Git\cmd oppure in Git\mingw64\bin: si risale fino a Git\bin\bash.exe.
+    for cartella in Path(git).resolve().parents:
+        candidata = cartella / "bin" / "bash.exe"
+        if candidata.is_file():
+            return str(candidata)
+    return None
+
+
 def messaggio(testo: str) -> bytes:
     """Un messaggio come lo manda Claude Code all'aggancio UserPromptSubmit."""
     return json.dumps({
@@ -388,6 +403,19 @@ class TestComandoTestimone(ConTestimone):
         risultato = self.lancia(messaggio("x"), "--config", "manca.toml")
         self.assertEqual(risultato.returncode, 1)
 
+    def test_errore_sempre_in_utf8(self):
+        # Senza impostazioni particolari: su Windows Python userebbe la vecchia codifica di sistema.
+        ambiente = {k: v for k, v in os.environ.items() if k not in ("PYTHONIOENCODING", "PYTHONUTF8")}
+        ambiente["PYTHONPATH"] = str(RADICE)
+        risultato = subprocess.run(
+            [sys.executable, "-m", "hypomnema", "--config", "manca.toml", "testimone"],
+            input=messaggio("x"), capture_output=True, env=ambiente, cwd=self.cartella,
+        )
+        self.assertEqual(risultato.returncode, 1)
+        errore = risultato.stderr.decode("utf-8")
+        self.assertIn("non trovo il file di configurazione «manca.toml»", errore)
+        self.assertIn("Il messaggio NON è stato registrato.", errore)
+
 
 class TestImpostazioniClaudeCode(unittest.TestCase):
     def comando_aggancio(self):
@@ -397,26 +425,42 @@ class TestImpostazioniClaudeCode(unittest.TestCase):
         self.assertEqual(len(comandi), 1)
         return comandi[0]
 
-    @unittest.skipIf(os.name == "nt" or shutil.which("bash") is None, "serve bash su macOS o Linux")
-    def test_aggancio_vero_da_un_altra_cartella(self):
-        """Lancia il comando dell'aggancio come farebbe Claude Code, da una cartella qualunque."""
+    @unittest.skipIf(_bash() is None, "serve bash (su Windows: Git Bash)")
+    def test_aggancio_vero_con_py(self):
+        """Windows: c'è il lanciatore py."""
+        self.lancia_aggancio("py")
+
+    @unittest.skipIf(_bash() is None, "serve bash (su Windows: Git Bash)")
+    def test_aggancio_vero_con_python3(self):
+        """macOS e Linux: py non c'è, si usa python3."""
+        self.lancia_aggancio("python3")
+
+    def lancia_aggancio(self, lanciatore):
+        """Lancia il comando dell'aggancio come farebbe Claude Code, da una cartella qualunque.
+
+        Nel PATH c'è solo un lanciatore finto (py o python3) che rimanda all'interprete dei test:
+        così si controlla quale dei due rami del comando viene usato.
+        """
         with tempfile.TemporaryDirectory() as progetto, tempfile.TemporaryDirectory() as altrove:
             shutil.copytree(RADICE / "hypomnema", Path(progetto) / "hypomnema",
                             ignore=shutil.ignore_patterns("__pycache__"))
             shutil.copy(RADICE / "aggancio_testimone.py", progetto)
             Path(progetto, "hypomnema.toml").write_text(CONFIG_ACCESO, encoding="utf-8")
-            # Un "py" finto che rimanda all'interprete dei test, come il lanciatore di Windows.
             finti = Path(altrove) / "bin"
             finti.mkdir()
-            py = finti / "py"
-            py.write_text(f'#!/bin/sh\nexec "{sys.executable}" "$@"\n', encoding="utf-8")
-            py.chmod(0o755)
+            finto = finti / lanciatore
+            finto.write_text(
+                f'#!/bin/sh\necho {lanciatore} > "{(finti / "usato").as_posix()}"\n'
+                f'exec "{Path(sys.executable).as_posix()}" "$@"\n',
+                encoding="utf-8", newline="\n")
+            finto.chmod(0o755)
             ambiente = {k: v for k, v in os.environ.items() if k != "HYPOMNEMA_CONFIG"}
-            ambiente.update(CLAUDE_PROJECT_DIR=progetto, PATH=f"{finti}{os.pathsep}{ambiente['PATH']}")
-            risultato = subprocess.run(["bash", "-c", self.comando_aggancio()], input=messaggio("dal vero"),
+            ambiente.update(CLAUDE_PROJECT_DIR=progetto, PATH=str(finti))
+            risultato = subprocess.run([_bash(), "-c", self.comando_aggancio()], input=messaggio("dal vero"),
                                        capture_output=True, env=ambiente, cwd=altrove)
             self.assertEqual(risultato.returncode, 0, risultato.stderr)
             self.assertEqual(risultato.stdout, b"")
+            self.assertEqual((finti / "usato").read_text(encoding="utf-8").strip(), lanciatore)
             registrato = Path(progetto, "quaderno", "testimone.jsonl").read_text(encoding="utf-8")
             self.assertIn('"testo": "dal vero"', registrato)
 

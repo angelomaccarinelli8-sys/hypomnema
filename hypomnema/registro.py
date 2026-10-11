@@ -3,6 +3,7 @@
 Il file si apre solo in aggiunta: nessuna riga viene mai modificata o tolta.
 """
 
+import re
 from datetime import datetime
 
 from hypomnema.configurazione import Configurazione
@@ -15,6 +16,16 @@ INTESTAZIONE = (
 )
 
 
+# Tutti i caratteri che possono far andare a capo un testo.
+A_CAPO = re.compile(r"\r\n|[\n\r\v\f\x1c\x1d\x1e\x85\u2028\u2029]")
+SEGNO_A_CAPO = "⏎"
+
+
+def su_una_riga(testo: str) -> str:
+    """Sostituisce ogni a capo con il segno ⏎: un passaggio non può mai occupare più righe."""
+    return A_CAPO.sub(SEGNO_A_CAPO, testo)
+
+
 def annota(
     config: Configurazione,
     adesso: datetime,
@@ -23,6 +34,10 @@ def annota(
     motivi: list[str],
 ) -> None:
     quando = adesso.isoformat(timespec="seconds")
+    # Nome del file e motivi possono contenere testo della proposta: senza questa pulizia
+    # un "a capo" permetterebbe di aggiungere al registro righe false.
+    origine = su_una_riga(origine)
+    motivi = [su_una_riga(m) for m in motivi]
     if id_nota is not None:
         riga = f"- {quando} | ACCETTATA | nota {id_nota} | da: {origine}\n"
     else:

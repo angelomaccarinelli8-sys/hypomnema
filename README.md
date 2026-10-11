@@ -30,7 +30,9 @@ Sophia e non ne contiene il codice, ma ne segue le regole:
   Stessi ingressi, stesso risultato.
 - **I dati restano tuoi**: i programmi non si collegano a internet.
 
-Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN) <!-- da aggiungere -->
+<!-- Da rendere visibile quando c'è il link all'articolo di Angelo:
+Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
+-->
 
 ## Cosa c'è dentro
 
@@ -234,6 +236,10 @@ attivi; un errore del testimone compare come avviso nella chat, ma non blocca ma
   un testo incollato conta come portato da te, e da dove viene lo dice la `fonte`.
 - Il `contesto` scritto da Claude non viene controllato: per questo è sempre separato dalle tue
   parole e porta la scritta "Contesto scritto da Claude".
+- Note, registro e testimone devono stare dentro la cartella del quaderno: il programma rifiuta
+  percorsi completi e `..` nelle impostazioni. Ma se dentro il quaderno crei un collegamento
+  (link simbolico) a un'altra cartella, i file vanno dove punta il collegamento: è una tua scelta,
+  e il programma la rispetta.
 
 **Cancellare.** I programmi non cancellano e non riscrivono mai niente. Tu resti sempre libero di
 cancellare i tuoi file, compreso il testimone: le note già salvate restano, ma le loro parole
