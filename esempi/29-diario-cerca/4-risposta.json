@@ -1,0 +1,7 @@
+{
+  "session_id": "sessione-di-esempio",
+  "prompt_id": "turno-2",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "last_assistant_message": "Il basilico vuole un terriccio universale, sempre umido."
+}

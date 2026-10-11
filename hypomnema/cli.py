@@ -10,6 +10,12 @@
     python -m hypomnema cambiati prima.json     # chat: i file da riportare sul computer dell'utente
     python -m hypomnema controlla               # note e registro corrispondono? righe estranee?
     python -m hypomnema confronta FILE1 FILE2   # due file identici byte per byte? (non serve configurazione)
+    python -m hypomnema risposte                # registra una risposta di Claude (lo lancia Claude Code)
+    python -m hypomnema impronta FILE           # l'impronta di un file, come per i blocchi di codice omessi
+    python -m hypomnema diario PAROLA           # cerca nei messaggi e nelle risposte (--intorno: con i vicini)
+
+Anche il comando "risposte", come "testimone", non esce mai con 2: per Claude Code, alla fine
+di una risposta, il codice 2 vorrebbe dire costringere Claude a continuare.
 
 Codici di uscita: 0 = tutto bene, 1 = nota rifiutata, 2 = errore di uso o di configurazione.
 Il comando "testimone" non esce mai con 2: per Claude Code vorrebbe dire bloccare il
@@ -24,7 +30,8 @@ from pathlib import Path
 from typing import TextIO
 
 from hypomnema import (
-    __version__, avvio, cambiamenti, cercatore, configurazione, controllo, registro, sportello, testimone,
+    __version__, avvio, cambiamenti, cercatore, configurazione, controllo, diario, registro, risposte,
+    sportello, testimone,
 )
 from hypomnema.nota import Nota, NotaIlleggibile
 
@@ -74,6 +81,25 @@ def _parser() -> argparse.ArgumentParser:
     confronta = comandi.add_parser("confronta", help="dice se due file sono identici, byte per byte")
     confronta.add_argument("file1")
     confronta.add_argument("file2")
+
+    registra_risposta = comandi.add_parser(
+        "risposte", help="registra una risposta di Claude (lo lancia Claude Code alla fine di ogni risposta)"
+    )
+    registra_risposta.add_argument(
+        "file", nargs="?", default="-",
+        help="file JSON con la risposta, come lo manda Claude Code (di base: ingresso standard)",
+    )
+    calcola_impronta = comandi.add_parser(
+        "impronta", help="scrive l'impronta di un file (o di un testo, con -), come per i blocchi di codice omessi"
+    )
+    calcola_impronta.add_argument("file", help="il file, oppure - per leggere il testo dall'ingresso standard")
+    cerca_diario = comandi.add_parser(
+        "diario", help="cerca una parola nei messaggi dell'utente e nelle risposte di Claude"
+    )
+    cerca_diario.add_argument("parola", help="la parola (o le parole) da cercare, così come sono")
+    cerca_diario.add_argument(
+        "--intorno", action="store_true", help="mostra anche il messaggio subito prima e subito dopo"
+    )
     comandi.add_parser(
         "impostazioni-claude",
         help="scrive le regole che vietano a Claude di modificare quaderno e configurazione (per l'avviabile)",
@@ -94,6 +120,8 @@ def _descrivi(nota: Nota) -> list[str]:
         righe.append(f"conferma di: nota {nota.conferma_di}")
     if nota.citazione is not None:
         righe.append(f"citazione: {nota.citazione}")
+    if nota.da_risposta is not None:
+        righe.append(f"da una risposta di Claude: {nota.da_risposta}")
     if nota.verifica is not None:
         righe.append(f"verifica: {nota.verifica}")
     righe.append("testo:")
@@ -185,9 +213,28 @@ def _stato(argomenti, config, uscita: TextIO) -> int:
         righe.append(f"Ultimo messaggio registrato: {messaggi[-1].quando}")
         righe.append("Testo dell'ultimo messaggio:")
         righe += _rientrato(messaggi[-1].testo)
+    if config.sezione_risposte:
+        righe += _stato_risposte(config)
     for riga in righe:
         print(riga, file=uscita)
     return 0
+
+
+def _stato_risposte(config) -> list[str]:
+    if config.risposte_attive:
+        codice = "con i blocchi di codice omessi" if config.ometti_codice else "con i blocchi di codice interi"
+        righe = [f"Testimone delle risposte: ACCESO (registra le risposte di Claude, {codice})."]
+    else:
+        righe = ["Testimone delle risposte: SPENTO (nella sezione [risposte] attivo = false)."]
+    registrate = risposte.leggi_risposte(config)
+    righe += [f"File delle risposte: {config.file_risposte}", f"Risposte registrate: {len(registrate)}"]
+    if not registrate:
+        righe.append("Ultima risposta registrata: nessuna.")
+    elif registrate[-1].testo is None:
+        righe.append(f"Ultima risposta registrata: {registrate[-1].quando} ({registrate[-1].privato}).")
+    else:
+        righe.append(f"Ultima risposta registrata: {registrate[-1].quando}")
+    return righe
 
 
 def _istantanea(config, uscita: TextIO) -> int:
@@ -279,6 +326,68 @@ def _impostazioni_claude(argomenti, config, uscita: TextIO) -> int:
     return 0
 
 
+def _risposte(argomenti, adesso: datetime, errori: TextIO) -> int:
+    # Come il testimone: niente a schermo e mai il codice 2 (costringerebbe Claude a continuare).
+    try:
+        config = configurazione.carica(argomenti.config)
+        if argomenti.file == "-":
+            dati = sys.stdin.buffer.read()
+        else:
+            dati = Path(argomenti.file).read_bytes()
+        risposte.registra(config, adesso, dati)
+    except (configurazione.ErroreConfigurazione, testimone.ErroreTestimone, OSError) as errore:
+        print(f"ERRORE del testimone delle risposte: {errore} La risposta NON è stata registrata.", file=errori)
+        return 1
+    return 0
+
+
+def _impronta(argomenti, uscita: TextIO) -> int:
+    """Solo lettura, senza configurazione."""
+    if argomenti.file == "-":
+        dati, nome = sys.stdin.buffer.read(), "testo"
+    else:
+        file = Path(argomenti.file)
+        if not file.is_file():
+            print(f"ERRORE: non trovo il file «{file}».", file=uscita)
+            return 2
+        dati, nome = file.read_bytes(), f"«{file}»"
+    print(f"Impronta di {nome}: {risposte.impronta(dati)} ({len(dati)} byte).", file=uscita)
+    return 0
+
+
+def _diario(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura: i messaggi e le risposte che contengono la parola, in ordine di tempo."""
+    parola = argomenti.parola.strip()
+    if not parola:
+        print("ERRORE: serve una parola da cercare.", file=uscita)
+        return 2
+    tutte, trovate = diario.cerca(config, parola)
+    if not tutte:
+        print("Il diario è vuoto: non c'è nessun messaggio registrato.", file=uscita)
+        return 0
+    if not trovate:
+        print(f"Nessun messaggio del diario contiene «{parola}».", file=uscita)
+        return 0
+    quanti = "Trovato 1 messaggio" if len(trovate) == 1 else f"Trovati {len(trovate)} messaggi"
+    print(f"{quanti} con «{parola}» nel diario (la conversazione registrata, non le note).",
+          file=uscita)
+    da_mostrare = sorted({j for i in trovate for j in ((i - 1, i, i + 1) if argomenti.intorno else (i,))
+                          if 0 <= j < len(tutte)})
+    precedente = None
+    for posizione in da_mostrare:
+        if argomenti.intorno and precedente is not None and posizione != precedente + 1:
+            print("", file=uscita)
+            print("[...]", file=uscita)
+        precedente = posizione
+        voce = tutte[posizione]
+        segno = " (trovato)" if argomenti.intorno and posizione in trovate else ""
+        print("", file=uscita)
+        print(f"--- {voce.quando} · {voce.chi}{segno} ---", file=uscita)
+        for riga in _rientrato(voce.testo if voce.testo is not None else f"({voce.dicitura})"):
+            print(riga, file=uscita)
+    return 0
+
+
 def _testimone(argomenti, adesso: datetime, errori: TextIO) -> int:
     # Su successo non scrive niente: per Claude Code, ciò che esce qui finirebbe nella chat.
     try:
@@ -317,14 +426,18 @@ def main(
     except SystemExit as uscita_argparse:
         # Un comando scritto male esce con 2; per il testimone vorrebbe dire bloccare il messaggio.
         elenco = sys.argv[1:] if argv is None else argv
-        if uscita_argparse.code == 2 and "testimone" in elenco:
+        if uscita_argparse.code == 2 and ("testimone" in elenco or "risposte" in elenco):
             return 1
         raise
     adesso = adesso or datetime.now().astimezone()
     if argomenti.comando == "testimone":
         return _testimone(argomenti, adesso, errori)
+    if argomenti.comando == "risposte":
+        return _risposte(argomenti, adesso, errori)
     if argomenti.comando == "confronta":
         return _confronta(argomenti, uscita)
+    if argomenti.comando == "impronta":
+        return _impronta(argomenti, uscita)
     try:
         config = configurazione.carica(argomenti.config)
     except configurazione.ErroreConfigurazione as errore:
@@ -341,6 +454,8 @@ def main(
             return _cambiati(argomenti, config, uscita)
         if argomenti.comando == "controlla":
             return _controlla(config, uscita)
+        if argomenti.comando == "diario":
+            return _diario(argomenti, config, uscita)
         if argomenti.comando == "impostazioni-claude":
             return _impostazioni_claude(argomenti, config, uscita)
         return _cerca(argomenti, config, uscita)

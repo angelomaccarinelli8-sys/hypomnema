@@ -1,0 +1,39 @@
+$ hypomnema testimone 1-messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 2-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema testimone 3-messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 4-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema diario fragole
+Trovati 2 messaggi con «fragole» nel diario (la conversazione registrata, non le note).
+
+--- 2026-01-15T10:00:00+01:00 · utente ---
+  Che terriccio uso per le fragole?
+
+--- 2026-01-15T10:01:00+01:00 · claude ---
+  Per le fragole serve un terriccio leggero e un po' acido.
+[codice di uscita: 0]
+
+$ hypomnema diario basilico --intorno
+Trovati 2 messaggi con «basilico» nel diario (la conversazione registrata, non le note).
+
+--- 2026-01-15T10:01:00+01:00 · claude ---
+  Per le fragole serve un terriccio leggero e un po' acido.
+
+--- 2026-01-15T10:02:00+01:00 · utente (trovato) ---
+  E per il basilico?
+
+--- 2026-01-15T10:03:00+01:00 · claude (trovato) ---
+  Il basilico vuole un terriccio universale, sempre umido.
+[codice di uscita: 0]
+
+$ hypomnema diario pomodori
+Nessun messaggio del diario contiene «pomodori».
+[codice di uscita: 0]
+

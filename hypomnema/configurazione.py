@@ -40,6 +40,11 @@ class Configurazione:
     testimone_attivo: bool
     # True nella configurazione per la chat di Claude, dove il testimone non esiste.
     in_chat: bool
+    # Il testimone delle risposte di Claude (sezione [risposte], facoltativa: se manca è spento).
+    sezione_risposte: bool
+    risposte_attive: bool
+    file_risposte: Path | None
+    ometti_codice: bool
     file_testimone: Path
     prefisso_privato: str
     segno_citazione: str
@@ -133,6 +138,42 @@ def carica(percorso: str | None = None) -> Configurazione:
             "il testimone non esiste, quindi serve attivo = false."
         )
 
+    # Facoltativa: senza la sezione [risposte] il testimone delle risposte è spento.
+    risposte = dati.get("risposte")
+    if risposte is not None and not isinstance(risposte, dict):
+        raise ErroreConfigurazione(f"nel file «{file}» [risposte] deve essere una sezione.")
+    risposte_attive = ometti_codice = False
+    file_risposte_nome = None
+    if risposte is not None:
+        for chiave, spiegazione in (("attivo", "true (acceso) oppure false (spento)"),
+                                    ("ometti_codice", "true (blocchi di codice omessi) oppure false (registrati interi)")):
+            if not isinstance(risposte.get(chiave), bool):
+                raise ErroreConfigurazione(
+                    f"nel file «{file}» l'impostazione «{chiave}» della sezione [risposte] deve essere {spiegazione}."
+                )
+        risposte_attive, ometti_codice = risposte["attivo"], risposte["ometti_codice"]
+        file_risposte_nome = risposte.get("file")
+        come_windows = PureWindowsPath(file_risposte_nome) if isinstance(file_risposte_nome, str) else None
+        if (
+            come_windows is None or not file_risposte_nome.strip() or come_windows.anchor
+            or PurePosixPath(file_risposte_nome).is_absolute() or ".." in come_windows.parts
+        ):
+            raise ErroreConfigurazione(
+                f"nel file «{file}» l'impostazione «file» della sezione [risposte] deve indicare un "
+                'posto dentro la cartella del quaderno, per esempio  file = "risposte.jsonl"  .'
+            )
+        if risposte_attive and in_chat:
+            raise ErroreConfigurazione(
+                f"nel file «{file}» il testimone delle risposte è acceso, ma nella chat di Claude non "
+                "esiste: con modalita = \"chat\" serve [risposte] attivo = false."
+            )
+        if risposte_attive and not attivo:
+            raise ErroreConfigurazione(
+                f"nel file «{file}» il testimone delle risposte è acceso ma quello dell'utente è spento: "
+                "le risposte si registrano solo insieme ai messaggi, perché serve sapere se il messaggio "
+                "era privato. Accendi anche [testimone] attivo = true, oppure spegni [risposte]."
+            )
+
     base = file.resolve().parent
     quaderno = base / testo("cartella")
     return Configurazione(
@@ -142,6 +183,10 @@ def carica(percorso: str | None = None) -> Configurazione:
         cifre_numero_nota=cifre,
         testimone_attivo=attivo,
         in_chat=in_chat,
+        sezione_risposte=risposte is not None,
+        risposte_attive=risposte_attive,
+        file_risposte=quaderno / file_risposte_nome if file_risposte_nome else None,
+        ometti_codice=ometti_codice,
         file_testimone=quaderno / dentro_il_quaderno("file", testimone),
         prefisso_privato=testo("prefisso_privato", testimone).strip(),
         segno_citazione=testo("segno_citazione", testimone).strip(),

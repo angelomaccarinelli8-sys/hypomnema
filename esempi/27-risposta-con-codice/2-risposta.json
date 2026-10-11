@@ -1,0 +1,7 @@
+{
+  "session_id": "sessione-di-esempio",
+  "prompt_id": "turno-1",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "last_assistant_message": "Puoi usare questo programma:\n\n```python\nfrom datetime import date\ngiorni = (date.today() - date(2026, 3, 1)).days\nprint(giorni)\n```\n\nTi dice quanti giorni sono passati dalla semina del 1° marzo."
+}

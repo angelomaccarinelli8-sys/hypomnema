@@ -1,0 +1,25 @@
+$ hypomnema testimone 1-messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 2-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema impronta giorni.py
+Impronta di «<esempio>/giorni.py»: 7e350f40e4ef (88 byte).
+[codice di uscita: 0]
+
+$ hypomnema stato
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 1
+Ultimo messaggio registrato: 2026-01-15T10:00:00+01:00
+Testo dell'ultimo messaggio:
+  Come conto i giorni dalla semina?
+Testimone delle risposte: ACCESO (registra le risposte di Claude, con i blocchi di codice omessi).
+File delle risposte: <cartella di prova>/quaderno/risposte.jsonl
+Risposte registrate: 1
+Ultima risposta registrata: 2026-01-15T10:01:00+01:00
+[codice di uscita: 0]
+

@@ -36,3 +36,17 @@ prefisso_privato = "#privato"
 # Facoltativo: le righe di un messaggio che iniziano con questo segno sono parole riportate
 # da altri (per esempio un passo di un libro).
 segno_citazione = ">"
+
+[risposte]
+# Il testimone delle risposte registra il testo di ogni risposta di Claude, con data e ora, in un
+# file dentro la cartella del quaderno: con i messaggi dell'utente forma il diario della
+# conversazione. Funziona solo insieme al testimone dell'utente e solo in Claude Code.
+# Se questa sezione manca, è spento.
+attivo = true
+
+# File delle risposte, dentro la cartella del quaderno (si allunga soltanto).
+file = "risposte.jsonl"
+
+# true: ogni blocco di codice (tra tre apici inversi) viene registrato come una riga
+# "[blocco di codice di N righe omesso, impronta XXXXXXXXXXXX]"; false: viene registrato intero.
+ometti_codice = true

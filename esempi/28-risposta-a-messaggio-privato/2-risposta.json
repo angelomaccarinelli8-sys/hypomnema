@@ -1,0 +1,7 @@
+{
+  "session_id": "sessione-di-esempio",
+  "prompt_id": "turno-1",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "last_assistant_message": "Va bene, parliamo d'altro quando vuoi."
+}

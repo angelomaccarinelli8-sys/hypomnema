@@ -1,0 +1,6 @@
+{
+  "session_id": "sessione-di-esempio",
+  "prompt_id": "turno-1",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "#privato oggi sono stanco, parliamo d'altro"
+}

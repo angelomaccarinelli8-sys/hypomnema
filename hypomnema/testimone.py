@@ -20,7 +20,8 @@ segno di citazione (di base ">"): l'utente le ha marcate come parole riportate d
 
 import json
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
+from pathlib import Path
 from datetime import datetime
 
 from hypomnema.configurazione import Configurazione
@@ -37,6 +38,10 @@ class Messaggio:
     quando: str
     testo: str | None  # None per i messaggi privati
     righe_citate: tuple[int, ...] = ()
+    # Il codice del messaggio che Claude Code dà a ogni turno, se c'è: lega una risposta al suo messaggio.
+    prompt_id: str | None = None
+    # La dicitura scritta al posto del testo, per i messaggi non registrati.
+    privato: str | None = None
 
 
 @dataclass(frozen=True)
@@ -75,6 +80,8 @@ def registra(config: Configurazione, adesso: datetime, contenuto: bytes) -> bool
         citate = righe_marcate(testo, config.segno_citazione)
         if citate:
             voce["righe_citate"] = citate
+    if isinstance(dati.get("prompt_id"), str):
+        voce["prompt_id"] = dati["prompt_id"]
 
     config.cartella_quaderno.mkdir(parents=True, exist_ok=True)
     with open(config.file_testimone, "a", encoding="utf-8", newline="\n") as f:
@@ -87,6 +94,7 @@ def _voce_valida(riga: str) -> Messaggio | None:
 
     Una voce valida ha "quando" (testo) e esattamente uno tra "testo" e "privato" (testo).
     Accanto a "testo" può avere "righe_citate": numeri di riga crescenti, da 1 al numero di righe.
+    Può avere "prompt_id" (testo).
     """
     try:
         voce = json.loads(riga)
@@ -94,7 +102,16 @@ def _voce_valida(riga: str) -> Messaggio | None:
         return None
     if not isinstance(voce, dict) or not isinstance(voce.get("quando"), str):
         return None
-    altri = set(voce) - {"quando"}
+    if "prompt_id" in voce and not isinstance(voce["prompt_id"], str):
+        return None
+    messaggio = _voce_senza_prompt_id(voce)
+    if messaggio is None or "prompt_id" not in voce:
+        return messaggio
+    return replace(messaggio, prompt_id=voce["prompt_id"])
+
+
+def _voce_senza_prompt_id(voce: dict) -> Messaggio | None:
+    altri = set(voce) - {"quando", "prompt_id"}
     if altri == {"testo"} and isinstance(voce["testo"], str):
         return Messaggio(quando=voce["quando"], testo=voce["testo"])
     if altri == {"testo", "righe_citate"} and isinstance(voce["testo"], str):
@@ -107,20 +124,26 @@ def _voce_valida(riga: str) -> Messaggio | None:
         ):
             return Messaggio(quando=voce["quando"], testo=voce["testo"], righe_citate=tuple(citate))
     if altri == {"privato"} and isinstance(voce["privato"], str):
-        return Messaggio(quando=voce["quando"], testo=None)
+        return Messaggio(quando=voce["quando"], testo=None, privato=voce["privato"])
     return None
 
 
-def leggi_messaggi(config: Configurazione) -> list[Messaggio]:
-    """Tutti i messaggi registrati, nell'ordine in cui sono arrivati."""
-    if not config.file_testimone.is_file():
+def leggi_messaggi(
+    config: Configurazione, file: Path | None = None, di_chi: str = "del testimone"
+) -> list[Messaggio]:
+    """Tutti i messaggi registrati, nell'ordine in cui sono arrivati.
+
+    Di base legge il file del testimone; ``file`` permette di leggere quello delle risposte.
+    """
+    file = config.file_testimone if file is None else file
+    if not file.is_file():
         return []
     messaggi = []
     try:
-        righe = config.file_testimone.read_text(encoding="utf-8").split("\n")
+        righe = file.read_text(encoding="utf-8").split("\n")
     except UnicodeDecodeError:
         raise ErroreTestimone(
-            "il file del testimone non è in UTF-8. Controlla se è stato modificato a mano."
+            f"il file {di_chi} non è in UTF-8. Controlla se è stato modificato a mano."
         )
     for numero, riga in enumerate(righe, start=1):
         if not riga.strip():
@@ -128,7 +151,7 @@ def leggi_messaggi(config: Configurazione) -> list[Messaggio]:
         messaggio = _voce_valida(riga)
         if messaggio is None:
             raise ErroreTestimone(
-                f"la riga {numero} del file del testimone non è valida. "
+                f"la riga {numero} del file {di_chi} non è valida. "
                 "Controlla se il file è stato modificato a mano."
             )
         messaggi.append(messaggio)

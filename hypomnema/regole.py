@@ -12,7 +12,7 @@ from hypomnema.nota import TITOLO_CONTESTO, Nota
 from hypomnema.testimone import Messaggio, Ritrovamento, trova_citazione
 
 CAMPI_OBBLIGATORI = ("data", "fonte", "autore", "tipo", "natura", "testo")
-CAMPI_FACOLTATIVI = ("conferma_di", "citazione", "contesto")
+CAMPI_FACOLTATIVI = ("conferma_di", "citazione", "contesto", "da_risposta")
 # Campi che possono andare a capo: tutti gli altri devono stare su una riga.
 CAMPI_SU_PIU_RIGHE = ("testo", "citazione", "contesto")
 CAMPI_AMMESSI = CAMPI_OBBLIGATORI + CAMPI_FACOLTATIVI
@@ -53,12 +53,14 @@ def _data_valida(valore: str) -> bool:
 
 
 def controlla(
-    proposta: dict, note_esistenti: list[Nota], messaggi: list[Messaggio] | None, segno: str
+    proposta: dict, note_esistenti: list[Nota], messaggi: list[Messaggio] | None, segno: str,
+    risposte: list[Messaggio] | None = None,
 ) -> list[str]:
     """Restituisce i motivi di rifiuto, in ordine fisso. Lista vuota = nota accettabile.
 
     ``messaggi`` sono i messaggi registrati dal testimone, oppure None se il testimone è spento.
     ``segno`` è il segno di citazione del testimone.
+    ``risposte`` sono le risposte di Claude registrate, oppure None se quel testimone è spento.
     """
     motivi: list[str] = []
 
@@ -148,6 +150,30 @@ def controlla(
             "spiegazioni di Claude separate dalle parole dell'utente: in una nota di Claude "
             "tutto il testo è già di Claude."
         )
+    # Una nota di Claude che salva un pezzo di una sua risposta: "da_risposta": "sì".
+    if "da_risposta" in valori:
+        if valori["da_risposta"] != "sì":
+            motivi.append("il campo «da_risposta» può valere solo «sì»: se la nota non viene da una "
+                          "risposta di Claude, toglilo.")
+        if autore == "utente":
+            motivi.append(
+                "il campo «da_risposta» si usa solo nelle note di Claude: se l'utente fa sua una "
+                "risposta di Claude, la nota è dell'utente e la provenienza va nella «fonte»."
+            )
+        if "citazione" in valori:
+            motivi.append("una nota non può avere insieme «da_risposta» e «citazione»: viene da una "
+                          "risposta di Claude oppure dalle parole dell'utente, non da tutte e due.")
+        if (
+            risposte is not None and autore == "claude" and valori["da_risposta"] == "sì"
+            and "testo" in valori and trova_citazione(risposte, valori["testo"], segno) is None
+        ):
+            motivi.append(
+                "il testo non si trova, parola per parola, in nessuna risposta di Claude registrata: "
+                "copia il pezzo esatto della tua risposta. Nel file delle risposte i blocchi di codice "
+                "possono essere sostituiti dalla loro impronta: se il pezzo contiene codice, salvalo "
+                "senza il codice."
+            )
+
     for campo in ("testo", "contesto"):
         if campo in valori and TITOLO_CONTESTO in (r.rstrip("\r") for r in valori[campo].split("\n")):
             motivi.append(
@@ -185,11 +211,20 @@ SENZA_TESTIMONE = "testimone spento"
 SENZA_TESTIMONE_IN_CHAT = "chat, senza testimone"
 
 
+SENZA_RISPOSTE = "registro delle risposte spento"
+
+
 def verifica(
     autore: str, testo: str, citazione: str | None, messaggi: list[Messaggio] | None, segno: str,
-    in_chat: bool = False,
+    in_chat: bool = False, da_risposta: bool = False, risposte: list[Messaggio] | None = None,
 ) -> str | None:
     """La dicitura "verifica" da scrivere nella nota accettata (None = nessuna dicitura)."""
+    if da_risposta:
+        if risposte is None:
+            perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_RISPOSTE
+            return f"risposta non verificata ({perche})"
+        trovato = trova_citazione(risposte, testo, segno)
+        return f"testo trovato nella risposta di Claude del {trovato.messaggio.quando}"
     if messaggi is None:
         perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE
         if autore == "utente":

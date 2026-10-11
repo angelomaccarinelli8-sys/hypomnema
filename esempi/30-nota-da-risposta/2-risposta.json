@@ -1,0 +1,7 @@
+{
+  "session_id": "sessione-di-esempio",
+  "prompt_id": "turno-1",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "last_assistant_message": "Per proteggere le fragole dalle lumache conviene una barriera di cenere attorno alle piante. Rinnovala dopo ogni pioggia."
+}

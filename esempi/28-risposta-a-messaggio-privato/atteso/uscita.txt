@@ -1,0 +1,12 @@
+$ hypomnema testimone 1-privato.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 2-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema testimone 3-messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 4-risposta.json
+[codice di uscita: 0]
+

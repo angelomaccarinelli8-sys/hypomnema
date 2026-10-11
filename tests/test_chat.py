@@ -84,6 +84,7 @@ class TestConfigurazioneChat(ConQuaderno):
         # Stesse impostazioni del file di sviluppo, più modalita = "chat".
         sviluppo = tomllib.loads((RADICE / "hypomnema.toml").read_text(encoding="utf-8"))
         sviluppo["testimone"]["modalita"] = "chat"
+        del sviluppo["risposte"]  # in chat il testimone delle risposte non esiste
         self.assertEqual(tomllib.loads(MODELLO_CHAT.read_text(encoding="utf-8")), sviluppo)
 
     def test_esempi_usano_il_modello(self):

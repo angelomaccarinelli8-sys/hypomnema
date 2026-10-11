@@ -1,0 +1,6 @@
+{
+  "session_id": "sessione-di-esempio",
+  "prompt_id": "turno-1",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "Come conto i giorni dalla semina?"
+}
