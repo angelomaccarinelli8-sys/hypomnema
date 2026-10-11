@@ -403,6 +403,19 @@ class TestComandoTestimone(ConTestimone):
         risultato = self.lancia(messaggio("x"), "--config", "manca.toml")
         self.assertEqual(risultato.returncode, 1)
 
+    def test_errore_sempre_in_utf8(self):
+        # Senza impostazioni particolari: su Windows Python userebbe la vecchia codifica di sistema.
+        ambiente = {k: v for k, v in os.environ.items() if k not in ("PYTHONIOENCODING", "PYTHONUTF8")}
+        ambiente["PYTHONPATH"] = str(RADICE)
+        risultato = subprocess.run(
+            [sys.executable, "-m", "hypomnema", "--config", "manca.toml", "testimone"],
+            input=messaggio("x"), capture_output=True, env=ambiente, cwd=self.cartella,
+        )
+        self.assertEqual(risultato.returncode, 1)
+        errore = risultato.stderr.decode("utf-8")
+        self.assertIn("non trovo il file di configurazione «manca.toml»", errore)
+        self.assertIn("Il messaggio NON è stato registrato.", errore)
+
 
 class TestImpostazioniClaudeCode(unittest.TestCase):
     def comando_aggancio(self):

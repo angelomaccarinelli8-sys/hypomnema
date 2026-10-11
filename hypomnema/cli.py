@@ -16,7 +16,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TextIO
 
-from hypomnema import __version__, cercatore, configurazione, sportello, testimone
+from hypomnema import __version__, cercatore, configurazione, registro, sportello, testimone
 from hypomnema.nota import Nota, NotaIlleggibile
 
 ORIGINE_DIRETTA = "(ingresso diretto)"
@@ -94,7 +94,9 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     print("RIFIUTATA: la nota non è stata salvata.", file=uscita)
     print("Motivi:", file=uscita)
     for motivo in esito.motivi:
-        print(f"- {motivo}", file=uscita)
+        # Come nel registro: un motivo sta su una riga, così nessuna riga falsa
+        # (per esempio un finto "ACCETTATA") può comparire nella risposta che legge Claude.
+        print(f"- {registro.su_una_riga(motivo)}", file=uscita)
     print("Il passaggio è annotato nel registro.", file=uscita)
     return 1
 

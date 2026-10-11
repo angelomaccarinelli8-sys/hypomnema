@@ -165,3 +165,4 @@ L'ora è quella del computer al momento del passaggio. `da:` è il nome del file
 oppure `(ingresso diretto)` se la nota arriva dall'ingresso standard.
 Ogni passaggio occupa sempre una sola riga: se il nome del file o un motivo contengono un
 "a capo" (per esempio un nome di campo inventato), al suo posto viene scritto il segno ⏎.
+Lo stesso vale per i motivi di rifiuto mostrati a schermo: ogni motivo sta su una riga.
