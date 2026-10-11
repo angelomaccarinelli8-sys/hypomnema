@@ -28,6 +28,7 @@ class Configurazione:
     testimone_attivo: bool
     file_testimone: Path
     prefisso_privato: str
+    segno_citazione: str
 
 
 def trova(percorso: str | None = None) -> Path:
@@ -92,4 +93,5 @@ def carica(percorso: str | None = None) -> Configurazione:
         testimone_attivo=attivo,
         file_testimone=quaderno / testo("file", testimone),
         prefisso_privato=testo("prefisso_privato", testimone).strip(),
+        segno_citazione=testo("segno_citazione", testimone).strip(),
     )

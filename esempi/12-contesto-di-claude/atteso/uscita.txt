@@ -1,0 +1,25 @@
+$ hypomnema testimone messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema proponi nota.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca terrazzo
+Trovata 1 nota con «terrazzo».
+
+--- Nota 0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sul progetto dell'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: testo trovato nel messaggio del 2026-01-15T10:00:00+01:00
+testo:
+  Il fico va potato solo quando ha perso tutte le foglie.
+contesto scritto da Claude:
+  Detto parlando degli alberi da frutto del giardino.
+  Riguarda il fico in vaso sul terrazzo.
+[codice di uscita: 0]
+

@@ -11,7 +11,11 @@ con autore "utente" sia davvero una frase dell'utente.
 Formato del file (una riga per messaggio)::
 
     {"quando": "2026-01-15T10:00:00+01:00", "testo": "il testo esatto del messaggio"}
-    {"quando": "2026-01-15T10:01:00+01:00", "privato": "messaggio privato, non registrato"}
+    {"quando": "2026-01-15T10:01:00+01:00", "testo": "> riga riportata\nmio commento", "righe_citate": [1]}
+    {"quando": "2026-01-15T10:02:00+01:00", "privato": "messaggio privato, non registrato"}
+
+"righe_citate" (facoltativo) elenca i numeri delle righe, contando da 1, che iniziano con il
+segno di citazione (di base ">"): l'utente le ha marcate come parole riportate da altri.
 """
 
 import json
@@ -32,6 +36,23 @@ class ErroreTestimone(Exception):
 class Messaggio:
     quando: str
     testo: str | None  # None per i messaggi privati
+    righe_citate: tuple[int, ...] = ()
+
+
+@dataclass(frozen=True)
+class Ritrovamento:
+    messaggio: Messaggio
+    # True se la citazione viene tutta da righe marcate con il segno di citazione.
+    riportata: bool
+
+
+def _righe(testo: str) -> list[str]:
+    return testo.split("\n")
+
+
+def righe_marcate(testo: str, segno: str) -> list[int]:
+    """I numeri (da 1) delle righe che iniziano con il segno, a parte gli spazi davanti."""
+    return [n for n, riga in enumerate(_righe(testo), start=1) if riga.lstrip().startswith(segno)]
 
 
 def registra(config: Configurazione, adesso: datetime, contenuto: bytes) -> bool:
@@ -46,11 +67,14 @@ def registra(config: Configurazione, adesso: datetime, contenuto: bytes) -> bool
         raise ErroreTestimone("il messaggio in arrivo non contiene il campo «prompt» con il testo.")
 
     testo = dati["prompt"]
-    voce: dict[str, str] = {"quando": adesso.isoformat(timespec="seconds")}
+    voce: dict[str, object] = {"quando": adesso.isoformat(timespec="seconds")}
     if testo.lstrip().startswith(config.prefisso_privato):
         voce["privato"] = DICITURA_PRIVATO
     else:
         voce["testo"] = testo
+        citate = righe_marcate(testo, config.segno_citazione)
+        if citate:
+            voce["righe_citate"] = citate
 
     config.cartella_quaderno.mkdir(parents=True, exist_ok=True)
     with open(config.file_testimone, "a", encoding="utf-8", newline="\n") as f:
@@ -62,6 +86,7 @@ def _voce_valida(riga: str) -> Messaggio | None:
     """La voce di una riga del testimone, oppure None se la riga non ha il formato previsto.
 
     Una voce valida ha "quando" (testo) e esattamente uno tra "testo" e "privato" (testo).
+    Accanto a "testo" può avere "righe_citate": numeri di riga crescenti, da 1 al numero di righe.
     """
     try:
         voce = json.loads(riga)
@@ -72,6 +97,15 @@ def _voce_valida(riga: str) -> Messaggio | None:
     altri = set(voce) - {"quando"}
     if altri == {"testo"} and isinstance(voce["testo"], str):
         return Messaggio(quando=voce["quando"], testo=voce["testo"])
+    if altri == {"testo", "righe_citate"} and isinstance(voce["testo"], str):
+        citate = voce["righe_citate"]
+        totale = len(_righe(voce["testo"]))
+        if (
+            isinstance(citate, list) and citate
+            and all(isinstance(n, int) and not isinstance(n, bool) and 1 <= n <= totale for n in citate)
+            and citate == sorted(set(citate))
+        ):
+            return Messaggio(quando=voce["quando"], testo=voce["testo"], righe_citate=tuple(citate))
     if altri == {"privato"} and isinstance(voce["privato"], str):
         return Messaggio(quando=voce["quando"], testo=None)
     return None
@@ -106,18 +140,47 @@ def normalizza(testo: str) -> str:
     return " ".join(testo.split())
 
 
-def trova_citazione(messaggi: list[Messaggio], citazione: str) -> Messaggio | None:
+def _senza_segni(messaggio: Messaggio, segno: str) -> list[str]:
+    """Le righe del messaggio, togliendo dalle righe marcate il segno e uno spazio dopo."""
+    righe = _righe(messaggio.testo)
+    for numero in messaggio.righe_citate:
+        riga = righe[numero - 1].lstrip()[len(segno):]
+        righe[numero - 1] = riga[1:] if riga.startswith(" ") else riga
+    return righe
+
+
+def _blocchi_marcati(messaggio: Messaggio, righe: list[str]) -> list[str]:
+    """I gruppi di righe marcate consecutive, ciascuno unito in un solo testo."""
+    blocchi, corrente, precedente = [], [], None
+    for numero in messaggio.righe_citate:
+        if precedente is not None and numero != precedente + 1:
+            blocchi.append("\n".join(corrente))
+            corrente = []
+        corrente.append(righe[numero - 1])
+        precedente = numero
+    if corrente:
+        blocchi.append("\n".join(corrente))
+    return blocchi
+
+
+def trova_citazione(messaggi: list[Messaggio], citazione: str, segno: str) -> Ritrovamento | None:
     """Il primo messaggio che contiene la citazione parola per parola, oppure None.
 
     Il confronto è identico (maiuscole, accenti e punteggiatura compresi), a parte gli
     spazi e gli a capo multipli. La citazione deve iniziare e finire a confine di parola:
-    "orto" non si trova dentro "contorto".
+    "orto" non si trova dentro "contorto". Nelle righe marcate il segno di citazione si può
+    omettere. La citazione è "riportata" se si trova tutta dentro righe marcate consecutive.
     """
     cercata = normalizza(citazione)
     if not cercata:
         return None
     schema = re.compile(r"(?<!\w)" + re.escape(cercata) + r"(?!\w)")
     for messaggio in messaggi:
-        if messaggio.testo is not None and schema.search(normalizza(messaggio.testo)):
-            return messaggio
+        if messaggio.testo is None:
+            continue
+        righe = _senza_segni(messaggio, segno)
+        if schema.search(normalizza("\n".join(righe))) or schema.search(normalizza(messaggio.testo)):
+            blocchi = _blocchi_marcati(messaggio, righe) + _blocchi_marcati(messaggio, _righe(messaggio.testo))
+            riportata = any(schema.search(normalizza(b)) for b in blocchi)
+            return Ritrovamento(messaggio=messaggio, riportata=riportata)
     return None

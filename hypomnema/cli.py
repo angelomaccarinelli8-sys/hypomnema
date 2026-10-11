@@ -67,6 +67,9 @@ def _descrivi(nota: Nota) -> list[str]:
         righe.append(f"verifica: {nota.verifica}")
     righe.append("testo:")
     righe += [f"  {riga}" if riga else "" for riga in nota.testo.split("\n")]
+    if nota.contesto is not None:
+        righe.append("contesto scritto da Claude:")
+        righe += [f"  {riga}" if riga else "" for riga in nota.contesto.split("\n")]
     return righe
 
 

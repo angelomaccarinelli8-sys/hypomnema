@@ -25,15 +25,22 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `04-idea-confermata` | Un'idea di Claude, poi la conferma dell'utente. | Due note: l'idea (0001) resta com'è, la decisione (0002) la cita con `conferma_di`. La ricerca di «orto» le trova entrambe. |
 | `05-ricerca` | Tre note, poi la ricerca di «caffè». | Trova le note 0001 e 0002 (anche «Caffè» con la maiuscola); non trova la 0003, che contiene «caffèlatte» e non la parola esatta «caffè». |
 
-| `06-citazione-trovata` | Testimone acceso. L'utente scrive un messaggio; Claude propone una decisione con la citazione esatta (il messaggio aveva due spazi e un a capo, la citazione uno spazio solo). | Accettata; la nota riporta la citazione e «citazione trovata nel messaggio del ...». |
-| `07-citazione-assente` | Testimone acceso. Una nota dell'utente senza citazione, poi una con parole mai dette. | Entrambe rifiutate, con motivi diversi. |
-| `08-citazione-modificata` | Testimone acceso. L'utente dice «zucchine», la citazione dice «melanzane». | Rifiutata: la citazione non si trova parola per parola. |
+| `06-citazione-trovata` | Testimone acceso. L'utente scrive un messaggio; Claude propone una decisione con le sue parole esatte nel `testo` (il messaggio aveva due spazi e un a capo, il testo uno spazio solo) e una spiegazione nel `contesto`. | Accettata; la nota dice «testo trovato nel messaggio del ...» e mostra a parte il «Contesto scritto da Claude». |
+| `07-citazione-assente` | Testimone acceso. Una nota dell'utente con un riassunto di Claude al posto delle sue parole, poi una con parole mai dette. | Entrambe rifiutate: il testo non si trova nei messaggi (il motivo ricorda che i riassunti vanno nel `contesto`). |
+| `08-citazione-modificata` | Testimone acceso. L'utente dice «zucchine», il testo della nota dice «melanzane». | Rifiutata: il testo non si trova parola per parola. |
 | `09-messaggio-privato` | Testimone acceso. Un messaggio che inizia con `#privato`, poi uno normale; poi una nota che cita il messaggio privato. | Il testimone annota solo data e ora del messaggio privato; la nota è rifiutata perché quelle parole non sono registrate. |
 | `10-testimone-spento` | Testimone spento. Arriva un messaggio, poi una nota dell'utente senza citazione. | Il testimone non registra niente (nessun file); la nota è accettata e marcata «autore non verificato (testimone spento)». |
 | `11-citazione-di-claude-non-verificata` | Testimone spento. Un'idea di Claude con una citazione delle parole dell'utente. | Accettata e marcata «citazione non verificata (testimone spento)». |
+| `12-contesto-di-claude` | Testimone acceso. Nota dell'utente con le sue parole nel `testo` e una spiegazione di Claude su due righe nel `contesto`; poi la ricerca di una parola che c'è solo nel contesto. | Accettata; testo e «Contesto scritto da Claude» separati nel file e nella ricerca. |
+| `13-citazione-riportata` | Testimone acceso. L'utente incolla un passo di un libro (inventato) marcandolo con `>`, più un suo commento; la nota prende solo il passo, con la fonte del libro. | Il testimone annota `righe_citate: [2, 3]`; nota accettata con «citazione riportata dall'utente». |
+| `14-citazione-mista` | Stesso messaggio; la nota prende l'ultima riga del passo e il commento non marcato. | Accettata con «testo trovato nel messaggio del ...», senza la dicitura «riportata». |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
 in più la riga «verifica: autore non verificato (testimone spento)».
 
 I test (`tests/test_esempi.py`) rifanno ogni esempio e confrontano il risultato, carattere per
 carattere, con la cartella `atteso/`.
+
+Dal compito 3, negli esempi 06, 07, 08 e 09 le note dell'utente hanno le parole dell'utente nel
+`testo` (non più nel campo `citazione`, che ora è solo per le note di Claude): cambiano le note
+proposte, i motivi di rifiuto e la riga «verifica» («testo trovato» invece di «citazione trovata»).

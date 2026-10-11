@@ -18,13 +18,18 @@ Una proposta è **una sola nota** scritta in JSON, salvata in UTF-8.
 | Campo | Obbligatorio | Valori ammessi | Significato |
 |---|---|---|---|
 | `data` | sì | `AAAA-MM-GG`, oppure `AAAA-MM-GGThh:mm`, oppure `AAAA-MM-GGThh:mm:ss` | Quando la cosa è stata detta o osservata. |
-| `fonte` | sì | testo su una riga | Da dove viene (per esempio quale chat). |
+| `fonte` | sì | testo su una riga | Da dove viene: quale chat, oppure "dal libro …", "dalla spiegazione di Claude …", "mio pensiero". |
 | `autore` | sì | `utente`, `claude` | Chi l'ha detta. |
 | `tipo` | sì | `osservata`, `dichiarata`, `dedotta` | Quanto è certa: vista, detta esplicitamente, oppure ricavata ragionando. |
 | `natura` | sì | `idea`, `decisione`, `fatto`, `discorso aperto` | Che cosa è. |
-| `testo` | sì | testo, anche su più righe | Il contenuto della nota. |
+| `testo` | sì | testo, anche su più righe | Con `autore: utente`: **le parole esatte dell'utente**, copiate da un suo messaggio. Con `autore: claude`: le parole di Claude. |
+| `contesto` | no; **solo** con `autore: utente` | testo, anche su più righe | Ciò che Claude aggiunge alle parole dell'utente (spiegazioni, di cosa si parlava). Mostrato come "Contesto scritto da Claude". |
+| `citazione` | no; **solo** con `autore: claude` | testo, anche su più righe | Le parole esatte dell'utente su cui Claude basa la sua nota. |
 | `conferma_di` | no | numero di una nota esistente, per esempio `"0001"` | Solo per una decisione che conferma un'idea già nel quaderno. |
-| `citazione` | **sì se `autore` è `utente` e il testimone è acceso**; altrimenti no | testo, anche su più righe | Le parole esatte dell'utente, copiate da un suo messaggio. Vedi «Il testimone». |
+
+Le parole dell'utente e quelle di Claude non stanno mai nello stesso campo: in una nota
+dell'utente sono `testo` (utente) e `contesto` (Claude); in una nota di Claude sono `testo`
+(Claude) e `citazione` (utente).
 
 I valori vanno scritti esattamente così, in minuscolo. Gli spazi all'inizio e alla fine vengono tolti.
 
@@ -35,17 +40,21 @@ La nota viene **rifiutata** se:
 1. manca un campo obbligatorio, oppure è vuoto;
 2. c'è un campo non previsto (per esempio un errore di battitura come `fnte`) o un campo ripetuto;
 3. un campo non è un testo tra virgolette;
-4. un campo diverso da `testo` va a capo;
+4. un campo diverso da `testo`, `contesto` e `citazione` va a capo;
 5. la data non esiste o non è nel formato indicato;
 6. `autore`, `tipo` o `natura` hanno un valore non ammesso;
 7. è una **decisione** scritta da **Claude**: le decisioni le prende solo l'utente;
 8. è una **decisione** non **dichiarata** (una decisione non si osserva e non si deduce: la dice l'utente);
 9. ha `conferma_di` ma non è una decisione, oppure la nota indicata non esiste, oppure non è un'idea;
 10. il file non è JSON valido, non contiene una sola nota, o non è in UTF-8;
-11. con il testimone acceso, ha `autore: utente` ma non ha la `citazione`
-    (vale anche per le decisioni, che sono sempre dell'utente);
-12. con il testimone acceso, ha una `citazione` che non si trova parola per parola in nessun
-    messaggio registrato dal testimone (vale per qualunque autore).
+11. ha `autore: utente` e il campo `citazione` (le sue parole vanno in `testo`), oppure ha
+    `autore: claude` e il campo `contesto` (in una nota di Claude è tutto già di Claude);
+12. `testo` o `contesto` contengono la riga `## Contesto scritto da Claude`, riservata al
+    formato della nota;
+13. con il testimone acceso, ha `autore: utente` e il `testo` non si trova parola per parola in
+    nessun messaggio registrato (vale anche per le decisioni, che sono sempre dell'utente);
+14. con il testimone acceso, è una nota di Claude con una `citazione` che non si trova parola
+    per parola in nessun messaggio registrato.
 
 Tutti i motivi trovati vengono elencati insieme, sempre nello stesso ordine.
 
@@ -53,7 +62,11 @@ Tutti i motivi trovati vengono elencati insieme, sempre nello stesso ordine.
 
 Il testimone è un programma che registra le parole esatte di ogni messaggio dell'utente,
 prima che Claude lo legga. Così lo sportello non deve fidarsi di Claude quando una nota dice
-`autore: utente`: confronta la `citazione` con i messaggi registrati.
+`autore: utente`: confronta il `testo` con i messaggi registrati (e, nelle note di Claude, la
+`citazione`). Qui sotto "citazione" vuol dire il pezzo da cercare, in entrambi i casi.
+
+**Testo incollato.** Un testo incollato dall'utente in un messaggio conta come portato da lui:
+non c'è nessuna regola che lo distingua dal testo scritto. Da dove viene lo dice la `fonte`.
 
 **Confronto (da confermare).** La citazione deve comparire **identica** dentro **un solo** messaggio:
 stesse parole, stesse maiuscole, stessi accenti, stessa punteggiatura. Unica tolleranza: gli spazi,
@@ -61,7 +74,15 @@ le tabulazioni e gli a capo multipli contano come un solo spazio, e quelli all'i
 non contano. La citazione deve iniziare e finire a confine di parola: `ucchine` non si trova
 dentro `zucchine`.
 
-**Testimone spento.** Le note con `autore: utente` vengono accettate anche senza citazione,
+**Il segno `>` (facoltativo).** Le righe di un messaggio che iniziano con il segno di citazione
+(di base `>`, regolabile con `segno_citazione`; contano anche gli spazi prima del segno) sono
+parole riportate da altri. Il testimone registra il messaggio identico e in più annota i numeri
+di quelle righe (`righe_citate`). Nel confronto il segno all'inizio di una riga marcata, e uno
+spazio dopo, si possono omettere. Se la citazione si trova tutta dentro un gruppo di righe
+marcate consecutive, la nota porta la dicitura "citazione riportata dall'utente"; se prende
+anche righe non marcate ("citazione mista") viene verificata come le altre, senza dicitura.
+
+**Testimone spento.** Le note con `autore: utente` vengono accettate senza controllo,
 ma sono marcate in modo visibile come non verificate (vedi sotto).
 
 **Messaggi privati.** Un messaggio che inizia con il prefisso privato (di base `#privato`) non
@@ -71,8 +92,11 @@ Il file del testimone (`testimone.jsonl` nel quaderno) ha una riga JSON per mess
 
 ```
 {"quando": "2026-01-15T10:00:00+01:00", "testo": "Ho deciso: da lunedì annaffio l'orto alle sei."}
-{"quando": "2026-01-15T10:01:00+01:00", "privato": "messaggio privato, non registrato"}
+{"quando": "2026-01-15T10:01:00+01:00", "testo": "Un passo:\n> Un orto non si finisce mai.", "righe_citate": [2]}
+{"quando": "2026-01-15T10:02:00+01:00", "privato": "messaggio privato, non registrato"}
 ```
+
+`righe_citate` compare solo se almeno una riga è marcata; le righe si contano da 1.
 
 ## La riga «verifica»
 
@@ -81,18 +105,21 @@ Lo sportello, e solo lo sportello, aggiunge alla nota salvata una riga `verifica
 
 | Situazione | Riga scritta nella nota |
 |---|---|
-| Testimone acceso, citazione trovata | `- verifica: citazione trovata nel messaggio del <data e ora del messaggio>` |
+| Testimone acceso, nota dell'utente, testo trovato | `- verifica: testo trovato nel messaggio del <data e ora del messaggio>` |
+| Testimone acceso, nota di Claude, citazione trovata | `- verifica: citazione trovata nel messaggio del <data e ora del messaggio>` |
+| Testimone acceso, trovato tutto in righe marcate con `>` | `- verifica: citazione riportata dall'utente, trovata nel messaggio del <data e ora>` |
 | Testimone spento, `autore: utente` | `- verifica: autore non verificato (testimone spento)` |
 | Testimone spento, nota di Claude con citazione | `- verifica: citazione non verificata (testimone spento)` |
 | Nota di Claude senza citazione | nessuna riga |
 
-Nel file della nota la citazione è scritta su una riga sola (spazi e a capo ridotti a uno).
+Nel file della nota la `citazione` (note di Claude) è scritta su una riga sola (spazi e a capo
+ridotti a uno); il `testo` e il `contesto` restano come sono, anche su più righe.
 
 ## Da idea a decisione
 
 Un'idea resta un'idea. Quando l'utente la conferma esplicitamente, si propone una **nuova** nota:
 `natura: decisione`, `autore: utente`, `tipo: dichiarata`, `conferma_di: <numero dell'idea>`
-e, con il testimone acceso, la `citazione` delle parole con cui l'utente conferma.
+e come `testo` le parole esatte con cui l'utente conferma (eventuali spiegazioni in `contesto`).
 L'idea originale non viene toccata: il quaderno conserva sia l'idea sia la decisione.
 
 ## La nota salvata nel quaderno
@@ -109,13 +136,18 @@ Ogni nota accettata riceve il numero successivo (`0001`, `0002`, ...) e diventa 
 - tipo: dichiarata
 - natura: decisione
 - conferma_di: 0001
-- citazione: sì, da domani annaffio la mattina presto
-- verifica: citazione trovata nel messaggio del 2026-01-15T10:04:30+01:00
+- verifica: testo trovato nel messaggio del 2026-01-15T10:04:30+01:00
 
 ## Testo
 
-D'ora in poi annaffio l'orto la mattina presto invece che la sera.
+sì, da domani annaffio la mattina presto
+
+## Contesto scritto da Claude
+
+Conferma dell'idea 0001: annaffiare la mattina presto invece che la sera.
 ```
+
+La sezione "Contesto scritto da Claude" compare solo se la nota ha un `contesto`.
 
 Il file si crea una volta sola: il programma non sovrascrive mai una nota esistente.
 

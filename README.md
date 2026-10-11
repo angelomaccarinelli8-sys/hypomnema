@@ -76,6 +76,12 @@ python -m hypomnema cerca orto
 python -m hypomnema testimone messaggio.json   # di solito lo lancia Claude Code da solo
 ```
 
+Su Windows scrivi `py` al posto di `python`:
+
+```
+py -m hypomnema cerca orto
+```
+
 Una nota proposta è un piccolo file JSON:
 
 ```json
@@ -90,8 +96,59 @@ Una nota proposta è un piccolo file JSON:
 ```
 
 Lo sportello risponde `ACCETTATA` (e dice il numero della nota) oppure `RIFIUTATA` con i motivi.
-Con il testimone acceso, una nota con `autore: utente` deve avere anche il campo `citazione`
-(vedi sotto e [FORMATO.md](FORMATO.md)).
+Il formato completo è in [FORMATO.md](FORMATO.md).
+
+### Le tue parole e quelle di Claude restano separate
+
+In una nota con `autore: utente`, il `testo` sono **le tue parole esatte**. Se Claude vuole
+aggiungere una spiegazione (di cosa si parlava, a cosa ti riferivi), la mette in un campo a parte,
+`contesto`, che nel quaderno compare sotto il titolo "Contesto scritto da Claude":
+
+```json
+{
+  "data": "2026-01-15",
+  "fonte": "chat del 15 gennaio 2026 sul progetto dell'orto",
+  "autore": "utente",
+  "tipo": "dichiarata",
+  "natura": "fatto",
+  "testo": "Il fico va potato solo quando ha perso tutte le foglie.",
+  "contesto": "Detto parlando del fico in vaso sul terrazzo."
+}
+```
+
+Le note scritte da Claude (`autore: claude`) sono tutte parole sue: lì il `contesto` non serve.
+Se si basano su qualcosa che hai detto, Claude può riportare le tue parole nel campo `citazione`.
+
+### Testo incollato: va bene così
+
+Hypomnema è un quaderno di appunti, come gli hypomnemata antichi: raccogliere passi letti
+altrove è proprio lo scopo. Se incolli in un messaggio un testo che non hai scritto tu (un passo
+di un libro, una spiegazione di Claude, un appunto), conta come portato da te nel quaderno: la
+nota è tua (`autore: utente`). **Da dove viene lo dice il campo `fonte`**, per esempio:
+
+- `"fonte": "dal libro «Il quaderno dell'ortolano»"`
+- `"fonte": "dalla spiegazione di Claude del 15 gennaio 2026"`
+- `"fonte": "mio pensiero"`
+
+Non c'è nessuna regola che distingua il testo scritto da quello incollato.
+
+### Il segno `>` per le citazioni (facoltativo)
+
+Per chi vuole essere più preciso: se in un messaggio inizi alcune righe con `>` (il segno
+classico per riportare parole altrui), il testimone registra il messaggio identico e in più annota
+quali righe erano marcate. Una nota il cui testo viene tutto da righe marcate viene salvata con la
+dicitura "citazione riportata dall'utente". Per esempio:
+
+```
+Ho trovato questo passo e lo voglio conservare:
+> Un orto non si finisce mai:
+> si continua, una stagione dopo l'altra.
+Mi sembra il modo giusto di pensarci.
+```
+
+Una nota con il testo "Un orto non si finisce mai: si continua, una stagione dopo l'altra." porta
+la dicitura; una nota che prende anche la riga del tuo commento no. Senza il segno tutto funziona
+come sempre. Il segno si può cambiare in `hypomnema.toml` (`segno_citazione`).
 
 ### Con Claude
 
@@ -106,9 +163,8 @@ controllo, il programma dovrebbe fidarsi.
 
 **La soluzione.** Il testimone è un piccolo programma che Claude Code lancia ogni volta che invii
 un messaggio, *prima* che Claude lo legga. Il programma aggiunge il testo esatto del messaggio, con
-data e ora, in fondo a un file. Da quel momento, una nota con `autore: utente` deve contenere una
-`citazione`, cioè un pezzo delle tue parole copiato parola per parola. Lo sportello la cerca nel
-file del testimone: se non la trova, rifiuta la nota.
+data e ora, in fondo a un file. Lo sportello cerca il `testo` di ogni nota con `autore: utente` in
+quel file, parola per parola: se non lo trova, rifiuta la nota.
 
 **Cosa registra.** Il testo di ogni messaggio che scrivi a Claude in questo progetto, con data e
 ora. Non registra le risposte di Claude. Se incolli un testo nel messaggio, il testimone registra
@@ -125,27 +181,63 @@ ben visibile "autore non verificato (testimone spento)".
 
 **Messaggi privati.** Se un messaggio inizia con `#privato`, il testimone non ne registra il
 testo: annota solo data e ora con "messaggio privato, non registrato". Il prefisso si cambia in
-`hypomnema.toml` (`prefisso_privato`). Attenzione: Claude il messaggio lo legge comunque;
-"privato" vuol dire che non finisce nel testimone, e la skill chiede a Claude di non farne note.
+`hypomnema.toml` (`prefisso_privato`).
+**Attenzione: un messaggio privato non finisce nel testimone, ma Claude lo legge comunque**, come
+ogni altro messaggio. "Privato" vuol dire solo che le sue parole non vengono registrate; la skill
+chiede a Claude di non farne note.
 
 **Come è collegato.** Il file `.claude/settings.json` del progetto contiene l'aggancio
-(`UserPromptSubmit`) che lancia `python -m hypomnema testimone` a ogni messaggio. Lo stesso file
-vieta a Claude di modificare con i suoi strumenti i file della cartella `quaderno/`. Su Windows
-Claude Code lancia l'aggancio con Git Bash: se il comando `python` non esiste, sostituiscilo con
-`py` nel file. Se usi Hypomnema da un'altra cartella o hai spostato il quaderno, copia
-l'aggancio nelle impostazioni di quel progetto e aggiorna il divieto con il nuovo percorso.
+(`UserPromptSubmit`): a ogni messaggio lancia il programma `aggancio_testimone.py` con `py` se
+esiste (Windows), altrimenti con `python3` (macOS e Linux). Lo stesso file vieta a Claude di
+modificare con i suoi strumenti i file della cartella `quaderno/`. Se usi Hypomnema da un'altra
+cartella o hai spostato il quaderno, copia l'aggancio nelle impostazioni di quel progetto e
+aggiorna il divieto con il nuovo percorso.
+
+### Il testimone su Windows
+
+Su Windows Claude Code lancia gli agganci con **Git Bash**, se è installato (arriva insieme a
+Git per Windows), altrimenti con **PowerShell**. L'aggancio di Hypomnema funziona così com'è con
+Git Bash e il comando `py`. Per controllare, in PowerShell, dalla cartella di Hypomnema:
+
+1. `py --version`: deve rispondere Python 3.12 o più recente.
+2. `Test-Path "C:\Program Files\Git\bin\bash.exe"`: `True` vuol dire che Git Bash c'è.
+3. In `hypomnema.toml` metti `attivo = true`.
+4. Prova il programma da solo:
+   `'{"prompt": "prova del testimone"}' | py .\aggancio_testimone.py`
+   poi `Get-Content -Encoding UTF8 quaderno\testimone.jsonl`: l'ultima riga deve contenere
+   `"testo": "prova del testimone"`. (Nella prova usa solo lettere senza accenti: PowerShell
+   può alterarle quando le passa a un programma. Con Claude Code gli accenti arrivano giusti.)
+5. Apri Claude Code nella cartella di Hypomnema, scrivi un messaggio (per esempio
+   "prova dal vero") e ricontrolla il file come al punto 4.
+
+**Se Git Bash non c'è** (il punto 2 risponde `False`), hai due strade:
+- installare Git per Windows (consigliato: serve anche per scaricare gli aggiornamenti), oppure
+- in `.claude/settings.json`, sostituire la riga `"command": ...` dell'aggancio con queste due:
+
+  ```json
+  "command": "py",
+  "args": ["${CLAUDE_PROJECT_DIR}/aggancio_testimone.py"]
+  ```
+
+  Così Claude Code lancia `py` direttamente, senza passare da nessuna shell. Ricorda che hai
+  modificato un file del repository: `git status` lo mostrerà come cambiato.
+
+Se il messaggio non viene registrato, in Claude Code il comando `/hooks` mostra gli agganci
+attivi; un errore del testimone compare come avviso nella chat, ma non blocca mai il messaggio.
 
 **I limiti, detti onestamente.**
 - Il divieto vale per gli strumenti di Claude, non per il computer: tu, o chiunque abbia accesso al
   tuo computer, può aprire e modificare il file del testimone. Anche un programma lanciato da
   Claude (per esempio uno script Python) non è fermato dal divieto: lo impedisce solo la skill, che
   lo vieta a Claude. Per un blocco completo serve il sandbox di Claude Code.
-- La citazione dimostra che hai scritto quelle parole, non che il `testo` della nota le riassuma
-  fedelmente: per questo la citazione resta scritta nella nota, accanto al testo, e la puoi rileggere.
+- Il testimone dimostra che quelle parole erano in un tuo messaggio, non che le abbia scritte tu:
+  un testo incollato conta come portato da te, e da dove viene lo dice la `fonte`.
+- Il `contesto` scritto da Claude non viene controllato: per questo è sempre separato dalle tue
+  parole e porta la scritta "Contesto scritto da Claude".
 
 **Cancellare.** I programmi non cancellano e non riscrivono mai niente. Tu resti sempre libero di
-cancellare i tuoi file, compreso il testimone: le note già salvate restano, ma le citazioni non
-si potranno più controllare.
+cancellare i tuoi file, compreso il testimone: le note già salvate restano, ma le loro parole
+non si potranno più controllare.
 
 ## Esempi
 

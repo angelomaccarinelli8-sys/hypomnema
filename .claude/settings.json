@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd \"$CLAUDE_PROJECT_DIR\" && python -m hypomnema testimone"
+            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PROJECT_DIR}/aggancio_testimone.py\"; else python3 \"${CLAUDE_PROJECT_DIR}/aggancio_testimone.py\"; fi"
           }
         ]
       }
