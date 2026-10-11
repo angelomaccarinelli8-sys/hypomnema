@@ -1,0 +1,33 @@
+$ hypomnema testimone 1-messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 2-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema proponi 3-nota-trovata.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 4-nota-mai-detta.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- il testo non si trova, parola per parola, in nessuna risposta di Claude registrata: copia il pezzo esatto della tua risposta. Nel file delle risposte i blocchi di codice possono essere sostituiti dalla loro impronta: se il pezzo contiene codice, salvalo senza il codice.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema cerca fragole
+Trovata 1 nota con «fragole».
+
+--- Nota 0001 ---
+data: 2026-01-15
+fonte: risposta di Claude del 15 gennaio 2026 sul progetto dell'orto
+autore: claude
+tipo: dedotta
+natura: idea
+da una risposta di Claude: sì
+verifica: testo trovato nella risposta di Claude del 2026-01-15T10:01:00+01:00
+testo:
+  Per proteggere le fragole dalle lumache conviene una barriera di cenere attorno alle piante.
+[codice di uscita: 0]
+

@@ -45,7 +45,10 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 - **Idee separate dalle decisioni**: un'idea diventa decisione solo con conferma esplicita
   dell'utente (nuova nota con `conferma_di`).
 - **Il testimone non si fida di Claude**: il comando `testimone` non scrive mai a schermo (finirebbe
-  nella chat) e non esce mai con codice 2 (bloccherebbe il messaggio dell'utente).
+  nella chat) e non esce mai con codice 2 (bloccherebbe il messaggio dell'utente). Lo stesso vale per
+  `risposte`: con l'aggancio Stop il codice 2 costringerebbe Claude a continuare.
+- **Diario e quaderno sono cose diverse**: il diario è la conversazione grezza registrata dai due
+  testimoni; il quaderno sono le note scelte. Una cosa trovata solo nel diario non è una decisione.
 - **Niente internet** nei programmi.
 - **Le note vere stanno fuori dal repository**: l'aggiornamento della copia in uso non deve mai
   toccarle. Il quaderno di prova `quaderno/` del repository è escluso da git.
@@ -58,10 +61,12 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 
 | File | Ruolo |
 |---|---|
-| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `testimone`, `stato`, `istantanea`, `cambiati`, `controlla`, `confronta`, `impostazioni-claude`), messaggi a schermo. `confronta` (due file identici byte per byte?) non usa la configurazione. |
+| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `testimone`, `stato`, `istantanea`, `cambiati`, `controlla`, `confronta`, `risposte`, `impronta`, `diario`, `impostazioni-claude`), messaggi a schermo. `confronta` (due file identici byte per byte?) non usa la configurazione. |
 | `hypomnema/cambiamenti.py` | `istantanea` e `cambiati` (solo lettura): i file del quaderno da riportare dopo una proposta, con il controllo che sia successo solo ciò che fa lo sportello. |
 | `chat/hypomnema-chat.toml` | Modello della configurazione per la chat: testimone spento e `modalita = "chat"` (note dell'utente marcate «chat, senza testimone»). |
 | `hypomnema/controllo.py` | `controlla` (solo lettura): ogni nota ha la sua riga ACCETTATA nel registro, e viceversa; righe del registro estranee (con il numero) e registro senza a capo finale. Segnala, non ripara. |
+| `hypomnema/risposte.py` | Il testimone delle risposte di Claude (aggancio Stop): solo aggiunta, rispetta i messaggi privati, sostituisce i blocchi di codice con la loro impronta; `impronta`. |
+| `hypomnema/diario.py` | Il diario: messaggi dell'utente e risposte di Claude insieme, in ordine di tempo; ricerca per parola esatta. Solo lettura. |
 | `hypomnema/avvio.py` | Le regole per l'avviabile: divieto di modificare quaderno e configurazione in uso. |
 | `hypomnema/sportello.py` | Legge la proposta, applica le regole, salva la nota, annota nel registro. |
 | `hypomnema/regole.py` | Le regole fisse e i motivi di rifiuto in italiano semplice. |
@@ -71,13 +76,13 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `hypomnema/cercatore.py` | Ricerca per parola esatta, solo lettura. |
 | `hypomnema/testimone.py` | Registra i messaggi dell'utente (solo aggiunta, prefisso privato) e cerca le citazioni. |
 | `aggancio_testimone.py` | Punto d'ingresso del testimone per l'aggancio: funziona da qualunque cartella e shell (Git Bash, PowerShell). |
-| `plugin/` | Plugin di Claude Code caricato solo dall'avviabile (`--plugin-dir`): la skill e l'aggancio del testimone (`hooks/hooks.json`, UserPromptSubmit, con `py` se c'è, altrimenti `python3`). |
+| `plugin/` | Plugin di Claude Code caricato solo dall'avviabile (`--plugin-dir`): la skill e gli agganci dei due testimoni (`hooks/hooks.json`: UserPromptSubmit per i messaggi, Stop per le risposte; con `py` se c'è, altrimenti `python3`). |
 | `windows/` | L'avviabile (`Hypomnema.cmd` → `avvia-hypomnema.ps1`), il modello della configurazione in uso (`hypomnema-uso.toml`) e l'aggiornamento della copia in uso (`aggiorna-hypomnema.cmd`). I `.cmd` sono ASCII con fine riga CRLF; il `.ps1` è UTF-8 con BOM. |
 | `.claude/settings.json` | Nella copia di sviluppo vieta a Claude di modificare `quaderno/`. Nessun aggancio. |
 | `hypomnema/configurazione.py` | Lettura di `hypomnema.toml`. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |
-| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`). |
+| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`); `test_risposte.py` il testimone delle risposte, il filtro sul codice, `impronta`, il diario e `da_risposta`. |
 
 ## Metodo di lavoro
 

@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 
-from hypomnema import quaderno, registro, regole, testimone
+from hypomnema import quaderno, registro, regole, risposte as testimone_risposte, testimone
 from hypomnema.configurazione import Configurazione
 from hypomnema.nota import Nota
 
@@ -67,9 +67,10 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
     registro.controlla_fine(config)
     note_esistenti = quaderno.leggi_note(config)
     messaggi = testimone.leggi_messaggi(config) if config.testimone_attivo else None
+    risposte = testimone_risposte.leggi_risposte(config) if config.risposte_attive else None
     proposta, motivi = _leggi_proposta(contenuto)
     if proposta is not None:
-        motivi = regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione)
+        motivi = regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte)
 
     if motivi:
         registro.annota(config, adesso, origine, None, motivi)
@@ -95,7 +96,11 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         conferma_di=conferma.strip() if conferma is not None else None,
         citazione=citazione,
         contesto=contesto.strip() if contesto is not None else None,
-        verifica=regole.verifica(autore, testo, citazione, messaggi, config.segno_citazione, config.in_chat),
+        da_risposta=proposta["da_risposta"].strip() if proposta.get("da_risposta") is not None else None,
+        verifica=regole.verifica(
+            autore, testo, citazione, messaggi, config.segno_citazione, config.in_chat,
+            da_risposta=proposta.get("da_risposta") is not None, risposte=risposte,
+        ),
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)
     numero = int(id_nota)

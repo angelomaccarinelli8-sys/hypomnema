@@ -17,10 +17,10 @@ testimone, nemmeno tramite comandi o script: il suo valore sta proprio nel fatto
 ## Dove ti trovi
 
 - **In Claude Code** (puoi lanciare comandi sul computer dell'utente): segui le sezioni da
-  «Come lanciare i programmi» alla 5.
+  «Come lanciare i programmi» alla 6.
 - **In una chat di Claude** (claude.ai, app desktop o mobile: non puoi lanciare comandi sul
   computer dell'utente): segui la sezione «Modalità chat» in fondo, e per il resto le sezioni
-  1, 2, 4 e 5. La sezione 0 non vale: in chat il testimone non c'è.
+  1, 2, 4 e 5. Le sezioni 0 e 6 non valgono: in chat non ci sono né i testimoni né il diario.
 
 ## Come lanciare i programmi (Claude Code)
 
@@ -174,7 +174,12 @@ che hai detto»): la nota è **tua**.
 - `tipo`: `dedotta` se era un tuo ragionamento o una proposta, `osservata` se riportava ciò che hai
   visto (un file, un risultato);
 - `natura`: `idea` o `fatto`, **mai** `decisione` (lo sportello la rifiuterebbe);
-- `fonte`: «risposta di Claude del <data> su <argomento>».
+- `fonte`: «risposta di Claude del <data> su <argomento>»;
+- `da_risposta: "sì"`: dice allo sportello che il testo viene da una tua risposta. Se il
+  testimone delle risposte è acceso, lo sportello cerca il testo, parola per parola, nelle tue
+  risposte registrate e rifiuta la nota se non lo trova. Se è spento (o in chat), la nota viene
+  salvata come «risposta non verificata». Nel file delle risposte i blocchi di codice possono
+  essere sostituiti dalla loro impronta: se il pezzo contiene codice, salvalo senza il codice.
 
 **«Questa risposta la faccio mia»** (o simili: «sono d'accordo, salvala come mia», «adotto questa
 parte»), con il pezzo **incollato nel messaggio**: la nota è **dell'utente**, perché l'adozione è sua.
@@ -255,14 +260,39 @@ Quando l'utente conferma:
 L'utente può anche dire "ricorda che ho deciso ...": in quel caso proponi direttamente una
 decisione (`autore: utente`, `tipo: dichiarata`) senza `conferma_di`.
 
+## 6. Cosa ci eravamo detti: quaderno e diario (Claude Code)
+
+Ci sono due posti dove cercare, e non sono la stessa cosa:
+
+- il **quaderno** sono le **note scelte**: `py -m hypomnema cerca <parola>`;
+- il **diario** è **tutta la conversazione registrata** dai testimoni, grezza: i messaggi
+  dell'utente e, se il testimone delle risposte è acceso, le tue risposte.
+  `py -m hypomnema diario <parola>`; con `--intorno` vedi anche il messaggio subito prima e
+  subito dopo ognuno di quelli trovati.
+
+Quando l'utente chiede «cosa ci eravamo detti su…», «cosa ti avevo detto di…», «cosa mi avevi
+consigliato…»:
+
+1. cerca **prima nel quaderno**;
+2. **poi, se serve**, nel diario;
+3. di' sempre **da dove** viene la risposta: «Dalle note del quaderno (scelte da te): …» oppure
+   «Dal diario, cioè dalla conversazione registrata, non da una nota: …». Una nota è una scelta
+   dell'utente; il diario è solo ciò che è stato detto. Una cosa trovata solo nel diario **non**
+   è una decisione, anche se suonava come tale: se l'utente vuole conservarla, proponi una nota.
+
+Puoi usare il diario anche per rileggere cosa avevi consigliato tu e accorgerti se ora stai
+dicendo il contrario: in quel caso dillo all'utente apertamente.
+
 
 ## Modalità chat
 
 Segui questa sezione quando sei in una **chat di Claude** (claude.ai, app desktop o mobile) e non
 in Claude Code. In chat non puoi lanciare comandi sul computer dell'utente, ma hai un **computer di
 lavoro** temporaneo, che sparisce a fine conversazione, dove puoi scaricare i programmi e lanciare
-Python. In chat **il testimone non c'è**: le note dell'utente vengono salvate come «autore non
-verificato (chat, senza testimone)». Tutte le altre regole di questa skill restano uguali, e
+Python. In chat **i testimoni non ci sono**, né quello dei messaggi dell'utente né quello delle
+tue risposte, e quindi non c'è nemmeno il diario: le note dell'utente vengono salvate come «autore
+non verificato (chat, senza testimone)», e le tue note con `da_risposta` come «risposta non
+verificata (chat, senza testimone)». Tutte le altre regole di questa skill restano uguali, e
 **non salvi mai una nota a mano**: passi sempre dallo sportello. Il lavoro sporco lo fai tu;
 all'utente chiedi solo il permesso per la sua cartella.
 

@@ -164,6 +164,7 @@ class TestPluginEModello(unittest.TestCase):
         sviluppo = tomllib.loads((RADICE / "hypomnema.toml").read_text(encoding="utf-8"))
         uso = tomllib.loads(modello.read_text(encoding="utf-8"))
         sviluppo["testimone"]["attivo"] = True
+        sviluppo["risposte"]["attivo"] = True
         self.assertEqual(uso, sviluppo)
 
     def test_file_cmd_ascii_e_crlf(self):

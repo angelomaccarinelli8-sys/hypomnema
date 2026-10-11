@@ -1,0 +1,7 @@
+{
+  "session_id": "sessione-di-esempio",
+  "prompt_id": "turno-1",
+  "hook_event_name": "Stop",
+  "stop_hook_active": false,
+  "last_assistant_message": "Per le fragole serve un terriccio leggero e un po' acido."
+}

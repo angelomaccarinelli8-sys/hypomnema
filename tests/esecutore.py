@@ -13,7 +13,9 @@ il testimone); altrimenti la configurazione di prova qui sotto, con il testimone
 Nei comandi, ``istantanea > FILE`` salva l'uscita in un file della cartella di prova (come la
 shell) e ``cambiati FILE`` lo rilegge da lì. ``proponi FILE`` e ``testimone FILE`` usano file della
 cartella dell'esempio:
-``testimone FILE`` simula un messaggio dell'utente come lo manderebbe Claude Code.
+``testimone FILE`` simula un messaggio dell'utente come lo manderebbe Claude Code, e
+``risposte FILE`` una risposta di Claude alla fine del turno; ``impronta FILE`` usa un file
+della cartella dell'esempio.
 
 I percorsi della cartella temporanea (che cambiano da computer a computer, per esempio
 nell'uscita di ``stato``) vengono scritti come ``<cartella di prova>/...``, e quelli della
@@ -88,7 +90,7 @@ def esegui(esempio: Path, lavoro: Path) -> str:
             # Come nella shell: l'uscita del comando va nel file, dentro la cartella di prova.
             destinazione = lavoro / parti[parti.index(">") + 1]
             parti = parti[:parti.index(">")]
-        if parti[0] in ("proponi", "testimone"):
+        if parti[0] in ("proponi", "testimone", "risposte", "impronta"):
             argomenti = [parti[0], str(esempio / parti[1])]
         elif parti[0] == "cambiati":
             argomenti = [parti[0], str(lavoro / parti[1])]

@@ -26,6 +26,7 @@ Una proposta è **una sola nota** scritta in JSON, salvata in UTF-8.
 | `contesto` | no; **solo** con `autore: utente` | testo, anche su più righe | Ciò che Claude aggiunge alle parole dell'utente (spiegazioni, di cosa si parlava). Mostrato come "Contesto scritto da Claude". |
 | `citazione` | no; **solo** con `autore: claude` | testo, anche su più righe | Le parole esatte dell'utente su cui Claude basa la sua nota. |
 | `conferma_di` | no | numero di una nota esistente, per esempio `"0001"` | Solo per una decisione che conferma un'idea già nel quaderno. |
+| `da_risposta` | no; **solo** con `autore: claude`, mai insieme a `citazione` | `"sì"` | Il `testo` è un pezzo di una risposta di Claude («Salva questa risposta di Claude»). Con il testimone delle risposte acceso, lo sportello lo cerca nelle risposte registrate. |
 
 Le parole dell'utente e quelle di Claude non stanno mai nello stesso campo: in una nota
 dell'utente sono `testo` (utente) e `contesto` (Claude); in una nota di Claude sono `testo`
@@ -112,10 +113,31 @@ Lo sportello, e solo lo sportello, aggiunge alla nota salvata una riga `verifica
 | Testimone spento, nota di Claude con citazione | `- verifica: citazione non verificata (testimone spento)` |
 | Chat di Claude (`modalita = "chat"`), `autore: utente` | `- verifica: autore non verificato (chat, senza testimone)` |
 | Chat di Claude (`modalita = "chat"`), nota di Claude con citazione | `- verifica: citazione non verificata (chat, senza testimone)` |
-| Nota di Claude senza citazione | nessuna riga |
+| Nota di Claude con `da_risposta`, testimone delle risposte acceso, testo trovato | `- verifica: testo trovato nella risposta di Claude del <data e ora>` |
+| Nota di Claude con `da_risposta`, testimone delle risposte spento | `- verifica: risposta non verificata (registro delle risposte spento)` |
+| Nota di Claude con `da_risposta`, chat di Claude | `- verifica: risposta non verificata (chat, senza testimone)` |
+| Nota di Claude senza citazione e senza `da_risposta` | nessuna riga |
 
 Nel file della nota la `citazione` (note di Claude) è scritta su una riga sola (spazi e a capo
 ridotti a uno); il `testo` e il `contesto` restano come sono, anche su più righe.
+
+## Il testimone delle risposte
+
+Se la sezione `[risposte]` della configurazione è accesa, il file delle risposte (`risposte.jsonl`
+nel quaderno) ha una riga JSON per ogni risposta di Claude:
+
+```
+{"quando": "2026-01-15T10:01:00+01:00", "testo": "Il testo della risposta.", "prompt_id": "…"}
+{"quando": "2026-01-15T10:03:00+01:00", "privato": "risposta a un messaggio privato, non registrata"}
+```
+
+`prompt_id` compare se Claude Code lo passa; dal compito 7 il testimone dei messaggi lo registra
+anche accanto ai messaggi dell'utente. Con `ometti_codice = true` ogni blocco di codice diventa
+`[blocco di codice di N righe omesso, impronta XXXXXXXXXXXX]`: l'impronta sono le prime 12 cifre
+esadecimali dello SHA-256 delle righe del blocco, ciascuna seguita da un a capo.
+
+Con `da_risposta`, il testo della nota viene cercato nelle risposte con le stesse regole del
+testimone dei messaggi (identico a parte spazi e a capo multipli, dentro una sola risposta).
 
 ## Da idea a decisione
 

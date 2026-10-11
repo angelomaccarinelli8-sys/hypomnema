@@ -28,7 +28,7 @@ TITOLO_CONTESTO = "## Contesto scritto da Claude"
 # Ordine fisso dei campi di intestazione nel file Markdown.
 # "conferma_di", "citazione" e "verifica" compaiono solo se presenti.
 CAMPI_SEMPRE_PRESENTI = ("data", "fonte", "autore", "tipo", "natura")
-CAMPI_INTESTAZIONE = CAMPI_SEMPRE_PRESENTI + ("conferma_di", "citazione", "verifica")
+CAMPI_INTESTAZIONE = CAMPI_SEMPRE_PRESENTI + ("conferma_di", "citazione", "da_risposta", "verifica")
 
 
 class NotaIlleggibile(Exception):
@@ -47,6 +47,8 @@ class Nota:
     conferma_di: str | None = None
     citazione: str | None = None
     contesto: str | None = None
+    # "sì" in una nota di Claude che salva un pezzo di una sua risposta.
+    da_risposta: str | None = None
     # Scritta dallo sportello, non da Claude: dice se l'autore è stato verificato dal testimone.
     verifica: str | None = None
 

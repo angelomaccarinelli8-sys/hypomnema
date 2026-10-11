@@ -88,8 +88,8 @@ computer: legge e scrive solo lì, e non copia il file del testimone (`testimone
 
 **I limiti.**
 
-- **Niente testimone.** In chat i tuoi messaggi arrivano solo a Claude: nessun programma li
-  registra. Le tue note sono salvate come «autore non verificato (chat, senza testimone)», così si
+- **Niente testimoni e niente diario.** In chat i tuoi messaggi e le risposte di Claude arrivano
+  solo a Claude: nessun programma li registra. Le tue note sono salvate come «autore non verificato (chat, senza testimone)», così si
   distinguono da quelle dell'avviabile con il testimone spento («testimone spento»).
 - **Serve l'app desktop di Claude aperta e collegata al computer**: è lei che dà a Claude gli
   strumenti per la tua cartella.
@@ -279,6 +279,8 @@ python -m hypomnema istantanea > prima.json    # chat: fotografa il quaderno pri
 python -m hypomnema cambiati prima.json        # chat: quali file riportare sul computer
 python -m hypomnema controlla                  # note e registro corrispondono? righe estranee?
 python -m hypomnema confronta a.md b.md        # due file identici byte per byte?
+python -m hypomnema impronta giorni.py         # l'impronta di un file, come per i blocchi di codice omessi
+python -m hypomnema diario fragole --intorno   # cerca nel diario, con i messaggi vicini
 ```
 
 Su Windows scrivi `py` al posto di `python`:
@@ -347,6 +349,10 @@ Puoi chiedere a Claude di conservare una sua risposta, in due modi:
   (`autore: utente`), con la fonte che dice da quale risposta di Claude viene (per esempio
   «risposta di Claude dell'11 ottobre 2026»). Può essere anche una decisione, perché l'adozione è
   tua. Con il testimone acceso il testo incollato viene verificato come sempre.
+
+Nel primo caso la nota ha il campo `da_risposta: "sì"`: con il testimone delle risposte acceso
+(vedi «Il testimone delle risposte e il diario») lo sportello controlla che il testo sia davvero
+in una risposta di Claude registrata; altrimenti la nota è salvata come «risposta non verificata».
 
 Indica o incolla **solo il pezzo che conta**, non tutta la risposta: le note brevi si ritrovano
 meglio.
@@ -473,6 +479,55 @@ attivi; un errore del testimone compare come avviso nella chat, ma non blocca ma
 **Cancellare.** I programmi non cancellano e non riscrivono mai niente. Tu resti sempre libero di
 cancellare i tuoi file, compreso il testimone: le note già salvate restano, ma le loro parole
 non si potranno più controllare.
+
+## Il testimone delle risposte e il diario
+
+Il testimone registra solo metà della conversazione: le tue parole. Il **testimone delle risposte**
+registra l'altra metà: il testo di ogni risposta di Claude, con data e ora. Così, in una sessione
+nuova, Claude può rileggere cosa ti aveva consigliato e accorgersi se si contraddice.
+
+- **Diario** = tutto quello che tu e Claude vi siete detti, grezzo e completo, che si allunga
+  soltanto (i due file dei testimoni).
+- **Quaderno** = le note scelte.
+
+**Come funziona.** Quando Claude ha finito di rispondere, Claude Code lancia l'aggancio `Stop` del
+plugin (`plugin/hooks/hooks.json`), che passa al programma il testo dell'ultima risposta. Il
+programma lo aggiunge in fondo al file `risposte.jsonl` del quaderno. Non scrive niente a schermo e
+non blocca mai la sessione. Funziona solo in Claude Code, aperto con l'avviabile; **in chat non
+esiste**, come il primo testimone.
+
+**Come si accende.** Nella configurazione, sezione `[risposte]`: `attivo = true` per accenderlo,
+`false` per spegnerlo, separatamente dal testimone dei tuoi messaggi. Se la sezione manca, è
+spento. Funziona solo insieme al testimone dei tuoi messaggi: gli serve sapere a quale messaggio
+Claude risponde, per rispettare i messaggi privati. **La tua configurazione in uso creata prima di
+questa versione non ha la sezione**: per accenderlo copia la sezione `[risposte]` da
+`windows/hypomnema-uso.toml` in fondo a `%USERPROFILE%\Hypomnema\hypomnema.toml`.
+
+**Messaggi privati.** Se il tuo messaggio comincia con `#privato`, anche la risposta di Claude a
+quel messaggio non viene registrata: resta solo data e ora con "risposta a un messaggio privato, non
+registrata". Se il programma non riesce a capire a quale messaggio risponde Claude, per prudenza fa
+lo stesso.
+
+**Il filtro sul codice.** Con `ometti_codice = true` (di base) ogni blocco di codice della risposta
+(tra tre apici inversi) viene registrato come una riga:
+`[blocco di codice di N righe omesso, impronta XXXXXXXXXXXX]`. Serve a non riempire la ricerca di
+codice. L'impronta (le prime 12 cifre dello SHA-256 del contenuto del blocco) è sempre la stessa
+per lo stesso blocco: per sapere se un blocco omesso corrisponde a un file, `py -m hypomnema
+impronta <file>`. Il file deve avere gli "a capo" di Linux e macOS (come tutti i file di questo
+repository). Con `ometti_codice = false` il blocco viene registrato intero.
+
+**Leggere il diario.** `py -m hypomnema diario <parola>` trova la parola (esatta, maiuscole
+indifferenti) nei tuoi messaggi e nelle risposte di Claude, e li mostra in ordine di tempo con
+data, ora e chi parla. Con `--intorno` mostra anche il messaggio subito prima e subito dopo.
+
+**I limiti, detti onestamente.**
+- Il divieto di modifica vale anche per questo file, perché sta nel quaderno: Claude non può
+  toccarlo con i suoi strumenti, ma chi ha accesso al computer sì, come per il primo testimone.
+- Se interrompi una risposta di Claude, Claude Code non lancia l'aggancio: quella risposta non viene
+  registrata. Lo stesso succede se la risposta finisce per un errore del servizio.
+- Il programma lega la risposta al tuo messaggio con il codice del turno che Claude Code gli passa
+  (`prompt_id`); se manca, usa l'ultimo messaggio registrato. Provato con Claude Code 2.1.274: il
+  codice è lo stesso per il messaggio e per la sua risposta.
 
 ## Esempi
 
