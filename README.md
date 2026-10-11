@@ -1,5 +1,7 @@
 # Hypomnema
 
+Stato: prototipo in evoluzione, usato ogni giorno dall'autore.
+
 **Una memoria permanente per Claude, scritta in file Markdown sul tuo computer.**
 
 Ogni chat con Claude riparte da zero. Hypomnema gli dà un quaderno: a inizio chat Claude
@@ -7,6 +9,15 @@ rilegge le note utili, durante la chat propone cosa ricordare. Ma **non è Claud
 cosa entra**: lo decide un piccolo programma con regole fisse, che dà sempre lo stesso risultato.
 
 > Claude propone le note, i programmi decidono se entrano.
+
+> **Provalo in 2 minuti**
+>
+> 1. Scarica [`hypomnema-skill.zip`](https://github.com/angelomaccarinelli8-sys/hypomnema/releases/download/v0.1.0/hypomnema-skill.zip).
+> 2. Caricalo tra le skill nelle impostazioni di Claude.
+> 3. Apri una chat e scrivi «Usiamo Hypomnema».
+>
+> Con l'app desktop di Claude collegata al computer il quaderno resta salvato; senza, è una prova
+> che sparisce a fine chat.
 
 ## Da dove viene il nome
 
