@@ -49,8 +49,11 @@ def carica(percorso: str | None = None) -> Configurazione:
             f"oppure indica il file con --config o con la variabile {VARIABILE_AMBIENTE}."
         )
     try:
-        with open(file, "rb") as f:
-            dati = tomllib.load(f)
+        # "utf-8-sig" accetta anche il segno invisibile (BOM) che alcuni programmi Windows,
+        # come PowerShell 5.1, mettono all'inizio dei file salvati in UTF-8.
+        dati = tomllib.loads(file.read_text(encoding="utf-8-sig"))
+    except UnicodeDecodeError:
+        raise ErroreConfigurazione(f"il file «{file}» non è salvato in UTF-8: salvalo in UTF-8 e riprova.")
     except tomllib.TOMLDecodeError as errore:
         raise ErroreConfigurazione(f"il file «{file}» non è scritto correttamente: {errore}")
 

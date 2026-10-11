@@ -248,6 +248,20 @@ class TestConfigurazione(unittest.TestCase):
             with self.assertRaises(configurazione.ErroreConfigurazione):
                 configurazione.carica(str(file))
 
+    def test_file_con_bom_accettato(self):
+        # PowerShell 5.1 con "Set-Content -Encoding utf8" salva il file con il BOM.
+        with tempfile.TemporaryDirectory() as tmp:
+            file = Path(tmp) / "hypomnema.toml"
+            file.write_bytes(b"\xef\xbb\xbf" + CONFIG_DI_PROVA.encode("utf-8"))
+            self.assertEqual(configurazione.carica(str(file)).cifre_numero_nota, 4)
+
+    def test_file_non_utf8_segnalato(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            file = Path(tmp) / "hypomnema.toml"
+            file.write_bytes(CONFIG_DI_PROVA.replace("quaderno", "quadernò").encode("latin-1"))
+            with self.assertRaisesRegex(configurazione.ErroreConfigurazione, "UTF-8"):
+                configurazione.carica(str(file))
+
     def test_file_del_repository_valido(self):
         config = configurazione.carica(str(RADICE / "hypomnema.toml"))
         self.assertEqual(config.cifre_numero_nota, 4)
