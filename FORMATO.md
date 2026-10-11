@@ -113,6 +113,8 @@ Lo sportello, e solo lo sportello, aggiunge alla nota salvata una riga `verifica
 | Testimone spento, nota di Claude con citazione | `- verifica: citazione non verificata (testimone spento)` |
 | Chat di Claude (`modalita = "chat"`), `autore: utente` | `- verifica: autore non verificato (chat, senza testimone)` |
 | Chat di Claude (`modalita = "chat"`), nota di Claude con citazione | `- verifica: citazione non verificata (chat, senza testimone)` |
+| Testimoni in pausa (`/hypomnema:pausa`), `autore: utente` | `- verifica: autore non verificato (testimoni in pausa)` |
+| Testimoni in pausa, nota di Claude con citazione o con `da_risposta` | `- verifica: citazione non verificata (testimoni in pausa)` oppure `- verifica: risposta non verificata (testimoni in pausa)` |
 | Nota di Claude con `da_risposta`, testimone delle risposte acceso, testo trovato | `- verifica: testo trovato nella risposta di Claude del <data e ora>` |
 | Nota di Claude con `da_risposta`, testimone delle risposte spento | `- verifica: risposta non verificata (registro delle risposte spento)` |
 | Nota di Claude con `da_risposta`, chat di Claude | `- verifica: risposta non verificata (chat, senza testimone)` |

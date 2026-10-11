@@ -99,7 +99,7 @@ anche negli altri progetti. Quando non vuoi:
 
 - `/hypomnema:pausa` mette in pausa i testimoni: da lì in poi annotano solo data e ora, senza testo,
   finché non scrivi `/hypomnema:riprendi`;
-- le note che salvi in pausa sono marcate «autore non verificato (testimone spento)»;
+- le note che salvi in pausa sono marcate «autore non verificato (testimoni in pausa)»;
 - `stato` dice «IN PAUSA dal …», e a ogni nuova sessione un avviso te lo ricorda;
 - per un solo messaggio basta cominciarlo con `#privato`;
 - per spegnerli del tutto: `attivo = false` nella configurazione.
