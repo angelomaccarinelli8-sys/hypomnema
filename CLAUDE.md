@@ -58,16 +58,16 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 
 | File | Ruolo |
 |---|---|
-| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `testimone`, `stato`, `istantanea`, `cambiati`, `controlla`, `impostazioni-claude`), messaggi a schermo. |
+| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `testimone`, `stato`, `istantanea`, `cambiati`, `controlla`, `confronta`, `impostazioni-claude`), messaggi a schermo. `confronta` (due file identici byte per byte?) non usa la configurazione. |
 | `hypomnema/cambiamenti.py` | `istantanea` e `cambiati` (solo lettura): i file del quaderno da riportare dopo una proposta, con il controllo che sia successo solo ciò che fa lo sportello. |
 | `chat/hypomnema-chat.toml` | Modello della configurazione per la chat: testimone spento e `modalita = "chat"` (note dell'utente marcate «chat, senza testimone»). |
-| `hypomnema/controllo.py` | `controlla` (solo lettura): ogni nota ha la sua riga ACCETTATA nel registro, e viceversa. Segnala, non ripara. |
+| `hypomnema/controllo.py` | `controlla` (solo lettura): ogni nota ha la sua riga ACCETTATA nel registro, e viceversa; righe del registro estranee (con il numero) e registro senza a capo finale. Segnala, non ripara. |
 | `hypomnema/avvio.py` | Le regole per l'avviabile: divieto di modificare quaderno e configurazione in uso. |
 | `hypomnema/sportello.py` | Legge la proposta, applica le regole, salva la nota, annota nel registro. |
 | `hypomnema/regole.py` | Le regole fisse e i motivi di rifiuto in italiano semplice. |
 | `hypomnema/nota.py` | La nota e il suo formato Markdown (scrittura e rilettura). |
 | `hypomnema/quaderno.py` | Elenco delle note salvate e numero della prossima. |
-| `hypomnema/registro.py` | Registro degli ingressi, solo aggiunta; le due forme di riga (ACCETTATA, RIFIUTATA) che riconoscono `cambiati` e `controlla`. |
+| `hypomnema/registro.py` | Registro degli ingressi, solo aggiunta; le due forme di riga (ACCETTATA, RIFIUTATA) che riconoscono `cambiati` e `controlla`; lo sportello si ferma se il registro non finisce con un a capo. |
 | `hypomnema/cercatore.py` | Ricerca per parola esatta, solo lettura. |
 | `hypomnema/testimone.py` | Registra i messaggi dell'utente (solo aggiunta, prefisso privato) e cerca le citazioni. |
 | `aggancio_testimone.py` | Punto d'ingresso del testimone per l'aggancio: funziona da qualunque cartella e shell (Git Bash, PowerShell). |

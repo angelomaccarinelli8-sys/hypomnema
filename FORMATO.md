@@ -165,6 +165,11 @@ accettato o rifiutato. Si apre solo in aggiunta.
 
 L'ora è quella del computer al momento del passaggio. `da:` è il nome del file proposto,
 oppure `(ingresso diretto)` se la nota arriva dall'ingresso standard.
+Se il registro esiste e non finisce con un "a capo" (qualcuno l'ha toccato a mano), lo sportello
+non scrive niente, né la nota né la riga, e risponde con un errore: la sua riga si attaccherebbe a
+quella scritta a mano. Non ripara il registro da solo. `controlla` mostra le righe che non hanno la
+forma di una riga dello sportello, con il loro numero.
+
 Ogni passaggio occupa sempre una sola riga: se il nome del file o un motivo contengono un
 "a capo" (per esempio un nome di campo inventato), al suo posto viene scritto il segno ⏎.
 Lo stesso vale per i motivi di rifiuto mostrati a schermo: ogni motivo sta su una riga.

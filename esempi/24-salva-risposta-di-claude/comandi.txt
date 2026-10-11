@@ -1,0 +1,2 @@
+proponi 1-idea.json
+proponi 2-come-decisione.json

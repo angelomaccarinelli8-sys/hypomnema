@@ -1,0 +1,5 @@
+{
+  "session_id": "sessione-di-esempio",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "Questa risposta la faccio mia: per proteggere le fragole dalle lumache conviene una barriera di cenere attorno alle piante."
+}

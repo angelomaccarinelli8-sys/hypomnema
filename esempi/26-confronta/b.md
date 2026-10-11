@@ -1,0 +1,1 @@
+- 2026-01-15T10:00:00+01:00 | ACCETTATA | nota 0001 | da: proposta.json

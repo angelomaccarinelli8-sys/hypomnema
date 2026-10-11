@@ -1,0 +1,11 @@
+$ hypomnema proponi nota.json
+ERRORE: il registro è stato toccato a mano: non finisce con un a capo (<cartella di prova>/quaderno/registro.md). Non ho scritto niente, né la nota né la riga nel registro. Controlla l'ultima riga del registro e sistemala tu: lo sportello non lo ripara da solo.
+[codice di uscita: 2]
+
+$ hypomnema controlla
+ATTENZIONE: note e registro non corrispondono.
+- registro, riga 6: «riga scritta a mano» non è una riga dello sportello.
+- il registro non finisce con un a capo: lo sportello non scriverà finché non è sistemato.
+Non è stato riparato niente: decide l'utente.
+[codice di uscita: 1]
+

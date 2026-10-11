@@ -1,0 +1,3 @@
+confronta a.md b.md
+confronta a.md c.md
+confronta a.md manca.md

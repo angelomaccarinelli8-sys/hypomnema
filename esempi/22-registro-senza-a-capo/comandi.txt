@@ -1,0 +1,2 @@
+proponi nota.json
+controlla
