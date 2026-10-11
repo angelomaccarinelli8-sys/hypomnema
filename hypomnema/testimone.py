@@ -1,7 +1,7 @@
 """Il testimone: registra le parole esatte dei messaggi dell'utente.
 
 Claude Code lancia ``hypomnema testimone`` ogni volta che l'utente invia un messaggio,
-prima che Claude lo legga (aggancio "UserPromptSubmit" in ``.claude/settings.json``).
+prima che Claude lo legga (aggancio "UserPromptSubmit" in ``plugin/hooks/hooks.json``).
 Il programma riceve il messaggio in formato JSON e lo aggiunge in fondo al file del
 testimone, una riga JSON per messaggio. Il file si apre solo in aggiunta.
 

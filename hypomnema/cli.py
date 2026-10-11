@@ -4,6 +4,8 @@
     python -m hypomnema proponi -               # legge la nota dall'ingresso standard
     python -m hypomnema cerca parola            # cerca le note che contengono la parola
     python -m hypomnema testimone               # registra un messaggio (lo lancia Claude Code)
+    python -m hypomnema stato                   # dice se il testimone è acceso e l'ultimo messaggio
+    python -m hypomnema impostazioni-claude     # le regole che l'avviabile passa a Claude Code
 
 Codici di uscita: 0 = tutto bene, 1 = nota rifiutata, 2 = errore di uso o di configurazione.
 Il comando "testimone" non esce mai con 2: per Claude Code vorrebbe dire bloccare il
@@ -11,12 +13,13 @@ messaggio dell'utente. In caso di errore esce con 1 e lo scrive sull'uscita degl
 """
 
 import argparse
+import json
 import sys
 from datetime import datetime
 from pathlib import Path
 from typing import TextIO
 
-from hypomnema import __version__, cercatore, configurazione, registro, sportello, testimone
+from hypomnema import __version__, avvio, cercatore, configurazione, registro, sportello, testimone
 from hypomnema.nota import Nota, NotaIlleggibile
 
 ORIGINE_DIRETTA = "(ingresso diretto)"
@@ -47,6 +50,14 @@ def _parser() -> argparse.ArgumentParser:
         "file", nargs="?", default="-",
         help="file JSON con il messaggio, come lo manda Claude Code (di base: ingresso standard)",
     )
+
+    comandi.add_parser(
+        "stato", help="dice se il testimone è acceso, dov'è il quaderno e l'ultimo messaggio registrato"
+    )
+    comandi.add_parser(
+        "impostazioni-claude",
+        help="scrive le regole che vietano a Claude di modificare quaderno e configurazione (per l'avviabile)",
+    )
     return parser
 
 
@@ -66,10 +77,10 @@ def _descrivi(nota: Nota) -> list[str]:
     if nota.verifica is not None:
         righe.append(f"verifica: {nota.verifica}")
     righe.append("testo:")
-    righe += [f"  {riga}" if riga else "" for riga in nota.testo.split("\n")]
+    righe += _rientrato(nota.testo)
     if nota.contesto is not None:
         righe.append("contesto scritto da Claude:")
-        righe += [f"  {riga}" if riga else "" for riga in nota.contesto.split("\n")]
+        righe += _rientrato(nota.contesto)
     return righe
 
 
@@ -118,6 +129,50 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
         print("", file=uscita)
         for riga in _descrivi(nota):
             print(riga, file=uscita)
+    return 0
+
+
+def _rientrato(testo: str) -> list[str]:
+    return [f"  {riga}" if riga else "" for riga in testo.split("\n")]
+
+
+def _stato(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura: non crea e non modifica niente."""
+    righe = [
+        f"Configurazione: {configurazione.trova(argomenti.config).resolve()}",
+        f"Quaderno: {config.cartella_quaderno}",
+    ]
+    if config.testimone_attivo:
+        righe.append("Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).")
+    else:
+        righe.append(
+            "Testimone: SPENTO (nella configurazione attivo = false): i messaggi non vengono registrati "
+            "e le note con autore «utente» saranno marcate «autore non verificato»."
+        )
+    righe.append(f"File del testimone: {config.file_testimone}")
+    messaggi = testimone.leggi_messaggi(config)
+    righe.append(f"Messaggi registrati: {len(messaggi)}")
+    if not messaggi:
+        righe.append("Ultimo messaggio registrato: nessuno.")
+    elif messaggi[-1].testo is None:
+        righe.append(f"Ultimo messaggio registrato: {messaggi[-1].quando} ({testimone.DICITURA_PRIVATO}).")
+    else:
+        righe.append(f"Ultimo messaggio registrato: {messaggi[-1].quando}")
+        righe.append("Testo dell'ultimo messaggio:")
+        righe += _rientrato(messaggi[-1].testo)
+    for riga in righe:
+        print(riga, file=uscita)
+    return 0
+
+
+def _impostazioni_claude(argomenti, config, uscita: TextIO) -> int:
+    try:
+        impostazioni = avvio.impostazioni_claude(config, configurazione.trova(argomenti.config))
+    except avvio.ErroreAvvio as errore:
+        print(f"ERRORE: {errore}", file=uscita)
+        return 2
+    # Solo caratteri ASCII: il testo passa intatto anche dalla riga di comando di Windows.
+    print(json.dumps(impostazioni, ensure_ascii=True), file=uscita)
     return 0
 
 
@@ -173,6 +228,10 @@ def main(
     try:
         if argomenti.comando == "proponi":
             return _proponi(argomenti, config, adesso, uscita)
+        if argomenti.comando == "stato":
+            return _stato(argomenti, config, uscita)
+        if argomenti.comando == "impostazioni-claude":
+            return _impostazioni_claude(argomenti, config, uscita)
         return _cerca(argomenti, config, uscita)
     except NotaIlleggibile as errore:
         print(f"ERRORE: il quaderno contiene un file non valido: {errore}. "

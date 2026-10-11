@@ -10,12 +10,17 @@ il testimone); altrimenti la configurazione di prova qui sotto, con il testimone
 Nei comandi, ``proponi FILE`` e ``testimone FILE`` usano file della cartella dell'esempio:
 ``testimone FILE`` simula un messaggio dell'utente come lo manderebbe Claude Code.
 
+I percorsi della cartella temporanea (che cambiano da computer a computer, per esempio
+nell'uscita di ``stato``) vengono scritti come ``<cartella di prova>/...``, con le barre
+"/" anche su Windows.
+
 Per avere risultati ripetibili l'ora di ogni comando è fissa:
 il primo comando avviene il 15 gennaio 2026 alle 10:00 (ora italiana),
 ogni comando successivo un minuto dopo.
 """
 
 import io
+import re
 import shlex
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
@@ -39,6 +44,15 @@ file = "testimone.jsonl"
 prefisso_privato = "#privato"
 segno_citazione = ">"
 """
+
+
+CARTELLA_DI_PROVA = "<cartella di prova>"
+
+
+def senza_cartella_di_prova(testo: str, lavoro: Path) -> str:
+    radice = str(lavoro.resolve())
+    schema = re.compile(re.escape(radice) + r"[^\s«»]*")
+    return schema.sub(lambda m: CARTELLA_DI_PROVA + m.group(0)[len(radice):].replace("\\", "/"), testo)
 
 
 def elenco_esempi() -> list[Path]:
@@ -67,7 +81,7 @@ def esegui(esempio: Path, lavoro: Path) -> str:
             errori=uscita,
         )
         uscita.write(f"[codice di uscita: {codice}]\n\n")
-    return uscita.getvalue()
+    return senza_cartella_di_prova(uscita.getvalue(), lavoro)
 
 
 def file_di(cartella: Path) -> dict[str, str]:

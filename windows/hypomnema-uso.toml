@@ -1,0 +1,38 @@
+# Configurazione IN USO di Hypomnema (modello).
+# La prima volta l'avviabile copia questo file in  %USERPROFILE%\Hypomnema\hypomnema.toml
+# (per esempio C:\Users\nome\Hypomnema\hypomnema.toml). Da quel momento conta solo la copia:
+# modifica quella, non questo modello. L'aggiornamento del programma non la tocca mai.
+# I percorsi relativi partono dalla cartella che contiene la copia.
+
+[quaderno]
+# Cartella dove vivono le note, il registro e il testimone: di base
+# %USERPROFILE%\Hypomnema\quaderno, fuori dalla cartella del programma.
+# Puoi mettere un percorso assoluto, per esempio "D:/Appunti/quaderno".
+# Attenzione: una cartella sincronizzata (OneDrive, Dropbox...) copia il quaderno su internet.
+cartella = "quaderno"
+
+# Sottocartella del quaderno con una nota per file.
+cartella_note = "note"
+
+# File del registro degli ingressi (si allunga soltanto).
+file_registro = "registro.md"
+
+# Quante cifre usare per il numero delle note (4 => 0001, 0002, ...).
+cifre_numero_nota = 4
+
+[testimone]
+# Il testimone registra le parole esatte di ogni tuo messaggio a Claude, con data e ora,
+# in un file dentro la cartella del quaderno. Registra solo nelle sessioni aperte con
+# l'avviabile. Qui e' acceso: scrivi false per spegnerlo anche nell'avviabile.
+attivo = true
+
+# File del testimone, dentro la cartella del quaderno (si allunga soltanto).
+file = "testimone.jsonl"
+
+# I messaggi che iniziano con questo prefisso non vengono registrati:
+# il testimone annota solo data e ora con "messaggio privato, non registrato".
+prefisso_privato = "#privato"
+
+# Facoltativo: le righe di un messaggio che iniziano con questo segno sono parole riportate
+# da altri (per esempio un passo di un libro).
+segno_citazione = ">"

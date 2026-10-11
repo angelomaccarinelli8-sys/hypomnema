@@ -1,6 +1,6 @@
 """Punto d'ingresso del testimone per l'aggancio di Claude Code.
 
-Claude Code lo lancia a ogni messaggio dell'utente (vedi ``.claude/settings.json``) con il
+Claude Code lo lancia a ogni messaggio dell'utente (vedi ``plugin/hooks/hooks.json``) con il
 percorso completo, per esempio ``py "C:/.../hypomnema/aggancio_testimone.py"``: così funziona
 qualunque sia la cartella corrente e qualunque sia la shell (Git Bash o PowerShell).
 
