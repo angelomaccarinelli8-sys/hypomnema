@@ -5,10 +5,15 @@ Leggi questo file all'inizio di ogni sessione.
 ## Cos'è
 
 Hypomnema ("promemoria" in greco antico) dà a Claude una memoria permanente tra una chat e
-l'altra, in file Markdown sul computer dell'utente. È fatto di una skill (`skill/hypomnema/SKILL.md`)
+l'altra, in file Markdown sul computer dell'utente. È fatto di una skill (`plugin/skills/hypomnema/SKILL.md`)
 e di piccoli programmi Python (`hypomnema/`): lo **sportello** (`proponi`), il **registro degli
-ingressi**, il **cercatore** (`cerca`) e il **testimone** (`testimone`), che registra le parole
-esatte dell'utente perché lo sportello possa verificare le note con autore "utente".
+ingressi**, il **cercatore** (`cerca`), il **testimone** (`testimone`), che registra le parole
+esatte dell'utente perché lo sportello possa verificare le note con autore "utente", e lo
+**stato** (`stato`), che dice se il testimone è acceso e qual è l'ultimo messaggio registrato.
+
+Per l'uso quotidiano su Windows c'è l'**avviabile** (`windows/Hypomnema.cmd`): apre Claude Code
+con il plugin (skill e testimone) e con il quaderno in uso fuori dal repository
+(`%USERPROFILE%\Hypomnema`). Fuori dall'avviabile Hypomnema è spento.
 
 Divisione dei compiti, il cuore del progetto: **Claude propone le note, i programmi decidono
 se entrano.** Claude non scrive mai direttamente nei file del quaderno.
@@ -36,6 +41,8 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 - **Il testimone non si fida di Claude**: il comando `testimone` non scrive mai a schermo (finirebbe
   nella chat) e non esce mai con codice 2 (bloccherebbe il messaggio dell'utente).
 - **Niente internet** nei programmi.
+- **Le note vere stanno fuori dal repository**: l'aggiornamento della copia in uso non deve mai
+  toccarle. Il quaderno di prova `quaderno/` del repository è escluso da git.
 - **Impostazioni in `hypomnema.toml`**, mai valori fissi nel codice. I valori ammessi per
   autore/tipo/natura non sono impostazioni ma regole: stanno in `hypomnema/regole.py`.
 - Python 3.12 o superiore (compatibile con 3.14), solo libreria standard, funzionante su
@@ -45,7 +52,8 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 
 | File | Ruolo |
 |---|---|
-| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`), messaggi a schermo. |
+| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `testimone`, `stato`, `impostazioni-claude`), messaggi a schermo. |
+| `hypomnema/avvio.py` | Le regole per l'avviabile: divieto di modificare quaderno e configurazione in uso. |
 | `hypomnema/sportello.py` | Legge la proposta, applica le regole, salva la nota, annota nel registro. |
 | `hypomnema/regole.py` | Le regole fisse e i motivi di rifiuto in italiano semplice. |
 | `hypomnema/nota.py` | La nota e il suo formato Markdown (scrittura e rilettura). |
@@ -54,11 +62,13 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `hypomnema/cercatore.py` | Ricerca per parola esatta, solo lettura. |
 | `hypomnema/testimone.py` | Registra i messaggi dell'utente (solo aggiunta, prefisso privato) e cerca le citazioni. |
 | `aggancio_testimone.py` | Punto d'ingresso del testimone per l'aggancio: funziona da qualunque cartella e shell (Git Bash, PowerShell). |
-| `.claude/settings.json` | Aggancia il testimone a ogni messaggio (UserPromptSubmit, con `py` se c'è, altrimenti `python3`) e vieta a Claude di modificare `quaderno/`. |
+| `plugin/` | Plugin di Claude Code caricato solo dall'avviabile (`--plugin-dir`): la skill e l'aggancio del testimone (`hooks/hooks.json`, UserPromptSubmit, con `py` se c'è, altrimenti `python3`). |
+| `windows/` | L'avviabile (`Hypomnema.cmd` → `avvia-hypomnema.ps1`), il modello della configurazione in uso (`hypomnema-uso.toml`) e l'aggiornamento della copia in uso (`aggiorna-hypomnema.cmd`). I `.cmd` sono ASCII con fine riga CRLF; il `.ps1` è UTF-8 con BOM. |
+| `.claude/settings.json` | Nella copia di sviluppo vieta a Claude di modificare `quaderno/`. Nessun aggancio. |
 | `hypomnema/configurazione.py` | Lettura di `hypomnema.toml`. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |
-| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione. |
+| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows). |
 
 ## Metodo di lavoro
 

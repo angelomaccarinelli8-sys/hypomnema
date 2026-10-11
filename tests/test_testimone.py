@@ -419,11 +419,16 @@ class TestComandoTestimone(ConTestimone):
 
 class TestImpostazioniClaudeCode(unittest.TestCase):
     def comando_aggancio(self):
-        impostazioni = json.loads((RADICE / ".claude" / "settings.json").read_text(encoding="utf-8"))
-        self.assertIn("Edit(/quaderno/**)", impostazioni["permissions"]["deny"])
-        comandi = [h["command"] for g in impostazioni["hooks"]["UserPromptSubmit"] for h in g["hooks"]]
+        aggancio = json.loads((RADICE / "plugin" / "hooks" / "hooks.json").read_text(encoding="utf-8"))
+        comandi = [h["command"] for g in aggancio["hooks"]["UserPromptSubmit"] for h in g["hooks"]]
         self.assertEqual(len(comandi), 1)
         return comandi[0]
+
+    def test_progetto_senza_aggancio_e_con_divieto(self):
+        """Fuori dall'avviabile non c'è nessun aggancio: il testimone vive solo nel plugin."""
+        impostazioni = json.loads((RADICE / ".claude" / "settings.json").read_text(encoding="utf-8"))
+        self.assertNotIn("hooks", impostazioni)
+        self.assertEqual(impostazioni["permissions"]["deny"], ["Edit(/quaderno/**)"])
 
     @unittest.skipIf(_bash() is None, "serve bash (su Windows: Git Bash)")
     def test_aggancio_vero_con_py(self):
@@ -445,6 +450,7 @@ class TestImpostazioniClaudeCode(unittest.TestCase):
             shutil.copytree(RADICE / "hypomnema", Path(progetto) / "hypomnema",
                             ignore=shutil.ignore_patterns("__pycache__"))
             shutil.copy(RADICE / "aggancio_testimone.py", progetto)
+            Path(progetto, "plugin").mkdir()
             Path(progetto, "hypomnema.toml").write_text(CONFIG_ACCESO, encoding="utf-8")
             finti = Path(altrove) / "bin"
             finti.mkdir()
@@ -455,7 +461,7 @@ class TestImpostazioniClaudeCode(unittest.TestCase):
                 encoding="utf-8", newline="\n")
             finto.chmod(0o755)
             ambiente = {k: v for k, v in os.environ.items() if k != "HYPOMNEMA_CONFIG"}
-            ambiente.update(CLAUDE_PROJECT_DIR=progetto, PATH=str(finti))
+            ambiente.update(CLAUDE_PLUGIN_ROOT=str(Path(progetto, "plugin")), PATH=str(finti))
             risultato = subprocess.run([_bash(), "-c", self.comando_aggancio()], input=messaggio("dal vero"),
                                        capture_output=True, env=ambiente, cwd=altrove)
             self.assertEqual(risultato.returncode, 0, risultato.stderr)

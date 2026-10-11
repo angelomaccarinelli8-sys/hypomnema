@@ -1,3 +1,5 @@
 # Tutti i file di testo restano con fine riga LF anche su Windows:
 # così i risultati attesi degli esempi sono identici su ogni sistema.
 * text=auto eol=lf
+# I file .cmd di Windows vogliono il fine riga CRLF, altrimenti cmd.exe può leggerli male.
+*.cmd text eol=crlf

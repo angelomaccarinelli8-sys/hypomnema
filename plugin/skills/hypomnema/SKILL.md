@@ -16,23 +16,47 @@ testimone, nemmeno tramite comandi o script: il suo valore sta proprio nel fatto
 
 ## Come lanciare i programmi
 
-I comandi si lanciano dalla cartella di Hypomnema (quella che contiene `hypomnema.toml`):
+Di solito l'utente apre la sessione con l'**avviabile** di Hypomnema: la sessione parte nella
+cartella del programma e la variabile `HYPOMNEMA_CONFIG` indica la configurazione in uso, con il
+quaderno fuori dal programma. Lancia i comandi da lì, senza `--config`:
 
 ```
-python -m hypomnema cerca <parola>
-python -m hypomnema proponi <file.json>
+py -m hypomnema stato
+py -m hypomnema cerca <parola>
+py -m hypomnema proponi <file.json>
 ```
 
-- Su Windows, se `python` non esiste, usa `py`.
-- Se Hypomnema è installato, puoi scrivere `hypomnema` al posto di `python -m hypomnema`;
-  in quel caso la variabile `HYPOMNEMA_CONFIG` indica dove sta `hypomnema.toml`.
+- `py` è il comando di Windows; su macOS e Linux usa `python3`.
+- Se Hypomnema è installato, puoi scrivere `hypomnema` al posto di `py -m hypomnema`.
 - Se non sai dov'è la cartella di Hypomnema, chiedilo all'utente una volta.
 - Codici di uscita: `0` tutto bene, `1` nota rifiutata, `2` errore (configurazione, file mancante).
+
+## 0. Controlla il testimone
+
+Lancia `py -m hypomnema stato` **a inizio sessione** e **ogni volta prima di proporre una nota con
+`autore: utente`**. È un confronto, non una stima: guarda due righe.
+
+1. `Testimone:` deve dire `ACCESO`.
+2. Il messaggio dell'utente che hai appena ricevuto deve essere l'ultimo registrato: il testo
+   sotto `Testo dell'ultimo messaggio:` deve essere lo stesso, parola per parola (gli spazi
+   all'inizio delle righe li aggiunge il comando). Se il messaggio che hai ricevuto inizia con
+   `#privato`, l'ultimo registrato deve essere `(messaggio privato, non registrato)`.
+
+Se qualcosa non torna, avvisa l'utente con una frase chiara **prima** di salvare note sue:
+
+- testimone `SPENTO`: «Il testimone non è attivo: le note che salvi ora saranno marcate come non
+  verificate. Vuoi riavviare con l'avviabile di Hypomnema?»
+- testimone `ACCESO`, ma l'ultimo messaggio registrato non è quello che hai ricevuto: «Il testimone
+  non ha registrato il tuo ultimo messaggio: le note con le tue parole di adesso verrebbero
+  rifiutate, perché non si possono verificare. Vuoi riavviare con l'avviabile di Hypomnema?»
+- il comando esce con `ERRORE`: riporta all'utente il messaggio d'errore così com'è.
+
+Non provare a riparare il testimone da solo: non toccare configurazione, quaderno o impostazioni.
 
 ## 1. A inizio chat: rileggi
 
 1. Individua 1-3 parole chiave del primo messaggio dell'utente (argomento, progetto, nomi).
-2. Per ciascuna lancia `python -m hypomnema cerca <parola>`. La ricerca è per parola esatta,
+2. Per ciascuna lancia `py -m hypomnema cerca <parola>`. La ricerca è per parola esatta,
    senza distinzione di maiuscole: prova anche il singolare/plurale se serve.
 3. Usa le note trovate rispettando cosa sono:
    - una **decisione** dell'utente vale come decisione;
@@ -137,9 +161,9 @@ sue parole non si possono verificare, perché il testimone non le ha registrate)
 ## 3. Passa le note allo sportello
 
 1. Scrivi la proposta in un file temporaneo **fuori dalla cartella del quaderno**
-   (per esempio `proposta.json` nella cartella di lavoro), in UTF-8.
-2. Lancia `python -m hypomnema proponi proposta.json`.
-   In alternativa puoi passarla dall'ingresso standard: `python -m hypomnema proponi -`.
+   (per esempio `proposta.json` nella cartella del programma, dove git lo ignora), in UTF-8.
+2. Lancia `py -m hypomnema proponi proposta.json`.
+   In alternativa puoi passarla dall'ingresso standard: `py -m hypomnema proponi -`.
 3. Leggi la risposta:
    - `ACCETTATA`: la nota ha un numero ed è salvata;
    - `RIFIUTATA`: leggi i motivi. Se è un errore tuo di formato, correggi e riproponi.

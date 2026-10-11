@@ -1,5 +1,7 @@
 # Il quaderno personale non va mai nel repository pubblico.
 /quaderno/
+# Proposte temporanee che Claude scrive prima di passarle allo sportello.
+/proposta*.json
 
 __pycache__/
 *.pyc

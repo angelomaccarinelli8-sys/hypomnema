@@ -1,0 +1,12 @@
+$ hypomnema testimone messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema stato
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Testimone: SPENTO (nella configurazione attivo = false): i messaggi non vengono registrati e le note con autore «utente» saranno marcate «autore non verificato».
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 0
+Ultimo messaggio registrato: nessuno.
+[codice di uscita: 0]
+
