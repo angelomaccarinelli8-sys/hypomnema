@@ -15,6 +15,12 @@ Per l'uso quotidiano su Windows c'è l'**avviabile** (`windows/Hypomnema.cmd`): 
 con il plugin (skill e testimone) e con il quaderno in uso fuori dal repository
 (`%USERPROFILE%\Hypomnema`). Fuori dall'avviabile Hypomnema è spento.
 
+**Direzione (decisione di Angelo, 11/10/2026)**: l'avviabile resta funzionante ma il suo sviluppo
+è in pausa. Hypomnema si sviluppa come skill piena nella **chat di Claude** (claude.ai, app
+desktop e mobile): Claude scarica i programmi nel computer di lavoro della chat, copia il quaderno
+dalla cartella `Hypomnema` dell'utente (con il suo permesso), passa dallo sportello con
+`chat/hypomnema-chat.toml` e riporta solo i file che `cambiati` elenca. In chat non c'è testimone.
+
 Divisione dei compiti, il cuore del progetto: **Claude propone le note, i programmi decidono
 se entrano.** Claude non scrive mai direttamente nei file del quaderno.
 
@@ -52,7 +58,9 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 
 | File | Ruolo |
 |---|---|
-| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `testimone`, `stato`, `impostazioni-claude`), messaggi a schermo. |
+| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `testimone`, `stato`, `istantanea`, `cambiati`, `impostazioni-claude`), messaggi a schermo. |
+| `hypomnema/cambiamenti.py` | `istantanea` e `cambiati` (solo lettura): i file del quaderno da riportare dopo una proposta, con il controllo che sia successo solo ciò che fa lo sportello. |
+| `chat/hypomnema-chat.toml` | Modello della configurazione per la chat: testimone spento e `modalita = "chat"` (note dell'utente marcate «chat, senza testimone»). |
 | `hypomnema/avvio.py` | Le regole per l'avviabile: divieto di modificare quaderno e configurazione in uso. |
 | `hypomnema/sportello.py` | Legge la proposta, applica le regole, salva la nota, annota nel registro. |
 | `hypomnema/regole.py` | Le regole fisse e i motivi di rifiuto in italiano semplice. |
@@ -68,7 +76,7 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `hypomnema/configurazione.py` | Lettura di `hypomnema.toml`. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |
-| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows). |
+| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea` e `cambiati`). |
 
 ## Metodo di lavoro
 

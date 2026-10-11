@@ -6,6 +6,8 @@
     python -m hypomnema testimone               # registra un messaggio (lo lancia Claude Code)
     python -m hypomnema stato                   # dice se il testimone è acceso e l'ultimo messaggio
     python -m hypomnema impostazioni-claude     # le regole che l'avviabile passa a Claude Code
+    python -m hypomnema istantanea > prima.json # chat: fotografa il quaderno prima di una proposta
+    python -m hypomnema cambiati prima.json     # chat: i file da riportare sul computer dell'utente
 
 Codici di uscita: 0 = tutto bene, 1 = nota rifiutata, 2 = errore di uso o di configurazione.
 Il comando "testimone" non esce mai con 2: per Claude Code vorrebbe dire bloccare il
@@ -19,7 +21,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import TextIO
 
-from hypomnema import __version__, avvio, cercatore, configurazione, registro, sportello, testimone
+from hypomnema import __version__, avvio, cambiamenti, cercatore, configurazione, registro, sportello, testimone
 from hypomnema.nota import Nota, NotaIlleggibile
 
 ORIGINE_DIRETTA = "(ingresso diretto)"
@@ -54,6 +56,13 @@ def _parser() -> argparse.ArgumentParser:
     comandi.add_parser(
         "stato", help="dice se il testimone è acceso, dov'è il quaderno e l'ultimo messaggio registrato"
     )
+    comandi.add_parser(
+        "istantanea", help="scrive dimensione e impronta di ogni file del quaderno (prima di una proposta)"
+    )
+    cambiati = comandi.add_parser(
+        "cambiati", help="elenca i file del quaderno creati o allungati rispetto a un'istantanea"
+    )
+    cambiati.add_argument("file", help="il file dell'istantanea fatta prima della proposta")
     comandi.add_parser(
         "impostazioni-claude",
         help="scrive le regole che vietano a Claude di modificare quaderno e configurazione (per l'avviabile)",
@@ -144,6 +153,11 @@ def _stato(argomenti, config, uscita: TextIO) -> int:
     ]
     if config.testimone_attivo:
         righe.append("Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).")
+    elif config.in_chat:
+        righe.append(
+            "Testimone: NON C'È (configurazione per la chat di Claude): i messaggi arrivano solo a Claude "
+            "e le note con autore «utente» saranno marcate «autore non verificato (chat, senza testimone)»."
+        )
     else:
         righe.append(
             "Testimone: SPENTO (nella configurazione attivo = false): i messaggi non vengono registrati "
@@ -162,6 +176,35 @@ def _stato(argomenti, config, uscita: TextIO) -> int:
         righe += _rientrato(messaggi[-1].testo)
     for riga in righe:
         print(riga, file=uscita)
+    return 0
+
+
+def _istantanea(config, uscita: TextIO) -> int:
+    """Solo lettura: scrive l'istantanea sull'uscita (si salva con > prima.json)."""
+    print(json.dumps(cambiamenti.istantanea(config), ensure_ascii=True, sort_keys=True), file=uscita)
+    return 0
+
+
+def _cambiati(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura: elenca i file da riportare, o si rifiuta se è successo altro."""
+    file = Path(argomenti.file)
+    if not file.is_file():
+        print(f"ERRORE: non trovo il file dell'istantanea «{file}».", file=uscita)
+        return 2
+    try:
+        elenco = cambiamenti.cambiati(config, cambiamenti.leggi_istantanea(file.read_bytes()))
+    except cambiamenti.ErroreCambiamenti as errore:
+        print("ERRORE: il quaderno non è cambiato solo come fa lo sportello. "
+              "Non riportare niente sul computer dell'utente.", file=uscita)
+        for problema in errore.problemi:
+            print(f"- {registro.su_una_riga(problema)}", file=uscita)
+        return 2
+    if not elenco:
+        print("Nessun file del quaderno è cambiato: non c'è niente da riportare.", file=uscita)
+        return 0
+    print(f"File del quaderno da riportare sul computer dell'utente: {len(elenco)}", file=uscita)
+    for cambiamento in elenco:
+        print(f"- {registro.su_una_riga(cambiamento.percorso)} ({cambiamento.tipo})", file=uscita)
     return 0
 
 
@@ -230,6 +273,10 @@ def main(
             return _proponi(argomenti, config, adesso, uscita)
         if argomenti.comando == "stato":
             return _stato(argomenti, config, uscita)
+        if argomenti.comando == "istantanea":
+            return _istantanea(config, uscita)
+        if argomenti.comando == "cambiati":
+            return _cambiati(argomenti, config, uscita)
         if argomenti.comando == "impostazioni-claude":
             return _impostazioni_claude(argomenti, config, uscita)
         return _cerca(argomenti, config, uscita)

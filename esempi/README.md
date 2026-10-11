@@ -39,6 +39,8 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `15-a-capo-nel-registro` | Una proposta con un nome di campo inventato che contiene degli «a capo» e, in mezzo, una finta riga «ACCETTATA \| nota 0099». | Rifiutata per il campo non previsto. Nel registro e a schermo il motivo resta su una riga, con il segno ⏎ al posto degli a capo: nessuna riga falsa. |
 | `16-stato-testimone-acceso` | Testimone acceso. `stato` con il quaderno vuoto, poi dopo un messaggio su due righe, poi dopo un messaggio `#privato`. | Prima «nessuno»; poi data, ora e testo esatto dell'ultimo messaggio; poi «(messaggio privato, non registrato)». `stato` non crea niente: il quaderno nasce con il primo messaggio. |
 | `17-stato-testimone-spento` | Testimone spento. Arriva un messaggio, poi `stato`. | «Testimone: SPENTO», con la spiegazione; nessun messaggio registrato. |
+| `18-chat-nota-utente` | Configurazione per la chat (`chat/hypomnema-chat.toml`). `stato`, poi una nota dell'utente con un contesto di Claude, poi la ricerca. | `stato` dice «Testimone: NON C'È»; la nota è accettata e marcata «autore non verificato (chat, senza testimone)». |
+| `19-chat-file-da-riportare` | Configurazione per la chat. `istantanea`, una nota accettata, `cambiati`; poi `istantanea`, una nota rifiutata, `cambiati` due volte. | Dopo la nota accettata: da riportare `note/0001.md` e `registro.md` (creati). Dopo quella rifiutata: solo `registro.md` (allungato), uguale anche la seconda volta perché `cambiati` non cambia niente. |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
 in più la riga «verifica: autore non verificato (testimone spento)».

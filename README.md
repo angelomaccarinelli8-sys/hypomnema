@@ -45,11 +45,71 @@ Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
 | **Stato** (`stato`) | Dice se il testimone è acceso, dov'è il quaderno e quale messaggio ha registrato per ultimo. Solo lettura. |
 | **Skill** (`plugin/skills/hypomnema/SKILL.md`) | Le istruzioni per Claude: quando leggere, come controllare il testimone, come preparare le note, come confermare una decisione. |
 | **Plugin** (`plugin/`) | La skill e l'aggancio del testimone, che Claude Code carica solo quando lo apri con l'avviabile. |
-| **Avviabile** (`windows/Hypomnema.cmd`) | Un doppio clic per aprire Claude Code con Hypomnema acceso. Vedi «Usarlo ogni giorno su Windows». |
+| **Modalità chat** (`chat/`, `istantanea`, `cambiati`) | La configurazione per la chat di Claude e i due comandi, in sola lettura, che dicono quali file del quaderno riportare sul tuo computer dopo una proposta. Vedi «Usarlo nella chat di Claude». |
+| **Avviabile** (`windows/Hypomnema.cmd`) | Un doppio clic per aprire Claude Code con Hypomnema acceso. Vedi «Usarlo con l'avviabile di Windows». |
 
 Il formato delle note e le regole dello sportello sono descritti in [FORMATO.md](FORMATO.md).
 
-## Usarlo ogni giorno su Windows
+## Usarlo nella chat di Claude
+
+Da ottobre 2026 Hypomnema si sviluppa come **skill per la chat di Claude** (claude.ai, app desktop
+e mobile). Il lavoro sporco lo fa Claude: a te chiede solo il permesso per la cartella dove sta il
+quaderno, sul tuo computer.
+
+> La modalità chat è nuova e **non è ancora stata provata dal vero**: le parti che dipendono dai
+> programmi sono provate dai test, quelle che dipendono dall'app di Claude no.
+
+**Cosa succede.**
+
+1. Claude scarica i programmi di Hypomnema (la versione principale, `main`, da questo repository)
+   nel suo **computer di lavoro**: un piccolo computer temporaneo della chat, che sparisce a fine
+   conversazione.
+2. Ti chiede il permesso per la cartella **Hypomnema** nella tua cartella utente
+   (`C:\Users\<nome>\Hypomnema` su Windows, `~/Hypomnema` su macOS e Linux) e copia nel computer
+   di lavoro le note e il registro. La prima volta il quaderno non c'è: Claude te lo dice, e il
+   quaderno nasce con la prima nota.
+3. Quando c'è qualcosa da ricordare, Claude propone la nota allo sportello, come sempre: le regole
+   sono le stesse e Claude non salva mai una nota a mano. Poi riporta sul tuo computer **solo i
+   file che lo sportello ha creato o allungato** (la nota nuova e il registro). Lo scrive con un
+   controllo che rifiuta la scrittura se nel frattempo il file sul tuo computer è cambiato: in quel
+   caso Claude non forza, ricopia il quaderno, riprova e te lo dice. Anche le proposte rifiutate
+   finiscono nel registro, che quindi viene riportato anche dopo un rifiuto.
+4. Quando chiedi «cosa avevo deciso su…», Claude cerca nel quaderno con il cercatore.
+
+**Il permesso richiesto.** Solo la cartella `Hypomnema`. In chat Claude non lancia comandi sul tuo
+computer: legge e scrive solo lì, e non copia il file del testimone (`testimone.jsonl`), se c'è.
+
+**I limiti.**
+
+- **Niente testimone.** In chat i tuoi messaggi arrivano solo a Claude: nessun programma li
+  registra. Le tue note sono salvate come «autore non verificato (chat, senza testimone)», così si
+  distinguono da quelle dell'avviabile con il testimone spento («testimone spento»).
+- **Serve l'app desktop di Claude aperta e collegata al computer**: è lei che dà a Claude gli
+  strumenti per la tua cartella.
+- **Senza computer collegato è solo una prova** (sito, app mobile): il quaderno vive nella chat e
+  sparisce quando la chiudi. Claude te lo dice prima di cominciare.
+- Il computer di lavoro deve poter scaricare da GitHub e avere Python 3.11 o più recente
+  (Hypomnema è garantito dal 3.12; con il 3.11 i test passano).
+- Meglio una chat alla volta sullo stesso quaderno: se due chat scrivono insieme, il controllo sui
+  file cambiati ferma la seconda, che deve ricominciare.
+
+**Come aggiungere la skill.** La skill è la cartella
+[`plugin/skills/hypomnema`](plugin/skills/hypomnema/SKILL.md). Nella chat di Claude le skill
+personali si aggiungono dalle impostazioni, caricando la cartella compressa in un file `.zip`: il
+percorso esatto nelle impostazioni lo verificheremo nella prima prova.
+
+**Come funziona dentro.** Claude usa la configurazione [`chat/hypomnema-chat.toml`](chat/hypomnema-chat.toml)
+(testimone spento e `modalita = "chat"`). Prima di ogni proposta fotografa il quaderno con
+`istantanea`; dopo, `cambiati` elenca i file da riportare e controlla che sia successo solo ciò che
+lo sportello sa fare (creare note annotate come ACCETTATA nel registro e allungare il registro).
+Se trova altro, per esempio una nota cambiata a mano, risponde con un errore e Claude non riporta
+niente.
+
+## Usarlo con l'avviabile di Windows (funzionante, sviluppo in pausa)
+
+**L'avviabile per Windows funziona, ma il suo sviluppo è in pausa**: da ottobre 2026 Hypomnema si
+sviluppa nella chat di Claude (vedi sopra). L'idea di un'interfaccia propria tornerà più avanti
+come ramo a sé. L'avviabile resta l'unico modo per avere il testimone.
 
 Questa parte è per chi vuole usare Hypomnema davvero, sul proprio computer, mentre il
 programma continua a essere sviluppato su GitHub.
@@ -171,8 +231,9 @@ Claude Code 2.1.274.
 | Claude Code nel terminale (PowerShell), aperto con l'avviabile | **Sì** | **Provato** con dati inventati e una sessione non interattiva (`claude -p`): il testimone ha registrato il messaggio, la skill era disponibile, la scrittura nel quaderno è stata bloccata. Il doppio clic con una sessione normale lo prova Angelo. |
 | Claude Code nel terminale, aperto senza l'avviabile | **No, resta spento** (voluto) | **Provato**: nessuna skill, niente registrato. |
 | Claude Code in VS Code (pannello dell'estensione) | **No, resta spento** | **Non provato.** Ricavato da come funziona l'avviabile: il pannello di VS Code non passa per l'avviabile, quindi non riceve il plugin, le regole e la configurazione in uso. |
-| App desktop di Claude | **No** | **Dalla documentazione** di Claude Code: l'app non riceve gli argomenti con cui l'avviabile carica plugin e regole (`claude --desktop` non accetta altri argomenti). |
-| Chat di claude.ai (sito o app) | **No** | **Ricavato**: la chat non può lanciare programmi sul tuo computer né leggere il tuo quaderno, e non ha il testimone. |
+| App desktop di Claude, sezione Claude Code | **No** (avviabile) | **Dalla documentazione** di Claude Code: l'app non riceve gli argomenti con cui l'avviabile carica plugin e regole (`claude --desktop` non accetta altri argomenti). |
+| Chat di Claude nell'app desktop, collegata al computer | **Sì, in modalità chat**, senza testimone | **Non ancora provato**: i programmi sono provati dai test; gli strumenti dell'app no. Vedi «Usarlo nella chat di Claude». |
+| Chat di Claude sul sito o nell'app mobile | **Solo come prova**: il quaderno sparisce a fine chat | **Non ancora provato**, come sopra. |
 
 ## Installazione per provarlo o svilupparlo
 
@@ -205,6 +266,8 @@ python -m hypomnema proponi esempi/01-nota-accettata/nota.json
 python -m hypomnema cerca orto
 python -m hypomnema testimone messaggio.json   # di solito lo lancia Claude Code da solo
 python -m hypomnema stato                      # testimone acceso? ultimo messaggio registrato?
+python -m hypomnema istantanea > prima.json    # chat: fotografa il quaderno prima di una proposta
+python -m hypomnema cambiati prima.json        # chat: quali file riportare sul computer
 ```
 
 Su Windows scrivi `py` al posto di `python`:
@@ -284,7 +347,7 @@ come sempre. Il segno si può cambiare in `hypomnema.toml` (`segno_citazione`).
 ### Con Claude
 
 La skill (`plugin/skills/hypomnema/SKILL.md`) spiega a Claude come usare il quaderno. Su Windows
-la carica l'avviabile (vedi «Usarlo ogni giorno su Windows»). Su macOS e Linux, dalla cartella
+la carica l'avviabile (vedi «Usarlo con l'avviabile di Windows»). Su macOS e Linux, dalla cartella
 del programma:
 
 ```

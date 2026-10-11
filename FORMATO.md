@@ -110,6 +110,8 @@ Lo sportello, e solo lo sportello, aggiunge alla nota salvata una riga `verifica
 | Testimone acceso, trovato tutto in righe marcate con `>` | `- verifica: citazione riportata dall'utente, trovata nel messaggio del <data e ora>` |
 | Testimone spento, `autore: utente` | `- verifica: autore non verificato (testimone spento)` |
 | Testimone spento, nota di Claude con citazione | `- verifica: citazione non verificata (testimone spento)` |
+| Chat di Claude (`modalita = "chat"`), `autore: utente` | `- verifica: autore non verificato (chat, senza testimone)` |
+| Chat di Claude (`modalita = "chat"`), nota di Claude con citazione | `- verifica: citazione non verificata (chat, senza testimone)` |
 | Nota di Claude senza citazione | nessuna riga |
 
 Nel file della nota la `citazione` (note di Claude) è scritta su una riga sola (spazi e a capo

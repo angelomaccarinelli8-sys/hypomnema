@@ -14,7 +14,15 @@ suo messaggio prima che tu lo legga. Lo sportello lo usa per controllare che le 
 `autore: utente` riportino parole che l'utente ha detto davvero. Non scrivere mai nel file del
 testimone, nemmeno tramite comandi o script: il suo valore sta proprio nel fatto che tu non lo tocchi.
 
-## Come lanciare i programmi
+## Dove ti trovi
+
+- **In Claude Code** (puoi lanciare comandi sul computer dell'utente): segui le sezioni da
+  «Come lanciare i programmi» alla 5.
+- **In una chat di Claude** (claude.ai, app desktop o mobile: non puoi lanciare comandi sul
+  computer dell'utente): segui la sezione «Modalità chat» in fondo, e per il resto le sezioni
+  1, 2, 4 e 5. La sezione 0 non vale: in chat il testimone non c'è.
+
+## Come lanciare i programmi (Claude Code)
 
 Di solito l'utente apre la sessione con l'**avviabile** di Hypomnema: la sessione parte nella
 cartella del programma e la variabile `HYPOMNEMA_CONFIG` indica la configurazione in uso, con il
@@ -31,7 +39,7 @@ py -m hypomnema proponi <file.json>
 - Se non sai dov'è la cartella di Hypomnema, chiedilo all'utente una volta.
 - Codici di uscita: `0` tutto bene, `1` nota rifiutata, `2` errore (configurazione, file mancante).
 
-## 0. Controlla il testimone
+## 0. Controlla il testimone (Claude Code)
 
 Lancia `py -m hypomnema stato` **a inizio sessione** e **ogni volta prima di proporre una nota con
 `autore: utente`**. È un confronto, non una stima: guarda due righe.
@@ -213,3 +221,92 @@ Quando l'utente conferma:
 
 L'utente può anche dire "ricorda che ho deciso ...": in quel caso proponi direttamente una
 decisione (`autore: utente`, `tipo: dichiarata`) senza `conferma_di`.
+
+
+## Modalità chat
+
+Segui questa sezione quando sei in una **chat di Claude** (claude.ai, app desktop o mobile) e non
+in Claude Code. In chat non puoi lanciare comandi sul computer dell'utente, ma hai un **computer di
+lavoro** temporaneo, che sparisce a fine conversazione, dove puoi scaricare i programmi e lanciare
+Python. In chat **il testimone non c'è**: le note dell'utente vengono salvate come «autore non
+verificato (chat, senza testimone)». Tutte le altre regole di questa skill restano uguali, e
+**non salvi mai una nota a mano**: passi sempre dallo sportello. Il lavoro sporco lo fai tu;
+all'utente chiedi solo il permesso per la sua cartella.
+
+### C1. Prepara il computer di lavoro (una volta per chat)
+
+```
+git clone --depth 1 --branch main https://github.com/angelomaccarinelli8-sys/hypomnema.git ~/hypomnema-programma
+mkdir -p ~/hypomnema-lavoro/quaderno
+cp ~/hypomnema-programma/chat/hypomnema-chat.toml ~/hypomnema-lavoro/hypomnema.toml
+python3 --version
+```
+
+- Serve Python 3.11 o più recente (Hypomnema è garantito dal 3.12; con il 3.11 i test passano).
+  Se `git` non c'è, scarica e scompatta
+  `https://github.com/angelomaccarinelli8-sys/hypomnema/archive/refs/heads/main.zip`.
+- Da qui in poi lancia ogni comando dalla cartella `~/hypomnema-programma`, sempre con la
+  configurazione per la chat:
+
+  ```
+  python3 -m hypomnema --config ~/hypomnema-lavoro/hypomnema.toml <comando>
+  ```
+
+  Qui sotto, `H <comando>` vuol dire proprio questa riga.
+- Controlla con `H stato`: deve dire `Testimone: NON C'È (configurazione per la chat di Claude)`.
+- Se non riesci a scaricare i programmi, dillo all'utente e fermati: senza sportello non salvi niente.
+
+### C2. Il quaderno dell'utente
+
+**Se hai gli strumenti per il computer dell'utente** (di solito: app desktop aperta e collegata):
+
+1. Chiedi il permesso per la cartella `Hypomnema` nella sua cartella utente
+   (`C:\Users\<nome>\Hypomnema` su Windows, `~/Hypomnema` su macOS e Linux), con una frase:
+   «Mi serve il permesso per la cartella Hypomnema: leggo il tuo quaderno e ci salvo le note
+   nuove, senza toccare nient'altro.» Se la cartella non esiste e gli strumenti non permettono di
+   chiedere il permesso per una cartella che non c'è, chiedi all'utente di crearla vuota.
+2. Elenca il contenuto di `Hypomnema/quaderno`.
+   - **Non c'è, o è vuota**: è la prima volta. Dillo all'utente («È la prima volta: il quaderno è
+     vuoto, nascerà con la prima nota.»). Il quaderno nasce nel computer di lavoro con la prima
+     proposta e lo riporti sul computer dell'utente come al punto C4.
+   - **C'è**: copia nel computer di lavoro, sotto `~/hypomnema-lavoro/quaderno/`, con **gli
+     stessi percorsi**, il file `registro.md` e tutti i file della cartella `note/`, a gruppi di
+     massimo 50 file per volta. Poi controlla che il numero dei file copiati sia uguale a quello
+     elencato. **Non copiare `testimone.jsonl`**: in chat non serve, e contiene parole private
+     dell'utente.
+
+**Se non hai gli strumenti per il computer dell'utente** (chat sul web, app mobile): è la
+**modalità prova**. Prima di cominciare dillo chiaramente: «Qui non posso accedere al tuo
+computer: il quaderno vivrà solo in questa chat e sparirà quando la chiudi. È una prova.» Poi
+usa il quaderno di `~/hypomnema-lavoro/quaderno` e non riportare niente.
+
+### C3. Le domande
+
+Quando l'utente chiede cosa aveva detto o deciso («cosa avevo deciso su…»), usa il cercatore sul
+quaderno copiato: `H cerca <parola>`, con le regole della sezione 1 (una decisione è una decisione,
+un'idea è solo un'idea, una nota dedotta è un'ipotesi, cita il numero della nota).
+
+### C4. Salvare una nota
+
+Per ogni nota, in quest'ordine:
+
+1. Fotografa il quaderno: `H istantanea > ~/hypomnema-lavoro/prima.json`
+2. Scrivi la proposta in `~/hypomnema-lavoro/proposta.json` (fuori dalla cartella del quaderno),
+   con le regole della sezione 2, e passala allo sportello:
+   `H proponi ~/hypomnema-lavoro/proposta.json`
+3. Chiedi quali file sono cambiati: `H cambiati ~/hypomnema-lavoro/prima.json`
+   - Risponde con un elenco: **riporta sul computer dell'utente esattamente quei file**, allo stesso
+     percorso sotto `Hypomnema/quaderno/` (per esempio `note/0007.md` va in
+     `Hypomnema/quaderno/note/0007.md`), usando il controllo sui file cambiati. Prima le note
+     create, poi `registro.md`. Anche una nota rifiutata allunga il registro: va riportato.
+   - Risponde «Nessun file del quaderno è cambiato»: non c'è niente da riportare.
+   - Risponde `ERRORE`: **non riportare niente**. Dillo all'utente con il messaggio ricevuto,
+     ricopia il quaderno dal suo computer (C2) e riparti dal punto 1.
+4. Se il controllo **rifiuta una scrittura** (il file sul computer dell'utente è cambiato nel
+   frattempo, per esempio da un'altra chat): **non forzare**. Dillo all'utente, ricopia il quaderno
+   (C2), controlla con `H cerca` se la nota è già arrivata (in quel caso non ripeterla) e ripeti
+   la proposta dal punto 1.
+5. Di' all'utente cosa è stato salvato e cosa è stato rifiutato (sezione 4). In modalità prova
+   ricorda che il quaderno sparirà a fine chat.
+
+In modalità prova i punti 1, 3 e 4 non servono: basta il punto 2.

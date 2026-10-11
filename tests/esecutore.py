@@ -7,7 +7,9 @@ dopo ``hypomnema``) e una cartella ``atteso/`` con:
 
 Se l'esempio ha un suo ``hypomnema.toml`` si usa quello (per esempio per accendere
 il testimone); altrimenti la configurazione di prova qui sotto, con il testimone spento.
-Nei comandi, ``proponi FILE`` e ``testimone FILE`` usano file della cartella dell'esempio:
+Nei comandi, ``istantanea > FILE`` salva l'uscita in un file della cartella di prova (come la
+shell) e ``cambiati FILE`` lo rilegge da lì. ``proponi FILE`` e ``testimone FILE`` usano file della
+cartella dell'esempio:
 ``testimone FILE`` simula un messaggio dell'utente come lo manderebbe Claude Code.
 
 I percorsi della cartella temporanea (che cambiano da computer a computer, per esempio
@@ -69,17 +71,27 @@ def esegui(esempio: Path, lavoro: Path) -> str:
     uscita = io.StringIO()
     for numero, riga in enumerate(c for c in comandi if c.strip()):
         parti = shlex.split(riga)
+        destinazione = None
+        if ">" in parti:
+            # Come nella shell: l'uscita del comando va nel file, dentro la cartella di prova.
+            destinazione = lavoro / parti[parti.index(">") + 1]
+            parti = parti[:parti.index(">")]
         if parti[0] in ("proponi", "testimone"):
             argomenti = [parti[0], str(esempio / parti[1])]
+        elif parti[0] == "cambiati":
+            argomenti = [parti[0], str(lavoro / parti[1])]
         else:
             argomenti = parti
         uscita.write(f"$ hypomnema {riga}\n")
+        uscita_comando = io.StringIO() if destinazione else uscita
         codice = main(
             ["--config", str(config), *argomenti],
             adesso=ORA_DI_PARTENZA + timedelta(minutes=numero),
-            uscita=uscita,
+            uscita=uscita_comando,
             errori=uscita,
         )
+        if destinazione:
+            destinazione.write_text(uscita_comando.getvalue(), encoding="utf-8")
         uscita.write(f"[codice di uscita: {codice}]\n\n")
     return senza_cartella_di_prova(uscita.getvalue(), lavoro)
 

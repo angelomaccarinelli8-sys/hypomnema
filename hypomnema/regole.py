@@ -179,15 +179,23 @@ def _dicitura(cosa: str, trovato: Ritrovamento) -> str:
     return f"{cosa} nel messaggio del {trovato.messaggio.quando}"
 
 
+# Perché manca la verifica: il testimone c'è ma è spento, oppure siamo nella chat di Claude,
+# dove il testimone non esiste. Fa parte della dicitura scritta nella nota.
+SENZA_TESTIMONE = "testimone spento"
+SENZA_TESTIMONE_IN_CHAT = "chat, senza testimone"
+
+
 def verifica(
-    autore: str, testo: str, citazione: str | None, messaggi: list[Messaggio] | None, segno: str
+    autore: str, testo: str, citazione: str | None, messaggi: list[Messaggio] | None, segno: str,
+    in_chat: bool = False,
 ) -> str | None:
     """La dicitura "verifica" da scrivere nella nota accettata (None = nessuna dicitura)."""
     if messaggi is None:
+        perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE
         if autore == "utente":
-            return "autore non verificato (testimone spento)"
+            return f"autore non verificato ({perche})"
         if citazione is not None:
-            return "citazione non verificata (testimone spento)"
+            return f"citazione non verificata ({perche})"
         return None
     if autore == "utente":
         return _dicitura("testo trovato", trova_citazione(messaggi, testo, segno))

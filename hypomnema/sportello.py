@@ -90,7 +90,7 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         conferma_di=conferma.strip() if conferma is not None else None,
         citazione=citazione,
         contesto=contesto.strip() if contesto is not None else None,
-        verifica=regole.verifica(autore, testo, citazione, messaggi, config.segno_citazione),
+        verifica=regole.verifica(autore, testo, citazione, messaggi, config.segno_citazione, config.in_chat),
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)
     numero = int(id_nota)
