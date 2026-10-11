@@ -275,8 +275,10 @@ def _archivio(argomenti, config, uscita: TextIO) -> int:
     if esito.privati or esito.risposte_private:
         print(f"Privati, solo data e ora: {quanti(esito.privati, 'messaggio', 'messaggi')} dell'utente, "
               f"{quanti(esito.risposte_private, 'risposta', 'risposte')}.", file=uscita)
+    if esito.avvisi_tolti:
+        print(f"Avvisi tecnici <system-reminder> tolti dai messaggi dell'utente: {esito.avvisi_tolti}.", file=uscita)
     if esito.gia_presenti:
-        print(f"Già presenti, non duplicati: {esito.gia_presenti}.", file=uscita)
+        print(f"Già presenti (stessa chat, stesso turno), non duplicati: {esito.gia_presenti}.", file=uscita)
     if esito.diversi:
         if esito.diversi == 1:
             quali, toccati = "1 già presente ha", "non l'ho toccato"
@@ -356,7 +358,7 @@ def _controlla(config, uscita: TextIO) -> int:
     for nome, numero in esito.archivio_rovinate:
         print(f"- {nome}, riga {numero}: non ha la forma di una riga dell'archivio della chat.", file=uscita)
     for nome, numero, prima in esito.archivio_doppioni:
-        print(f"- {nome}, riga {numero}: stessa chat e stessa ora della riga {prima} (doppione).", file=uscita)
+        print(f"- {nome}, riga {numero}: stessa chat e stesso turno della riga {prima} (doppione).", file=uscita)
     for numero in esito.senza_riga:
         print(f"- nota {numero}: la nota c'è, ma nel registro manca la sua riga ACCETTATA.", file=uscita)
     for numero in esito.senza_nota:

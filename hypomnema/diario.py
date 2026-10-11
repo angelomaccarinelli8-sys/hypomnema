@@ -40,9 +40,11 @@ def voci(config: Configurazione) -> list[Voce]:
                     f"nel diario c'è una data non valida: «{messaggio.quando}». "
                     "Controlla se i file dei testimoni sono stati modificati a mano."
                 )
-            fonte = f"archivio della chat {messaggio.chat}, copiato da Claude" if messaggio.chat else None
+            fonte = (f"archivio della chat {messaggio.chat}, turno {messaggio.turno}, copiato da Claude"
+                     if messaggio.chat else None)
             voce = Voce(messaggio.quando, chi, messaggio.testo, messaggio.privato, fonte)
-            elenco.append(((momento, ordine % 2, ordine, posizione), voce))
+            turno = messaggio.turno if messaggio.turno is not None else -1
+            elenco.append(((momento, turno, ordine % 2, ordine, posizione), voce))
     elenco.sort(key=lambda coppia: coppia[0])
     return [voce for _, voce in elenco]
 

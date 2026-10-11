@@ -1,5 +1,6 @@
 $ hypomnema archivio copia.json
 Copiati dall'archivio della chat: 1 messaggio dell'utente, 1 risposta di Claude.
+Avvisi tecnici <system-reminder> tolti dai messaggi dell'utente: 1.
 [codice di uscita: 0]
 
 $ hypomnema proponi nota.json

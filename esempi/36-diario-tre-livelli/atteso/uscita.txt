@@ -31,7 +31,7 @@ fonte: chat del 15 gennaio 2026 sul balcone
 autore: utente
 tipo: dichiarata
 natura: fatto
-verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, messaggio del 2026-01-15T09:00:00+01:00 (copiato da Claude)
+verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, messaggio del turno 0 (2026-01-15T09:00:00+01:00, copiato da Claude)
 testo:
   Le fragole in vaso vogliono un terriccio acido.
 
@@ -52,10 +52,10 @@ Trovati 3 messaggi con «fragole» nel diario (la conversazione registrata, non 
 --- 2026-01-14T18:00:00+01:00 · utente ---
   Le fragole le copro con la paglia d'inverno.
 
---- 2026-01-15T09:00:00+01:00 · utente · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, copiato da Claude ---
+--- 2026-01-15T09:00:00+01:00 · utente · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, turno 0, copiato da Claude ---
   Le fragole in vaso vogliono un terriccio acido.
 
---- 2026-01-15T09:00:20+01:00 · claude · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, copiato da Claude ---
+--- 2026-01-15T09:00:00+01:00 · claude · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, turno 1, copiato da Claude ---
   Sì: per le fragole va bene un terriccio per acidofile.
 [codice di uscita: 0]
 

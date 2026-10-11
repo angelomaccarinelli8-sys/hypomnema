@@ -113,8 +113,8 @@ Lo sportello, e solo lo sportello, aggiunge alla nota salvata una riga `verifica
 | Testimone spento, nota di Claude con citazione | `- verifica: citazione non verificata (testimone spento)` |
 | Chat di Claude (`modalita = "chat"`), `autore: utente` | `- verifica: autore non verificato (chat, senza testimone)` |
 | Chat di Claude (`modalita = "chat"`), nota di Claude con citazione | `- verifica: citazione non verificata (chat, senza testimone)` |
-| Chat con l'archivio (`[archivio]`), `autore: utente`, testo trovato nella copia dell'archivio | `- verifica: testo riscontrato sull'archivio della chat <indirizzo>, messaggio del <data e ora> (copiato da Claude)` |
-| Chat con l'archivio, nota di Claude con citazione trovata nell'archivio, o con `da_risposta` trovata nel diario della chat | `- verifica: citazione riscontrata sull'archivio della chat …` oppure `- verifica: testo riscontrato sull'archivio della chat …, risposta del …` |
+| Chat con l'archivio (`[archivio]`), `autore: utente`, testo trovato nella copia dell'archivio | `- verifica: testo riscontrato sull'archivio della chat <indirizzo>, messaggio del turno <numero> (<data e ora>, copiato da Claude)` |
+| Chat con l'archivio, nota di Claude con citazione trovata nell'archivio, o con `da_risposta` trovata nel diario della chat | `- verifica: citazione riscontrata sull'archivio della chat …` oppure `- verifica: testo riscontrato sull'archivio della chat …, risposta del turno …` |
 | Testimoni in pausa (`/hypomnema:pausa`), `autore: utente` | `- verifica: autore non verificato (testimoni in pausa)` |
 | Testimoni in pausa, nota di Claude con citazione o con `da_risposta` | `- verifica: citazione non verificata (testimoni in pausa)` oppure `- verifica: risposta non verificata (testimoni in pausa)` |
 | Nota di Claude con `da_risposta`, testimone delle risposte acceso, testo trovato | `- verifica: testo trovato nella risposta di Claude del <data e ora>` |
@@ -146,17 +146,27 @@ testimone dei messaggi (identico a parte spazi e a capo multipli, dentro una sol
 ## L'archivio della chat
 
 Nella configurazione per la chat, la sezione `[archivio]` accende la copia dall'archivio della chat.
-Il comando `archivio <file.json>` riceve da Claude l'indirizzo della chat e i messaggi
-(`{"chat": "https://…", "messaggi": [{"quando": "…+02:00", "chi": "utente"|"claude", "testo": "…"}]}`)
-e li aggiunge, solo in aggiunta e senza doppioni (stesso indirizzo, stessa data e ora):
+Il comando `archivio <file.json>` riceve da Claude la copia come la dà lo strumento dell'archivio:
+l'indirizzo della chat, il fuso orario a parte e, per ogni messaggio, il numero del turno, la data e
+l'ora al minuto, chi parla e il testo
+(`{"chat": "https://…", "fuso": "UTC+02:00", "messaggi": [{"turno": 12, "quando": "Fri 2026-10-09 17:46", "chi": "utente"|"claude", "testo": "…"}]}`).
+Li aggiunge solo in aggiunta e senza doppioni: un messaggio è già presente se ha lo stesso indirizzo
+e lo stesso numero di turno (l'ora al minuto non basta: due messaggi nello stesso minuto si
+confonderebbero). La data e l'ora si scrivono con il fuso (`2026-10-09T17:46:00+02:00`).
 
 ```
-archivio-chat.jsonl  {"quando": "…", "chat": "https://…", "testo": "…", "origine": "copiato dall'archivio della chat da Claude"}
-diario-chat.jsonl    {"quando": "…", "chat": "https://…", "testo": "…", "origine": "copiato dall'archivio della chat da Claude"}
+archivio-chat.jsonl  {"quando": "…", "chat": "https://…", "turno": 12, "testo": "…", "origine": "copiato dall'archivio della chat da Claude"}
+diario-chat.jsonl    {"quando": "…", "chat": "https://…", "turno": 13, "testo": "…", "origine": "copiato dall'archivio della chat da Claude"}
 ```
+
+Dai messaggi dell'utente si tolgono, con una regola fissa, gli avvisi tecnici dell'app: ogni blocco
+da `<system-reminder>` a `</system-reminder>`, poi gli spazi e gli a capo rimasti all'inizio e alla
+fine. Si fa prima di controllare il prefisso privato. Un segno di avviso senza la sua coppia ferma
+la copia con un errore. Le risposte di Claude restano come sono.
 
 I messaggi che cominciano con il prefisso privato diventano `"privato": "messaggio privato, non
-copiato"`, e la risposta che li segue `"privato": "risposta a un messaggio privato, non copiata"`.
+copiato"`, e la risposta che li segue `"privato": "risposta a un messaggio privato, non copiata"` (la risposta segue il messaggio
+dell'utente con il numero di turno più alto, non più alto del suo).
 Nelle risposte i blocchi di codice sono sostituiti dalla loro impronta se `ometti_codice = true`.
 Lo sportello cerca il testo delle note dell'utente nell'archivio con le stesse regole del testimone;
 se non lo trova la nota resta non verificata, non viene rifiutata.

@@ -215,7 +215,7 @@ def _riscontro(copiati: list[Messaggio] | None, testo: str, segno: str, cosa: st
     if trovato is None:
         return None
     m = trovato.messaggio
-    return f"{cosa} sull'archivio della chat {m.chat}, {che} del {m.quando} (copiato da Claude)"
+    return f"{cosa} sull'archivio della chat {m.chat}, {che} del turno {m.turno} ({m.quando}, copiato da Claude)"
 
 
 SENZA_TESTIMONE = "testimone spento"

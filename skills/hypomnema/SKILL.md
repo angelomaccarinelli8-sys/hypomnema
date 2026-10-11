@@ -441,22 +441,28 @@ Così la conversazione finisce nel quaderno da sola. Fallo **ogni `copia_ogni` s
 
 1. Fotografa il quaderno: `H istantanea > ~/hypomnema-lavoro/prima.json` (non serve se lo fai
    dentro C4).
-2. Rileggi questa conversazione con lo strumento dell'archivio e scrivi in
-   `~/hypomnema-lavoro/archivio.json` l'indirizzo della chat e **tutti** i messaggi, quelli
-   dell'utente e le tue risposte, **esattamente come li restituisce l'archivio**, con la data e
-   l'ora dell'archivio (con il fuso orario):
+2. Rileggi questa conversazione con lo strumento dell'archivio. Lo strumento restituisce **al
+   massimo 50 turni per volta**, con un **segnalino** per chiedere i successivi: leggi a pezzi,
+   seguendo il segnalino, finché non hai tutti i turni che ti servono (alla prima copia della chat
+   tutti; dopo, quelli successivi all'ultimo copiato, che `H stato` mostra). Per **ogni pezzo**
+   scrivi in `~/hypomnema-lavoro/archivio.json` l'indirizzo della chat, il fuso orario e i messaggi,
+   quelli dell'utente e le tue risposte, **esattamente come li restituisce l'archivio**: il numero
+   del turno, la data e l'ora così come sono (al minuto) e il testo intero:
 
    ```json
-   {"chat": "https://claude.ai/chat/<codice della chat>",
-    "messaggi": [{"quando": "2026-10-11T18:47:33+02:00", "chi": "utente", "testo": "…"},
-                 {"quando": "2026-10-11T18:47:50+02:00", "chi": "claude", "testo": "…"}]}
+   {"chat": "https://claude.ai/chat/<codice della chat>", "fuso": "UTC+02:00",
+    "messaggi": [{"turno": 12, "quando": "Fri 2026-10-09 17:46", "chi": "utente", "testo": "…"},
+                 {"turno": 13, "quando": "Fri 2026-10-09 17:46", "chi": "claude", "testo": "…"}]}
    ```
 
-   Puoi mettere anche i messaggi già copiati: il programma non li duplica. Metti anche i messaggi
-   che cominciano con `#privato`: il programma ne tiene solo data e ora, e così anche per la tua
-   risposta.
-3. `H archivio ~/hypomnema-lavoro/archivio.json`. Se avvisa che un messaggio già presente ha un
-   testo diverso, dillo all'utente: non toccare niente.
+   Non togliere niente dal testo: gli avvisi tecnici che l'app inserisce tra `<system-reminder>` e
+   `</system-reminder>` li toglie il programma, con una regola fissa. Metti anche i messaggi già
+   copiati: il programma riconosce i doppioni dall'indirizzo della chat e dal numero del turno, e
+   non li duplica. Metti anche i messaggi che cominciano con `#privato`: il programma ne tiene solo
+   data e ora, e così anche per la tua risposta.
+3. Per ogni pezzo: `H archivio ~/hypomnema-lavoro/archivio.json`. Se avvisa che un messaggio già
+   presente ha un testo diverso, dillo all'utente: non toccare niente. Se rifiuta la copia (per
+   esempio per un avviso tecnico senza chiusura), dillo all'utente con il messaggio ricevuto.
 4. `H cambiati ~/hypomnema-lavoro/prima.json` e riporta i file elencati come in C4 (cartella nuova a
    ogni riporto, poi `H confronta`).
 5. Dillo all'utente in una riga: «Ho copiato nel quaderno gli ultimi messaggi di questa chat.»

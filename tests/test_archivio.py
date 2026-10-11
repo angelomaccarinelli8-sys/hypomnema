@@ -20,13 +20,14 @@ SEZIONE = ('\n[archivio]\nfile = "archivio-chat.jsonl"\nfile_diario = "diario-ch
 CONFIG_ARCHIVIO = CONFIG_CHAT + SEZIONE
 
 
-def copia_json(*messaggi, chat=CHAT) -> bytes:
-    return json.dumps({"chat": chat, "messaggi": [
-        {"quando": q, "chi": chi, "testo": t} for q, chi, t in messaggi]}).encode("utf-8")
+def copia_json(*messaggi, chat=CHAT, fuso="UTC+01:00") -> bytes:
+    """Una copia come la dà lo strumento dell'archivio: ora al minuto, fuso a parte, numero del turno."""
+    return json.dumps({"chat": chat, "fuso": fuso, "messaggi": [
+        {"turno": t, "quando": q, "chi": chi, "testo": testo} for t, q, chi, testo in messaggi]}).encode("utf-8")
 
 
-UTENTE = ("2026-01-15T09:00:00+01:00", "utente", "Voglio provare i peperoncini sul balcone.")
-CLAUDE = ("2026-01-15T09:00:20+01:00", "claude", "Bella idea:\n```\nx = 1\n```\nmettili al sole.")
+UTENTE = (0, "Thu 2026-01-15 09:00", "utente", "Voglio provare i peperoncini sul balcone.")
+CLAUDE = (1, "Thu 2026-01-15 09:00", "claude", "Bella idea:\n```\nx = 1\n```\nmettili al sole.")
 
 
 class ConArchivio(unittest.TestCase):
@@ -101,16 +102,17 @@ class TestCopia(ConArchivio):
         self.assertEqual(codice, 0)
         self.assertIn("1 messaggio dell'utente, 1 risposta di Claude", uscita)
         self.assertEqual(self.righe(self.config.file_archivio), [{
-            "quando": "2026-01-15T09:00:00+01:00", "chat": CHAT,
+            "quando": "2026-01-15T09:00:00+01:00", "chat": CHAT, "turno": 0,
             "testo": "Voglio provare i peperoncini sul balcone.", "origine": archivio.ORIGINE}])
         testo = self.righe(self.config.file_diario_chat)[0]["testo"]
         self.assertTrue(testo.startswith("Bella idea:\n[blocco di codice di 1 riga omesso, impronta "))
 
     def test_privati(self):
-        self.copia_da_file(copia_json(("2026-01-15T09:00:00+01:00", "utente", "#privato segreto"),
-                                      ("2026-01-15T09:00:10+01:00", "claude", "risposta segreta"),
-                                      ("2026-01-15T09:01:00+01:00", "utente", "normale"),
-                                      ("2026-01-15T09:01:10+01:00", "claude", "risposta normale")))
+        # Tutto nello stesso minuto: a dire chi risponde a chi è il numero del turno.
+        self.copia_da_file(copia_json((0, "Thu 2026-01-15 09:00", "utente", "#privato segreto"),
+                                      (1, "Thu 2026-01-15 09:00", "claude", "risposta segreta"),
+                                      (2, "Thu 2026-01-15 09:00", "utente", "normale"),
+                                      (3, "Thu 2026-01-15 09:00", "claude", "risposta normale")))
         self.assertEqual([r.get("privato") for r in self.righe(self.config.file_archivio)],
                          [archivio.DICITURA_PRIVATO, None])
         self.assertEqual([r.get("privato") for r in self.righe(self.config.file_diario_chat)],
@@ -119,44 +121,81 @@ class TestCopia(ConArchivio):
         self.assertNotIn("segret", tutto)
 
     def test_risposta_a_un_privato_copiato_prima(self):
-        self.copia_da_file(copia_json(("2026-01-15T09:00:00+01:00", "utente", "#privato segreto")))
-        self.copia_da_file(copia_json(("2026-01-15T09:00:10+01:00", "claude", "risposta segreta")))
+        self.copia_da_file(copia_json((0, "Thu 2026-01-15 09:00", "utente", "#privato segreto")))
+        self.copia_da_file(copia_json((1, "Thu 2026-01-15 09:00", "claude", "risposta segreta")))
         self.assertEqual(self.righe(self.config.file_diario_chat)[0]["privato"], archivio.DICITURA_RISPOSTA_PRIVATA)
 
     def test_niente_doppioni_e_testo_diverso_segnalato(self):
         self.copia_da_file(copia_json(UTENTE, CLAUDE))
         prima = self.config.file_archivio.read_text(encoding="utf-8")
-        codice, uscita = self.copia_da_file(copia_json(UTENTE, UTENTE,
-                                                       ("2026-01-15T09:00:20+01:00", "claude", "cambiata")))
+        codice, uscita = self.copia_da_file(copia_json(UTENTE, (1, "Thu 2026-01-15 09:00", "claude", "cambiata")))
         self.assertEqual(codice, 0)
         self.assertEqual(self.config.file_archivio.read_text(encoding="utf-8"), prima)
-        self.assertIn("Già presenti, non duplicati: 3.", uscita)
+        self.assertIn("Già presenti (stessa chat, stesso turno), non duplicati: 2.", uscita)
         self.assertIn("ATTENZIONE: 1 già presente ha un testo diverso", uscita)
         self.assertEqual(len(self.righe(self.config.file_diario_chat)), 1)
 
-    def test_stessa_ora_scritta_in_un_altro_modo(self):
+    def test_doppioni_per_turno_non_per_ora(self):
         self.copia_da_file(copia_json(UTENTE))
-        self.copia_da_file(copia_json(("2026-01-15T08:00:00+00:00", "utente", UTENTE[2]),
-                                      ("2026-01-15T09:00:00.000+01:00", "utente", UTENTE[2])))
-        self.assertEqual(len(self.righe(self.config.file_archivio)), 2)  # le 08:00 UTC sono un'altra ora scritta
+        # Stesso minuto, turno diverso: è un messaggio nuovo. Stesso turno, minuto diverso: è lo stesso.
+        self.copia_da_file(copia_json((2, "Thu 2026-01-15 09:00", "utente", "nuovo nello stesso minuto"),
+                                      (0, "Thu 2026-01-15 09:03", "utente", UTENTE[3])))
+        self.assertEqual([r["turno"] for r in self.righe(self.config.file_archivio)], [0, 2])
+
+    def test_stesso_turno_in_due_chat(self):
+        self.copia_da_file(copia_json(UTENTE))
+        self.copia_da_file(copia_json(UTENTE, chat="https://claude.ai/chat/altra"))
+        self.assertEqual(len(self.righe(self.config.file_archivio)), 2)
+
+    def test_ora_e_fuso_dello_strumento(self):
+        self.copia_da_file(copia_json((0, "Fri 2026-10-09 17:46", "utente", "a"), fuso="UTC+02:00"))
+        self.copia_da_file(copia_json((0, "2026-10-09 17:46", "utente", "b"), fuso="UTC-05:30",
+                                      chat="https://claude.ai/chat/altra"))
+        self.assertEqual([r["quando"] for r in self.righe(self.config.file_archivio)],
+                         ["2026-10-09T17:46:00+02:00", "2026-10-09T17:46:00-05:30"])
+
+    def test_avvisi_tecnici_tolti_dai_messaggi_dell_utente(self):
+        testo = "<system-reminder>\navviso\n</system-reminder>\n#privato segreto"
+        codice, uscita = self.copia_da_file(copia_json(
+            (0, "Thu 2026-01-15 09:00", "utente", testo),
+            (1, "Thu 2026-01-15 09:00", "claude", "risposta"),
+            (2, "Thu 2026-01-15 09:01", "utente", "prima <system-reminder>x</system-reminder> dopo"),
+            (3, "Thu 2026-01-15 09:01", "claude", "parlo di <system-reminder>x</system-reminder>")))
+        self.assertEqual(codice, 0)
+        self.assertIn("Avvisi tecnici <system-reminder> tolti dai messaggi dell'utente: 2.", uscita)
+        utente = self.righe(self.config.file_archivio)
+        self.assertEqual(utente[0]["privato"], archivio.DICITURA_PRIVATO)  # il #privato dopo l'avviso vale
+        self.assertEqual(utente[1]["testo"], "prima  dopo")
+        # Le risposte di Claude restano come sono.
+        self.assertEqual(self.righe(self.config.file_diario_chat)[1]["testo"],
+                         "parlo di <system-reminder>x</system-reminder>")
+
+    def test_avviso_non_chiuso_ferma_la_copia(self):
+        codice, uscita = self.copia_da_file(copia_json((0, "Thu 2026-01-15 09:00", "utente", "a <system-reminder> b")))
+        self.assertEqual(codice, 2)
+        self.assertIn("senza la sua chiusura", uscita)
+        self.assertFalse(self.config.cartella_quaderno.exists())
 
     def test_solo_aggiunta(self):
         self.copia_da_file(copia_json(UTENTE))
         prima = self.config.file_archivio.read_text(encoding="utf-8")
-        self.copia_da_file(copia_json(("2026-01-15T09:05:00+01:00", "utente", "dopo")))
+        self.copia_da_file(copia_json((2, "Thu 2026-01-15 09:05", "utente", "dopo")))
         self.assertTrue(self.config.file_archivio.read_text(encoding="utf-8").startswith(prima))
 
     def test_copia_non_valida_non_scrive_niente(self):
         for contenuto, frammento in (
             (b"non json", "non è in formato JSON"),
-            (json.dumps({"chat": CHAT}).encode(), "solo i campi «chat» e «messaggi»"),
+            (json.dumps({"chat": CHAT}).encode(), "solo i campi «chat», «fuso» e «messaggi»"),
             (copia_json(UTENTE, chat="claude.ai/chat/x"), "comincia con https://"),
             (copia_json(UTENTE, chat="https://claude.ai/chat/ con spazio"), "comincia con https://"),
-            (json.dumps({"chat": CHAT, "messaggi": []}).encode(), "almeno un messaggio"),
-            (copia_json(UTENTE, ("2026-01-15T09:00:00", "utente", "senza fuso")), "con il fuso orario"),
-            (copia_json(UTENTE, ("2026-01-15T09:00:00+01:00", "altro", "x")), "«utente» oppure «claude»"),
-            (json.dumps({"chat": CHAT, "messaggi": [{"quando": UTENTE[0], "chi": "utente", "testo": 3}]}).encode(),
-             "deve essere un testo"),
+            (copia_json(UTENTE, fuso="+02:00"), "il campo «fuso»"),
+            (json.dumps({"chat": CHAT, "fuso": "UTC+01:00", "messaggi": []}).encode(), "almeno un messaggio"),
+            (copia_json((0, "2026-01-15T09:00:00+01:00", "utente", "x")), "la forma dell'archivio"),
+            (copia_json((0, "Thu 2026-02-30 09:00", "utente", "x")), "una data che non esiste"),
+            (copia_json((-1, "Thu 2026-01-15 09:00", "utente", "x")), "numero del turno"),
+            (copia_json(UTENTE, UTENTE), "ripete un turno"),
+            (copia_json((0, "Thu 2026-01-15 09:00", "altro", "x")), "«utente» oppure «claude»"),
+            (copia_json((0, "Thu 2026-01-15 09:00", "utente", 3)), "deve essere un testo"),
         ):
             with self.subTest(frammento=frammento):
                 codice, uscita = self.copia_da_file(contenuto)
@@ -175,8 +214,8 @@ class TestTreLivelli(ConArchivio):
     def test_nota_dell_utente_riscontrata(self):
         self.copia_da_file(copia_json(UTENTE))
         self.assertEqual(self.riga_verifica(self.proponi(testo="provare i peperoncini")),
-                         f"- verifica: testo riscontrato sull'archivio della chat {CHAT}, messaggio del "
-                         "2026-01-15T09:00:00+01:00 (copiato da Claude)")
+                         f"- verifica: testo riscontrato sull'archivio della chat {CHAT}, messaggio del turno 0 "
+                         "(2026-01-15T09:00:00+01:00, copiato da Claude)")
 
     def test_testo_assente_non_verificato_e_non_rifiutato(self):
         self.copia_da_file(copia_json(UTENTE))
@@ -189,7 +228,7 @@ class TestTreLivelli(ConArchivio):
         self.assertIn("non verificato", self.riga_verifica(self.proponi(testo="mettili al sole.")))
 
     def test_messaggio_privato_non_riscontrabile(self):
-        self.copia_da_file(copia_json(("2026-01-15T09:00:00+01:00", "utente", "#privato parole segrete")))
+        self.copia_da_file(copia_json((0, "Thu 2026-01-15 09:00", "utente", "#privato parole segrete")))
         self.assertIn("non verificato", self.riga_verifica(self.proponi(testo="parole segrete")))
 
     def test_citazione_di_claude_riscontrata(self):
@@ -201,8 +240,8 @@ class TestTreLivelli(ConArchivio):
         self.copia_da_file(copia_json(UTENTE, CLAUDE))
         esito = self.proponi(autore="claude", tipo="dedotta", natura="idea", da_risposta="sì", testo="mettili al sole.")
         self.assertEqual(self.riga_verifica(esito),
-                         f"- verifica: testo riscontrato sull'archivio della chat {CHAT}, risposta del "
-                         "2026-01-15T09:00:20+01:00 (copiato da Claude)")
+                         f"- verifica: testo riscontrato sull'archivio della chat {CHAT}, risposta del turno 1 "
+                         "(2026-01-15T09:00:00+01:00, copiato da Claude)")
         esito = self.proponi(autore="claude", tipo="dedotta", natura="idea", da_risposta="sì", testo="mai detto")
         self.assertEqual(self.riga_verifica(esito), "- verifica: risposta non verificata (chat, senza testimone)")
 
@@ -216,10 +255,10 @@ class TestDiarioEStato(ConArchivio):
         self.copia_da_file(copia_json(UTENTE, CLAUDE))
         codice, uscita = self.comando("diario", "peperoncini")
         self.assertEqual(codice, 0)
-        self.assertIn(f"--- 2026-01-15T09:00:00+01:00 · utente · archivio della chat {CHAT}, copiato da Claude ---", uscita)
+        self.assertIn(f"--- 2026-01-15T09:00:00+01:00 · utente · archivio della chat {CHAT}, turno 0, copiato da Claude ---", uscita)
 
     def test_ultimi(self):
-        self.copia_da_file(copia_json(UTENTE, CLAUDE, ("2026-01-15T09:05:00+01:00", "utente", "terzo")))
+        self.copia_da_file(copia_json(UTENTE, CLAUDE, (2, "Thu 2026-01-15 09:05", "utente", "terzo")))
         codice, uscita = self.comando("diario", "--ultimi", "2")
         self.assertEqual(codice, 0)
         self.assertTrue(uscita.startswith("Gli ultimi 2 messaggi del diario"))
@@ -233,7 +272,7 @@ class TestDiarioEStato(ConArchivio):
         _, uscita = self.comando("stato")
         self.assertIn("Archivio della chat: 1 messaggi dell'utente e 1 risposte di Claude copiati da Claude "
                       "(da copiare ogni 5 scambi e alla chiusura).", uscita)
-        self.assertIn(f"Ultimo copiato: 2026-01-15T09:00:20+01:00 (chat {CHAT})", uscita)
+        self.assertIn(f"Ultimo copiato: 2026-01-15T09:00:00+01:00 (chat {CHAT})", uscita)
 
 
 class TestCambiatiEControlla(ConArchivio):
@@ -256,7 +295,7 @@ class TestCambiatiEControlla(ConArchivio):
         self.copia_da_file(copia_json(UTENTE))
         prima = self.istantanea()
         with open(self.config.file_archivio, "ab") as f:
-            f.write(b'{"quando": "2026-01-15T10:00:00+01:00", "testo": "scritto a mano"}\n')
+            f.write(b'{"quando": "2026-01-15T10:00:00+01:00", "turno": 9, "testo": "scritto a mano"}\n')
         codice, uscita = self.comando("cambiati", str(prima))
         self.assertEqual(codice, 2)
         self.assertIn("non è del comando archivio", uscita)
@@ -268,7 +307,7 @@ class TestCambiatiEControlla(ConArchivio):
             f.write(riga + b"rovinata\n")
         codice, uscita = self.comando("controlla")
         self.assertEqual(codice, 1)
-        self.assertIn("- archivio-chat.jsonl, riga 2: stessa chat e stessa ora della riga 1 (doppione).", uscita)
+        self.assertIn("- archivio-chat.jsonl, riga 2: stessa chat e stesso turno della riga 1 (doppione).", uscita)
         self.assertIn("- archivio-chat.jsonl, riga 3: non ha la forma di una riga dell'archivio della chat.", uscita)
 
     def test_controlla_in_ordine(self):
@@ -280,7 +319,8 @@ class TestSkillArchivio(unittest.TestCase):
     def test_skill(self):
         skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
         for frammento in ("H archivio", "dove eravamo rimasti", "H diario --ultimi", "copia_ogni",
-                          "Non copiare mai le parole dell'utente a memoria"):
+                          "Non copiare mai le parole dell'utente a memoria", "50 turni", "segnalino",
+                          '"fuso": "UTC+02:00"', '"turno"'):
             with self.subTest(frammento=frammento):
                 self.assertIn(frammento, skill)
 

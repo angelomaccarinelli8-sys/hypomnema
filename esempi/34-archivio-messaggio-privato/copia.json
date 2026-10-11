@@ -1,23 +1,28 @@
 {
   "chat": "https://claude.ai/chat/00000000-0000-0000-0000-esempio00001",
+  "fuso": "UTC+01:00",
   "messaggi": [
     {
-      "quando": "2026-01-15T09:00:00+01:00",
+      "turno": 0,
+      "quando": "Thu 2026-01-15 09:00",
       "chi": "utente",
       "testo": "#privato oggi sono stanco, parliamo d'altro"
     },
     {
-      "quando": "2026-01-15T09:00:15+01:00",
+      "turno": 1,
+      "quando": "Thu 2026-01-15 09:00",
       "chi": "claude",
       "testo": "Va bene, quando vuoi."
     },
     {
-      "quando": "2026-01-15T09:05:00+01:00",
+      "turno": 2,
+      "quando": "Thu 2026-01-15 09:05",
       "chi": "utente",
       "testo": "Quando semino il basilico?"
     },
     {
-      "quando": "2026-01-15T09:05:20+01:00",
+      "turno": 3,
+      "quando": "Thu 2026-01-15 09:05",
       "chi": "claude",
       "testo": "Il basilico si semina ad aprile."
     }

@@ -1,5 +1,6 @@
 $ hypomnema archivio copia.json
 Copiati dall'archivio della chat: 1 messaggio dell'utente, 1 risposta di Claude.
+Avvisi tecnici <system-reminder> tolti dai messaggi dell'utente: 1.
 [codice di uscita: 0]
 
 $ hypomnema proponi nota.json
@@ -16,7 +17,7 @@ fonte: chat del 15 gennaio 2026 sul balcone
 autore: utente
 tipo: dichiarata
 natura: idea
-verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, messaggio del 2026-01-15T09:00:00+01:00 (copiato da Claude)
+verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, messaggio del turno 0 (2026-01-15T09:00:00+01:00, copiato da Claude)
 testo:
   voglio provare i peperoncini piccanti sul balcone
 contesto scritto da Claude:
@@ -33,6 +34,6 @@ Ultimo messaggio registrato: nessuno.
 Archivio della chat: 1 messaggi dell'utente e 1 risposte di Claude copiati da Claude (da copiare ogni 5 scambi e alla chiusura).
 File dell'archivio: <cartella di prova>/quaderno/archivio-chat.jsonl
 File del diario della chat: <cartella di prova>/quaderno/diario-chat.jsonl
-Ultimo copiato: 2026-01-15T09:00:20+01:00 (chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001)
+Ultimo copiato: 2026-01-15T09:00:00+01:00 (chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001)
 [codice di uscita: 0]
 

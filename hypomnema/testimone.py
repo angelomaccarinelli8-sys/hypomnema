@@ -51,8 +51,9 @@ class Messaggio:
     prompt_id: str | None = None
     # La dicitura scritta al posto del testo, per i messaggi non registrati.
     privato: str | None = None
-    # L'indirizzo della chat, per i messaggi copiati dall'archivio della chat.
+    # L'indirizzo della chat e il numero del turno, per i messaggi copiati dall'archivio della chat.
     chat: str | None = None
+    turno: int | None = None
 
 
 @dataclass(frozen=True)
