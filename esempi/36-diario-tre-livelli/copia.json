@@ -1,0 +1,15 @@
+{
+  "chat": "https://claude.ai/chat/00000000-0000-0000-0000-esempio00001",
+  "messaggi": [
+    {
+      "quando": "2026-01-15T09:00:00+01:00",
+      "chi": "utente",
+      "testo": "Le fragole in vaso vogliono un terriccio acido."
+    },
+    {
+      "quando": "2026-01-15T09:00:20+01:00",
+      "chi": "claude",
+      "testo": "Sì: per le fragole va bene un terriccio per acidofile."
+    }
+  ]
+}

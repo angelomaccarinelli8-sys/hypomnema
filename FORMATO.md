@@ -113,6 +113,8 @@ Lo sportello, e solo lo sportello, aggiunge alla nota salvata una riga `verifica
 | Testimone spento, nota di Claude con citazione | `- verifica: citazione non verificata (testimone spento)` |
 | Chat di Claude (`modalita = "chat"`), `autore: utente` | `- verifica: autore non verificato (chat, senza testimone)` |
 | Chat di Claude (`modalita = "chat"`), nota di Claude con citazione | `- verifica: citazione non verificata (chat, senza testimone)` |
+| Chat con l'archivio (`[archivio]`), `autore: utente`, testo trovato nella copia dell'archivio | `- verifica: testo riscontrato sull'archivio della chat <indirizzo>, messaggio del <data e ora> (copiato da Claude)` |
+| Chat con l'archivio, nota di Claude con citazione trovata nell'archivio, o con `da_risposta` trovata nel diario della chat | `- verifica: citazione riscontrata sull'archivio della chat …` oppure `- verifica: testo riscontrato sull'archivio della chat …, risposta del …` |
 | Testimoni in pausa (`/hypomnema:pausa`), `autore: utente` | `- verifica: autore non verificato (testimoni in pausa)` |
 | Testimoni in pausa, nota di Claude con citazione o con `da_risposta` | `- verifica: citazione non verificata (testimoni in pausa)` oppure `- verifica: risposta non verificata (testimoni in pausa)` |
 | Nota di Claude con `da_risposta`, testimone delle risposte acceso, testo trovato | `- verifica: testo trovato nella risposta di Claude del <data e ora>` |
@@ -140,6 +142,24 @@ esadecimali dello SHA-256 delle righe del blocco, ciascuna seguita da un a capo.
 
 Con `da_risposta`, il testo della nota viene cercato nelle risposte con le stesse regole del
 testimone dei messaggi (identico a parte spazi e a capo multipli, dentro una sola risposta).
+
+## L'archivio della chat
+
+Nella configurazione per la chat, la sezione `[archivio]` accende la copia dall'archivio della chat.
+Il comando `archivio <file.json>` riceve da Claude l'indirizzo della chat e i messaggi
+(`{"chat": "https://…", "messaggi": [{"quando": "…+02:00", "chi": "utente"|"claude", "testo": "…"}]}`)
+e li aggiunge, solo in aggiunta e senza doppioni (stesso indirizzo, stessa data e ora):
+
+```
+archivio-chat.jsonl  {"quando": "…", "chat": "https://…", "testo": "…", "origine": "copiato dall'archivio della chat da Claude"}
+diario-chat.jsonl    {"quando": "…", "chat": "https://…", "testo": "…", "origine": "copiato dall'archivio della chat da Claude"}
+```
+
+I messaggi che cominciano con il prefisso privato diventano `"privato": "messaggio privato, non
+copiato"`, e la risposta che li segue `"privato": "risposta a un messaggio privato, non copiata"`.
+Nelle risposte i blocchi di codice sono sostituiti dalla loro impronta se `ometti_codice = true`.
+Lo sportello cerca il testo delle note dell'utente nell'archivio con le stesse regole del testimone;
+se non lo trova la nota resta non verificata, non viene rifiutata.
 
 ## Da idea a decisione
 

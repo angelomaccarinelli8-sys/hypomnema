@@ -7,6 +7,7 @@ soltanto: non ripara niente, perché il registro si allunga soltanto e la decisi
 
 from dataclasses import dataclass
 
+from hypomnema import archivio
 from hypomnema.configurazione import Configurazione
 from hypomnema.quaderno import NOME_FILE_NOTA
 from hypomnema.registro import INTESTAZIONE, RIGA_ACCETTATA, RIGA_RIFIUTATA
@@ -20,11 +21,15 @@ class Esito:
     senza_intestazione: bool  # il registro c'è ma non comincia con l'intestazione
     righe_estranee: list[tuple[int, str]]  # (numero di riga, testo) che non sono dello sportello
     senza_a_capo_finale: bool  # il registro c'è ma non finisce con un a capo
+    # Nei file dell'archivio della chat: (nome del file, riga) rovinate e (nome, riga, riga già vista) doppioni.
+    archivio_rovinate: tuple[tuple[str, int], ...] = ()
+    archivio_doppioni: tuple[tuple[str, int, int], ...] = ()
 
     @property
     def in_ordine(self) -> bool:
         return not (self.senza_riga or self.senza_nota or self.senza_intestazione
-                    or self.righe_estranee or self.senza_a_capo_finale)
+                    or self.righe_estranee or self.senza_a_capo_finale
+                    or self.archivio_rovinate or self.archivio_doppioni)
 
 
 def controlla(config: Configurazione) -> Esito:
@@ -57,6 +62,15 @@ def controlla(config: Configurazione) -> Esito:
             elif not RIGA_RIFIUTATA.fullmatch(riga):
                 righe_estranee.append((numero, riga))
 
+    rovinate: list[tuple[str, int]] = []
+    doppioni: list[tuple[str, int, int]] = []
+    for file in (config.file_archivio, config.file_diario_chat):
+        if file is None:
+            continue
+        coppie, righe_rovinate = archivio.doppioni_e_righe_rovinate(file)
+        rovinate += [(file.name, n) for n in righe_rovinate]
+        doppioni += [(file.name, n, m) for n, m in coppie]
+
     def in_ordine(numeri: set[str]) -> list[str]:
         return sorted(numeri, key=lambda n: (int(n), n))
 
@@ -67,4 +81,6 @@ def controlla(config: Configurazione) -> Esito:
         senza_intestazione=senza_intestazione,
         righe_estranee=righe_estranee,
         senza_a_capo_finale=senza_a_capo_finale,
+        archivio_rovinate=tuple(rovinate),
+        archivio_doppioni=tuple(doppioni),
     )

@@ -1,0 +1,3 @@
+archivio 1-copia.json
+archivio 2-copia-di-nuovo.json
+controlla

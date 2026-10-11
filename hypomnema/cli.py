@@ -14,6 +14,7 @@
     python -m hypomnema impronta FILE           # l'impronta di un file, come per i blocchi di codice omessi
     python -m hypomnema diario PAROLA           # cerca nei messaggi e nelle risposte (--intorno: con i vicini)
     python -m hypomnema avvio                   # inizio sessione (lo lancia Claude Code): prima volta e avvisi
+    python -m hypomnema archivio copia.json     # chat: aggiunge la copia dell'archivio della chat (solo aggiunta)
     python -m hypomnema protezione              # ferma gli strumenti di Claude sul quaderno (lo lancia Claude Code)
 
 Anche il comando "risposte", come "testimone", non esce mai con 2: per Claude Code, alla fine
@@ -32,7 +33,7 @@ from pathlib import Path
 from typing import TextIO
 
 from hypomnema import (
-    __version__, avvio, cambiamenti, cercatore, configurazione, controllo, diario, registro, risposte,
+    __version__, archivio, avvio, cambiamenti, cercatore, configurazione, controllo, diario, registro, risposte,
     sportello, testimone,
 )
 from hypomnema.nota import Nota, NotaIlleggibile
@@ -98,10 +99,16 @@ def _parser() -> argparse.ArgumentParser:
     cerca_diario = comandi.add_parser(
         "diario", help="cerca una parola nei messaggi dell'utente e nelle risposte di Claude"
     )
-    cerca_diario.add_argument("parola", help="la parola (o le parole) da cercare, così come sono")
+    cerca_diario.add_argument("parola", nargs="?", help="la parola (o le parole) da cercare, così come sono")
+    cerca_diario.add_argument("--ultimi", type=int, metavar="N",
+                              help="senza parola: mostra gli ultimi N messaggi del diario")
     cerca_diario.add_argument(
         "--intorno", action="store_true", help="mostra anche il messaggio subito prima e subito dopo"
     )
+    copia_archivio = comandi.add_parser(
+        "archivio", help="chat: aggiunge ai file del quaderno la copia dei messaggi presa dall'archivio della chat"
+    )
+    copia_archivio.add_argument("file", help="file JSON con l'indirizzo della chat e i messaggi")
     comandi.add_parser(
         "avvio", help="inizio sessione (lo lancia Claude Code): crea la configurazione la prima volta e avvisa"
     )
@@ -230,8 +237,52 @@ def _stato(argomenti, config, uscita: TextIO) -> int:
         righe += _rientrato(messaggi[-1].testo)
     if config.sezione_risposte:
         righe += _stato_risposte(config)
+    if config.file_archivio is not None:
+        righe += _stato_archivio(config)
     for riga in righe:
         print(riga, file=uscita)
+    return 0
+
+
+def _stato_archivio(config) -> list[str]:
+    messaggi, risposte_copiate = archivio.leggi_messaggi(config), archivio.leggi_risposte(config)
+    righe = [
+        f"Archivio della chat: {len(messaggi)} messaggi dell'utente e {len(risposte_copiate)} risposte di Claude "
+        f"copiati da Claude (da copiare ogni {config.copia_ogni} scambi e alla chiusura).",
+        f"File dell'archivio: {config.file_archivio}",
+        f"File del diario della chat: {config.file_diario_chat}",
+    ]
+    tutti = sorted(messaggi + risposte_copiate, key=lambda m: datetime.fromisoformat(m.quando))
+    if tutti:
+        righe.append(f"Ultimo copiato: {tutti[-1].quando} (chat {tutti[-1].chat})")
+    else:
+        righe.append("Ultimo copiato: nessuno.")
+    return righe
+
+
+def _archivio(argomenti, config, uscita: TextIO) -> int:
+    file = Path(argomenti.file)
+    if not file.is_file():
+        print(f"ERRORE: non trovo il file «{file}».", file=uscita)
+        return 2
+    esito = archivio.copia(config, file.read_bytes())
+
+    def quanti(n: int, uno: str, tanti: str) -> str:
+        return f"{n} {uno if n == 1 else tanti}"
+
+    print(f"Copiati dall'archivio della chat: {quanti(esito.utente, 'messaggio', 'messaggi')} dell'utente, "
+          f"{quanti(esito.claude, 'risposta', 'risposte')} di Claude.", file=uscita)
+    if esito.privati or esito.risposte_private:
+        print(f"Privati, solo data e ora: {quanti(esito.privati, 'messaggio', 'messaggi')} dell'utente, "
+              f"{quanti(esito.risposte_private, 'risposta', 'risposte')}.", file=uscita)
+    if esito.gia_presenti:
+        print(f"Già presenti, non duplicati: {esito.gia_presenti}.", file=uscita)
+    if esito.diversi:
+        if esito.diversi == 1:
+            quali, toccati = "1 già presente ha", "non l'ho toccato"
+        else:
+            quali, toccati = f"{esito.diversi} già presenti hanno", "non li ho toccati"
+        print(f"ATTENZIONE: {quali} un testo diverso da quello arrivato ora: {toccati}.", file=uscita)
     return 0
 
 
@@ -302,6 +353,10 @@ def _controlla(config, uscita: TextIO) -> int:
     if esito.senza_a_capo_finale:
         print("- il registro non finisce con un a capo: lo sportello non scriverà finché non è sistemato.",
               file=uscita)
+    for nome, numero in esito.archivio_rovinate:
+        print(f"- {nome}, riga {numero}: non ha la forma di una riga dell'archivio della chat.", file=uscita)
+    for nome, numero, prima in esito.archivio_doppioni:
+        print(f"- {nome}, riga {numero}: stessa chat e stessa ora della riga {prima} (doppione).", file=uscita)
     for numero in esito.senza_riga:
         print(f"- nota {numero}: la nota c'è, ma nel registro manca la sua riga ACCETTATA.", file=uscita)
     for numero in esito.senza_nota:
@@ -416,10 +471,23 @@ def _impronta(argomenti, uscita: TextIO) -> int:
 
 def _diario(argomenti, config, uscita: TextIO) -> int:
     """Solo lettura: i messaggi e le risposte che contengono la parola, in ordine di tempo."""
-    parola = argomenti.parola.strip()
-    if not parola:
-        print("ERRORE: serve una parola da cercare.", file=uscita)
+    parola = (argomenti.parola or "").strip()
+    if not parola and argomenti.ultimi is None:
+        print("ERRORE: serve una parola da cercare (oppure --ultimi N).", file=uscita)
         return 2
+    if not parola:
+        if argomenti.ultimi < 1:
+            print("ERRORE: --ultimi vuole un numero maggiore di zero.", file=uscita)
+            return 2
+        tutte = diario.voci(config)
+        if not tutte:
+            print("Il diario è vuoto: non c'è nessun messaggio registrato.", file=uscita)
+            return 0
+        ultimi = tutte[-argomenti.ultimi:]
+        print(f"Gli ultimi {len(ultimi)} messaggi del diario (la conversazione registrata, non le note):", file=uscita)
+        for voce in ultimi:
+            _stampa_voce(voce, "", uscita)
+        return 0
     tutte, trovate = diario.cerca(config, parola)
     if not tutte:
         print("Il diario è vuoto: non c'è nessun messaggio registrato.", file=uscita)
@@ -438,13 +506,18 @@ def _diario(argomenti, config, uscita: TextIO) -> int:
             print("", file=uscita)
             print("[...]", file=uscita)
         precedente = posizione
-        voce = tutte[posizione]
         segno = " (trovato)" if argomenti.intorno and posizione in trovate else ""
-        print("", file=uscita)
-        print(f"--- {voce.quando} · {voce.chi}{segno} ---", file=uscita)
-        for riga in _rientrato(voce.testo if voce.testo is not None else f"({voce.dicitura})"):
-            print(riga, file=uscita)
+        _stampa_voce(tutte[posizione], segno, uscita)
     return 0
+
+
+def _stampa_voce(voce, segno: str, uscita: TextIO) -> None:
+    # Le righe dei testimoni di Claude Code non hanno indicazione; quelle copiate dall'archivio dicono da dove vengono.
+    fonte = f" · {voce.fonte}" if voce.fonte else ""
+    print("", file=uscita)
+    print(f"--- {voce.quando} · {voce.chi}{fonte}{segno} ---", file=uscita)
+    for riga in _rientrato(voce.testo if voce.testo is not None else f"({voce.dicitura})"):
+        print(riga, file=uscita)
 
 
 def _testimone(argomenti, adesso: datetime, errori: TextIO) -> int:
@@ -523,6 +596,8 @@ def main(
             return _controlla(config, uscita)
         if argomenti.comando == "diario":
             return _diario(argomenti, config, uscita)
+        if argomenti.comando == "archivio":
+            return _archivio(argomenti, config, uscita)
         if argomenti.comando == "impostazioni-claude":
             return _impostazioni_claude(argomenti, config, uscita)
         return _cerca(argomenti, config, uscita)

@@ -1,0 +1,20 @@
+{
+  "chat": "https://claude.ai/chat/00000000-0000-0000-0000-esempio00001",
+  "messaggi": [
+    {
+      "quando": "2026-01-15T09:00:00+01:00",
+      "chi": "utente",
+      "testo": "Quest'anno voglio provare i peperoncini piccanti sul balcone."
+    },
+    {
+      "quando": "2026-01-15T09:00:20+01:00",
+      "chi": "claude",
+      "testo": "Bella idea: mettili al sole pieno."
+    },
+    {
+      "quando": "2026-01-15T09:10:00+01:00",
+      "chi": "utente",
+      "testo": "E i pomodori?"
+    }
+  ]
+}

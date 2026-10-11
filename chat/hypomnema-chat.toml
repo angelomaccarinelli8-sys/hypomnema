@@ -41,3 +41,23 @@ prefisso_privato = "#privato"
 # annota quali righe erano marcate; una nota presa tutta da righe marcate viene salvata con
 # la dicitura "citazione riportata dall'utente".
 segno_citazione = ">"
+
+[archivio]
+# Nella chat Claude può rileggere la conversazione dall'archivio delle chat di Claude (serve il
+# permesso «cerca e consulta le chat passate»). Con il comando «archivio» copia nel quaderno i
+# messaggi dell'utente e le sue risposte, con l'indirizzo della chat: le note dell'utente il cui
+# testo si trova lì sono «riscontrate sull'archivio della chat». Il testo passa da Claude: per questo
+# ogni nota riscontrata porta l'indirizzo della chat, che chiunque può aprire per controllare.
+
+# File dei messaggi dell'utente copiati dall'archivio (si allunga soltanto).
+file = "archivio-chat.jsonl"
+
+# File delle risposte di Claude copiate dall'archivio: il diario della chat (si allunga soltanto).
+file_diario = "diario-chat.jsonl"
+
+# true: nelle risposte ogni blocco di codice diventa una riga con la sua impronta, come nel
+# testimone delle risposte; false: viene copiato intero.
+ometti_codice = true
+
+# Ogni quanti scambi Claude copia dall'archivio i messaggi nuovi (lo fa anche quando chiudi la chat).
+copia_ogni = 5

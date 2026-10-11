@@ -207,6 +207,17 @@ def _dicitura(cosa: str, trovato: Ritrovamento) -> str:
 
 # Perché manca la verifica: il testimone c'è ma è spento, oppure siamo nella chat di Claude,
 # dove il testimone non esiste. Fa parte della dicitura scritta nella nota.
+def _riscontro(copiati: list[Messaggio] | None, testo: str, segno: str, cosa: str, che: str) -> str | None:
+    """La dicitura del livello «riscontrato sull'archivio della chat», oppure None se non si trova."""
+    if not copiati:
+        return None
+    trovato = trova_citazione(copiati, testo, segno)
+    if trovato is None:
+        return None
+    m = trovato.messaggio
+    return f"{cosa} sull'archivio della chat {m.chat}, {che} del {m.quando} (copiato da Claude)"
+
+
 SENZA_TESTIMONE = "testimone spento"
 SENZA_TESTIMONE_IN_CHAT = "chat, senza testimone"
 
@@ -219,10 +230,17 @@ SENZA_TESTIMONE_IN_PAUSA = "testimoni in pausa"
 def verifica(
     autore: str, testo: str, citazione: str | None, messaggi: list[Messaggio] | None, segno: str,
     in_chat: bool = False, da_risposta: bool = False, risposte: list[Messaggio] | None = None,
-    in_pausa: bool = False,
+    in_pausa: bool = False, archivio: list[Messaggio] | None = None, diario_chat: list[Messaggio] | None = None,
 ) -> str | None:
-    """La dicitura "verifica" da scrivere nella nota accettata (None = nessuna dicitura)."""
+    """La dicitura "verifica" da scrivere nella nota accettata (None = nessuna dicitura).
+
+    Tre livelli: verificato dal testimone («trovato»), riscontrato sull'archivio della chat
+    («riscontrato», con l'indirizzo della chat), non verificato.
+    """
     if da_risposta:
+        riscontro = _riscontro(diario_chat, testo, segno, "testo riscontrato", "risposta")
+        if risposte is None and riscontro:
+            return riscontro
         if risposte is None:
             perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_RISPOSTE
             return f"risposta non verificata ({perche})"
@@ -231,9 +249,10 @@ def verifica(
     if messaggi is None:
         perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_TESTIMONE
         if autore == "utente":
-            return f"autore non verificato ({perche})"
+            return _riscontro(archivio, testo, segno, "testo riscontrato", "messaggio") or f"autore non verificato ({perche})"
         if citazione is not None:
-            return f"citazione non verificata ({perche})"
+            return (_riscontro(archivio, citazione, segno, "citazione riscontrata", "messaggio")
+                    or f"citazione non verificata ({perche})")
         return None
     if autore == "utente":
         return _dicitura("testo trovato", trova_citazione(messaggi, testo, segno))

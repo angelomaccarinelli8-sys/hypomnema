@@ -1,0 +1,38 @@
+$ hypomnema archivio copia.json
+Copiati dall'archivio della chat: 1 messaggio dell'utente, 1 risposta di Claude.
+[codice di uscita: 0]
+
+$ hypomnema proponi nota.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca peperoncini
+Trovata 1 nota con «peperoncini».
+
+--- Nota 0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sul balcone
+autore: utente
+tipo: dichiarata
+natura: idea
+verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, messaggio del 2026-01-15T09:00:00+01:00 (copiato da Claude)
+testo:
+  voglio provare i peperoncini piccanti sul balcone
+contesto scritto da Claude:
+  Detto parlando delle semine di primavera.
+[codice di uscita: 0]
+
+$ hypomnema stato
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Testimone: NON C'È (configurazione per la chat di Claude): i messaggi arrivano solo a Claude e le note con autore «utente» saranno marcate «autore non verificato (chat, senza testimone)».
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 0
+Ultimo messaggio registrato: nessuno.
+Archivio della chat: 1 messaggi dell'utente e 1 risposte di Claude copiati da Claude (da copiare ogni 5 scambi e alla chiusura).
+File dell'archivio: <cartella di prova>/quaderno/archivio-chat.jsonl
+File del diario della chat: <cartella di prova>/quaderno/diario-chat.jsonl
+Ultimo copiato: 2026-01-15T09:00:20+01:00 (chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001)
+[codice di uscita: 0]
+

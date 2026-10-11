@@ -1,0 +1,14 @@
+$ hypomnema archivio 1-copia.json
+Copiati dall'archivio della chat: 1 messaggio dell'utente, 1 risposta di Claude.
+[codice di uscita: 0]
+
+$ hypomnema archivio 2-copia-di-nuovo.json
+Copiati dall'archivio della chat: 1 messaggio dell'utente, 0 risposte di Claude.
+Già presenti, non duplicati: 2.
+ATTENZIONE: 1 già presente ha un testo diverso da quello arrivato ora: non l'ho toccato.
+[codice di uscita: 0]
+
+$ hypomnema controlla
+Quaderno in ordine: nessuna nota.
+[codice di uscita: 0]
+

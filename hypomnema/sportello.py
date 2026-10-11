@@ -9,7 +9,7 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 
-from hypomnema import quaderno, registro, regole, risposte as testimone_risposte, testimone
+from hypomnema import archivio as testimone_archivio, quaderno, registro, regole, risposte as testimone_risposte, testimone
 from hypomnema.configurazione import Configurazione
 from hypomnema.nota import Nota
 
@@ -105,6 +105,8 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         verifica=regole.verifica(
             autore, testo, citazione, messaggi, config.segno_citazione, config.in_chat,
             da_risposta=proposta.get("da_risposta") is not None, risposte=risposte, in_pausa=in_pausa,
+            archivio=testimone_archivio.leggi_messaggi(config) if config.file_archivio else None,
+            diario_chat=testimone_archivio.leggi_risposte(config) if config.file_archivio else None,
         ),
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)

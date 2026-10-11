@@ -85,13 +85,18 @@ class TestConfigurazioneChat(ConQuaderno):
         sviluppo = tomllib.loads((RADICE / "hypomnema.toml").read_text(encoding="utf-8"))
         sviluppo["testimone"]["modalita"] = "chat"
         del sviluppo["risposte"]  # in chat il testimone delle risposte non esiste
-        self.assertEqual(tomllib.loads(MODELLO_CHAT.read_text(encoding="utf-8")), sviluppo)
+        modello = tomllib.loads(MODELLO_CHAT.read_text(encoding="utf-8"))
+        self.assertEqual(modello.pop("archivio"), {"file": "archivio-chat.jsonl", "file_diario": "diario-chat.jsonl",
+                                                   "ometti_codice": True, "copia_ogni": 5})
+        self.assertEqual(modello, sviluppo)
 
     def test_esempi_usano_il_modello(self):
+        # Gli esempi 18 e 19 sono nati prima della sezione [archivio]: uguali al modello senza di lei.
         modello = MODELLO_CHAT.read_text(encoding="utf-8")
+        senza_archivio = modello[:modello.index("\n[archivio]")]
         for nome in ("18-chat-nota-utente", "19-chat-file-da-riportare"):
             with self.subTest(esempio=nome):
-                self.assertEqual((CARTELLA_ESEMPI / nome / "hypomnema.toml").read_text(encoding="utf-8"), modello)
+                self.assertEqual((CARTELLA_ESEMPI / nome / "hypomnema.toml").read_text(encoding="utf-8"), senza_archivio)
 
 
 class TestMarcaturaInChat(ConQuaderno):
@@ -366,7 +371,7 @@ class TestSkillModalitaChat(unittest.TestCase):
         for comando in ("istantanea >", "cambiati", "chat/hypomnema-chat.toml", "H controlla"):
             self.assertIn(comando, skill)
         # Prima il registro, poi le note: il registro fa da lucchetto.
-        self.assertIn("**Prima `registro.md`, poi le note create.**", skill)
+        self.assertIn("**Prima `registro.md`, poi i file dell'archivio della chat, poi le note create.**", skill)
 
 
 if __name__ == "__main__":

@@ -48,6 +48,11 @@ class Configurazione:
     file_testimone: Path
     prefisso_privato: str
     segno_citazione: str
+    # La copia dell'archivio della chat (sezione [archivio], facoltativa, solo per la chat).
+    file_archivio: Path | None = None
+    file_diario_chat: Path | None = None
+    archivio_ometti_codice: bool = True
+    copia_ogni: int | None = None
 
 
 def trova(percorso: str | None = None) -> Path:
@@ -174,6 +179,40 @@ def carica(percorso: str | None = None) -> Configurazione:
                 "era privato. Accendi anche [testimone] attivo = true, oppure spegni [risposte]."
             )
 
+    # Facoltativa e solo nella configurazione per la chat: la copia dell'archivio della chat.
+    archivio = dati.get("archivio")
+    if archivio is not None:
+        if not isinstance(archivio, dict):
+            raise ErroreConfigurazione(f"nel file «{file}» [archivio] deve essere una sezione.")
+        if not in_chat:
+            raise ErroreConfigurazione(
+                f"nel file «{file}» c'è la sezione [archivio], che serve solo nella chat di Claude: "
+                'va insieme a modalita = "chat" nella sezione [testimone].'
+            )
+        for chiave in ("file", "file_diario"):
+            valore = archivio.get(chiave)
+            come_windows = PureWindowsPath(valore) if isinstance(valore, str) else None
+            if (
+                come_windows is None or not valore.strip() or come_windows.anchor
+                or PurePosixPath(valore).is_absolute() or ".." in come_windows.parts
+            ):
+                raise ErroreConfigurazione(
+                    f"nel file «{file}» l'impostazione «{chiave}» della sezione [archivio] deve indicare un "
+                    "posto dentro la cartella del quaderno, per esempio  "
+                    + ('file = "archivio-chat.jsonl"' if chiave == "file" else 'file_diario = "diario-chat.jsonl"')
+                )
+        if not isinstance(archivio.get("ometti_codice"), bool):
+            raise ErroreConfigurazione(
+                f"nel file «{file}» l'impostazione «ometti_codice» della sezione [archivio] deve essere "
+                "true (blocchi di codice omessi) oppure false (registrati interi)."
+            )
+        copia_ogni = archivio.get("copia_ogni")
+        if not isinstance(copia_ogni, int) or isinstance(copia_ogni, bool) or copia_ogni < 1:
+            raise ErroreConfigurazione(
+                f"nel file «{file}» l'impostazione «copia_ogni» della sezione [archivio] deve essere un "
+                "numero intero maggiore di zero (ogni quanti scambi copiare dall'archivio)."
+            )
+
     base = file.resolve().parent
     quaderno = base / testo("cartella")
     return Configurazione(
@@ -190,4 +229,8 @@ def carica(percorso: str | None = None) -> Configurazione:
         file_testimone=quaderno / dentro_il_quaderno("file", testimone),
         prefisso_privato=testo("prefisso_privato", testimone).strip(),
         segno_citazione=testo("segno_citazione", testimone).strip(),
+        file_archivio=quaderno / archivio["file"] if archivio is not None else None,
+        file_diario_chat=quaderno / archivio["file_diario"] if archivio is not None else None,
+        archivio_ometti_codice=archivio["ometti_codice"] if archivio is not None else True,
+        copia_ogni=archivio["copia_ogni"] if archivio is not None else None,
     )

@@ -68,12 +68,13 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 
 | File | Ruolo |
 |---|---|
-| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `testimone`, `stato`, `istantanea`, `cambiati`, `controlla`, `confronta`, `risposte`, `impronta`, `diario`, `avvio`, `protezione`, `impostazioni-claude`), messaggi a schermo. `confronta` (due file identici byte per byte?) non usa la configurazione. |
+| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `testimone`, `stato`, `istantanea`, `cambiati`, `controlla`, `confronta`, `risposte`, `impronta`, `diario`, `archivio`, `avvio`, `protezione`, `impostazioni-claude`), messaggi a schermo. `confronta` (due file identici byte per byte?) non usa la configurazione. |
 | `hypomnema/cambiamenti.py` | `istantanea` e `cambiati` (solo lettura): i file del quaderno da riportare dopo una proposta, con il controllo che sia successo solo ciò che fa lo sportello. |
 | `chat/hypomnema-chat.toml` | Modello della configurazione per la chat: testimone spento e `modalita = "chat"` (note dell'utente marcate «chat, senza testimone»). |
 | `hypomnema/controllo.py` | `controlla` (solo lettura): ogni nota ha la sua riga ACCETTATA nel registro, e viceversa; righe del registro estranee (con il numero) e registro senza a capo finale. Segnala, non ripara. |
 | `hypomnema/risposte.py` | Il testimone delle risposte di Claude (aggancio Stop): solo aggiunta, rispetta i messaggi privati, sostituisce i blocchi di codice con la loro impronta; `impronta`. |
 | `hypomnema/diario.py` | Il diario: messaggi dell'utente e risposte di Claude insieme, in ordine di tempo; ricerca per parola esatta. Solo lettura. |
+| `hypomnema/archivio.py` | Il testimone dell'archivio (modalità chat): il comando `archivio` aggiunge a `archivio-chat.jsonl` e `diario-chat.jsonl` la copia della conversazione presa da Claude dall'archivio delle chat, senza doppioni e con i privati ridotti a data e ora. Le note dell'utente il cui testo si trova lì sono «riscontrate sull'archivio della chat». |
 | `hypomnema/avvio.py` | Configurazione di base `~/Hypomnema`, prima volta (creata dal modello `windows/hypomnema-uso.toml`), avvisi (quaderno nel plugin, OneDrive, pausa), protezione del quaderno; le regole per l'avviabile. |
 | `hypomnema/sportello.py` | Legge la proposta, applica le regole, salva la nota, annota nel registro. |
 | `hypomnema/regole.py` | Le regole fisse e i motivi di rifiuto in italiano semplice. |
@@ -92,7 +93,7 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `hypomnema/configurazione.py` | Lettura di `hypomnema.toml`. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |
-| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`); `test_risposte.py` il testimone delle risposte, il filtro sul codice, `impronta`, il diario e `da_risposta`; `test_plugin.py` il plugin installabile (catalogo, agganci da una copia del plugin, prima volta, protezione, pausa). |
+| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`); `test_risposte.py` il testimone delle risposte, il filtro sul codice, `impronta`, il diario e `da_risposta`; `test_plugin.py` il plugin installabile (catalogo, agganci da una copia del plugin, prima volta, protezione, pausa); `test_archivio.py` l'archivio della chat e i tre livelli. |
 
 ## Metodo di lavoro
 
@@ -130,5 +131,8 @@ Prossimo passo proposto:
   esatta `## Contesto scritto da Claude` verrebbe riletta come se da lì in poi ci fosse il
   contesto. Caso improbabile; da risolvere quando si affrontano le versioni, con un formato
   versionato o una migrazione.
+- **Fuori perimetro del compito 9** (11/10/2026): la verifica a posteriori sull'esportazione
+  ufficiale delle chat di Claude (potrà promuovere le note «riscontrate sull'archivio della chat» a
+  «verificate»); il vocabolario (compito 10); un'interfaccia propria.
 - **Il quaderno in valigia** (idea parcheggiata l'11/10/2026 sera): portare il quaderno con sé
   tra computer diversi. Non si fa per ora; da riprendere più avanti.

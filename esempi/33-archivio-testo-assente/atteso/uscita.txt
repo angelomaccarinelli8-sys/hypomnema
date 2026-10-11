@@ -1,0 +1,9 @@
+$ hypomnema archivio copia.json
+Copiati dall'archivio della chat: 1 messaggio dell'utente, 1 risposta di Claude.
+[codice di uscita: 0]
+
+$ hypomnema proponi nota.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+

@@ -1,0 +1,21 @@
+$ hypomnema archivio copia.json
+Copiati dall'archivio della chat: 1 messaggio dell'utente, 1 risposta di Claude.
+Privati, solo data e ora: 1 messaggio dell'utente, 1 risposta.
+[codice di uscita: 0]
+
+$ hypomnema diario --ultimi 4
+Gli ultimi 4 messaggi del diario (la conversazione registrata, non le note):
+
+--- 2026-01-15T09:00:00+01:00 · utente · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, copiato da Claude ---
+  (messaggio privato, non copiato)
+
+--- 2026-01-15T09:00:15+01:00 · claude · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, copiato da Claude ---
+  (risposta a un messaggio privato, non copiata)
+
+--- 2026-01-15T09:05:00+01:00 · utente · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, copiato da Claude ---
+  Quando semino il basilico?
+
+--- 2026-01-15T09:05:20+01:00 · claude · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, copiato da Claude ---
+  Il basilico si semina ad aprile.
+[codice di uscita: 0]
+
