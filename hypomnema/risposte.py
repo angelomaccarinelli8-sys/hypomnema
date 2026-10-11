@@ -1,7 +1,7 @@
 """Il testimone delle risposte di Claude: registra il testo di ogni risposta, con data e ora.
 
 Claude Code lancia ``hypomnema risposte`` quando Claude ha finito di rispondere (aggancio "Stop"
-in ``plugin/hooks/hooks.json``) e gli passa in JSON il campo ``last_assistant_message``, il testo
+in ``hooks/hooks.json``) e gli passa in JSON il campo ``last_assistant_message``, il testo
 dell'ultima risposta. Il programma lo aggiunge in fondo al file delle risposte, una riga JSON per
 risposta. Il file si apre solo in aggiunta.
 
@@ -28,6 +28,8 @@ from hypomnema.testimone import ErroreTestimone, Messaggio
 
 DICITURA_PRIVATA = "risposta a un messaggio privato, non registrata"
 DICITURA_SENZA_MESSAGGIO = "risposta a un messaggio non trovato nel testimone, non registrata"
+DICITURA_IN_PAUSA = "risposta durante la pausa, non registrata"
+DICITURA_COMANDO = "risposta a un comando di pausa o di ripresa, non registrata"
 
 # Una riga che apre un blocco di codice: fino a 3 spazi, poi almeno tre apici inversi.
 _APERTURA = re.compile(r"^ {0,3}(`{3,})")
@@ -104,6 +106,10 @@ def registra(config: Configurazione, adesso: datetime, contenuto: bytes) -> bool
     messaggio = _messaggio_dell_utente(config, prompt_id)
     if messaggio is None:
         voce["privato"] = DICITURA_SENZA_MESSAGGIO
+    elif messaggio.privato in (testimone.DICITURA_PAUSA, testimone.DICITURA_RIPRESA):
+        voce["privato"] = DICITURA_COMANDO
+    elif messaggio.privato == testimone.DICITURA_IN_PAUSA or testimone.in_pausa(testimone.leggi_messaggi(config)):
+        voce["privato"] = DICITURA_IN_PAUSA
     elif messaggio.testo is None:
         voce["privato"] = DICITURA_PRIVATA
     else:

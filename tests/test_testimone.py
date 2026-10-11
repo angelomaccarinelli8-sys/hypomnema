@@ -419,7 +419,7 @@ class TestComandoTestimone(ConTestimone):
 
 class TestImpostazioniClaudeCode(unittest.TestCase):
     def comando_aggancio(self):
-        aggancio = json.loads((RADICE / "plugin" / "hooks" / "hooks.json").read_text(encoding="utf-8"))
+        aggancio = json.loads((RADICE / "hooks" / "hooks.json").read_text(encoding="utf-8"))
         comandi = [h["command"] for g in aggancio["hooks"]["UserPromptSubmit"] for h in g["hooks"]]
         self.assertEqual(len(comandi), 1)
         return comandi[0]
@@ -447,11 +447,13 @@ class TestImpostazioniClaudeCode(unittest.TestCase):
         così si controlla quale dei due rami del comando viene usato.
         """
         with tempfile.TemporaryDirectory() as progetto, tempfile.TemporaryDirectory() as altrove:
+            # Una copia del plugin (come quella che Claude Code tiene nella cache) e i dati altrove.
             shutil.copytree(RADICE / "hypomnema", Path(progetto) / "hypomnema",
                             ignore=shutil.ignore_patterns("__pycache__"))
-            shutil.copy(RADICE / "aggancio_testimone.py", progetto)
-            Path(progetto, "plugin").mkdir()
-            Path(progetto, "hypomnema.toml").write_text(CONFIG_ACCESO, encoding="utf-8")
+            shutil.copy(RADICE / "programma.py", progetto)
+            dati = Path(altrove) / "Hypomnema"
+            dati.mkdir()
+            (dati / "hypomnema.toml").write_text(CONFIG_ACCESO, encoding="utf-8")
             finti = Path(altrove) / "bin"
             finti.mkdir()
             finto = finti / lanciatore
@@ -461,13 +463,14 @@ class TestImpostazioniClaudeCode(unittest.TestCase):
                 encoding="utf-8", newline="\n")
             finto.chmod(0o755)
             ambiente = {k: v for k, v in os.environ.items() if k != "HYPOMNEMA_CONFIG"}
-            ambiente.update(CLAUDE_PLUGIN_ROOT=str(Path(progetto, "plugin")), PATH=str(finti))
+            # La configurazione di base è ~/Hypomnema: la casa dell'utente è la cartella temporanea.
+            ambiente.update(CLAUDE_PLUGIN_ROOT=progetto, PATH=str(finti), HOME=altrove, USERPROFILE=altrove)
             risultato = subprocess.run([_bash(), "-c", self.comando_aggancio()], input=messaggio("dal vero"),
                                        capture_output=True, env=ambiente, cwd=altrove)
             self.assertEqual(risultato.returncode, 0, risultato.stderr)
             self.assertEqual(risultato.stdout, b"")
             self.assertEqual((finti / "usato").read_text(encoding="utf-8").strip(), lanciatore)
-            registrato = Path(progetto, "quaderno", "testimone.jsonl").read_text(encoding="utf-8")
+            registrato = (dati / "quaderno" / "testimone.jsonl").read_text(encoding="utf-8")
             self.assertIn('"testo": "dal vero"', registrato)
 
     def test_testimone_spento_di_base(self):

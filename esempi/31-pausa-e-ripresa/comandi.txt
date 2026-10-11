@@ -1,0 +1,14 @@
+testimone 01-messaggio.json
+risposte 02-risposta.json
+testimone 03-pausa.json
+risposte 04-risposta.json
+testimone 05-messaggio.json
+risposte 06-risposta.json
+stato
+proponi 07-nota.json
+testimone 08-riprendi.json
+risposte 09-risposta.json
+testimone 10-messaggio.json
+risposte 11-risposta.json
+stato
+diario pomodori --intorno

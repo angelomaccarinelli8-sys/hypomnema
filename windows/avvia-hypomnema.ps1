@@ -71,5 +71,5 @@ Write-Host ''
 Write-Host 'Avvio Claude Code con Hypomnema: testimone e skill sono attivi solo in questa finestra.'
 $Comando = $Claude[0]
 $PrimiArgomenti = @($Claude | Select-Object -Skip 1)
-& $Comando @PrimiArgomenti --plugin-dir (Join-Path $Programma 'plugin') --settings $Impostazioni @ArgomentiClaude
+& $Comando @PrimiArgomenti --plugin-dir $Programma --settings $Impostazioni @ArgomentiClaude
 exit $LASTEXITCODE

@@ -196,7 +196,7 @@ class TestConfronta(unittest.TestCase):
 
 class TestSkill(unittest.TestCase):
     def setUp(self):
-        self.skill = (RADICE / "plugin" / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        self.skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
 
     def test_riporto_da_cartella_nuova_e_verifica(self):
         self.assertIn("copialo in una **cartella nuova** del computer di lavoro, mai usata prima in questa chat", self.skill)

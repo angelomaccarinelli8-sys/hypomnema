@@ -147,13 +147,13 @@ class TestImpostazioniClaude(ConCartella):
 
 class TestPluginEModello(unittest.TestCase):
     def test_plugin(self):
-        manifesto = json.loads((RADICE / "plugin" / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
+        manifesto = json.loads((RADICE / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         self.assertEqual(manifesto["name"], "hypomnema")
-        skill = (RADICE / "plugin" / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
         self.assertTrue(skill.startswith("---\nname: hypomnema\n"))
-        self.assertIn("py -m hypomnema stato", skill)
+        self.assertIn('py "${CLAUDE_PLUGIN_ROOT}/programma.py" stato', skill)
         self.assertIn("Il testimone non è attivo: le note che salvi ora saranno marcate come non\n"
-                      "  verificate. Vuoi riavviare con l'avviabile di Hypomnema?", skill)
+                      "  verificate. Per accenderlo serve attivo = true nella configurazione di Hypomnema.", skill)
 
     def test_modello_della_configurazione_in_uso(self):
         modello = RADICE / "windows" / "hypomnema-uso.toml"
@@ -225,7 +225,7 @@ class TestAvviabileWindows(unittest.TestCase):
         self.assertEqual(Path(ricevuto["cartella"]), RADICE)
         self.assertEqual(Path(ricevuto["HYPOMNEMA_CONFIG"]), config)
         argomenti = ricevuto["argomenti"]
-        self.assertEqual(argomenti[:3], ["--plugin-dir", str(RADICE / "plugin"), "--settings"])
+        self.assertEqual(argomenti[:3], ["--plugin-dir", str(RADICE), "--settings"])
         impostazioni = json.loads(argomenti[3])  # il JSON arriva intatto
         self.assertEqual(impostazioni["permissions"]["deny"], [
             f"Edit({avvio.percorso_per_le_regole(self.dati / 'quaderno')}/**)",

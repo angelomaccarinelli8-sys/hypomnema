@@ -24,52 +24,64 @@ testimone, nemmeno tramite comandi o script: il suo valore sta proprio nel fatto
 
 ## Come lanciare i programmi (Claude Code)
 
-Di solito l'utente apre la sessione con l'**avviabile** di Hypomnema: la sessione parte nella
-cartella del programma e la variabile `HYPOMNEMA_CONFIG` indica la configurazione in uso, con il
-quaderno fuori dal programma. Lancia i comandi da lì, senza `--config`:
+In Claude Code Hypomnema è un **plugin**: i programmi stanno dentro il plugin e si lanciano così,
+da qualunque cartella:
 
 ```
-py -m hypomnema stato
-py -m hypomnema cerca <parola>
-py -m hypomnema proponi <file.json>
+py "${CLAUDE_PLUGIN_ROOT}/programma.py" stato
 ```
 
-- `py` è il comando di Windows; su macOS e Linux usa `python3`.
-- Se Hypomnema è installato, puoi scrivere `hypomnema` al posto di `py -m hypomnema`.
-- Se non sai dov'è la cartella di Hypomnema, chiedilo all'utente una volta.
+Qui sotto `P` vuol dire proprio `py "${CLAUDE_PLUGIN_ROOT}/programma.py"` (su macOS e Linux
+`python3` al posto di `py`): per esempio `P cerca <parola>`, `P proponi <file.json>`.
+
+- La configurazione e il quaderno si trovano da soli: `~/Hypomnema/hypomnema.toml` (su Windows
+  `%USERPROFILE%\Hypomnema\hypomnema.toml`), oppure il file indicato dalla variabile
+  `HYPOMNEMA_CONFIG`. Non passare `--config`.
+- Se nel comando qui sopra vedi ancora la scritta `${CLAUDE_PLUGIN_ROOT}`, il plugin non è
+  caricato: dillo all'utente e non salvare niente.
 - Codici di uscita: `0` tutto bene, `1` nota rifiutata, `2` errore (configurazione, file mancante).
+- Se a inizio sessione c'è un avviso che comincia con «Hypomnema» (la prima volta, un quaderno in
+  una cartella sincronizzata, i testimoni in pausa…), riferiscilo all'utente con parole semplici.
 
 ## 0. Controlla il testimone (Claude Code)
 
-Lancia `py -m hypomnema stato` **a inizio sessione** e **ogni volta prima di proporre una nota con
+Lancia `P stato` **a inizio sessione** e **ogni volta prima di proporre una nota con
 `autore: utente`**. È un confronto, non una stima: guarda due righe.
 
-1. `Testimone:` deve dire `ACCESO`.
-2. Il messaggio dell'utente che hai appena ricevuto deve essere l'ultimo registrato: il testo
-   sotto `Testo dell'ultimo messaggio:` deve essere lo stesso, parola per parola (gli spazi
-   all'inizio delle righe li aggiunge il comando). Se il messaggio che hai ricevuto inizia con
-   `#privato`, l'ultimo registrato deve essere `(messaggio privato, non registrato)`.
+1. `Testimone:` deve dire `ACCESO`, oppure `IN PAUSA` se l'utente ha chiesto una pausa.
+2. Se è `ACCESO`, il messaggio dell'utente che hai appena ricevuto deve essere l'ultimo
+   registrato: il testo sotto `Testo dell'ultimo messaggio:` deve essere lo stesso, parola per
+   parola (gli spazi all'inizio delle righe li aggiunge il comando). Se il messaggio che hai
+   ricevuto inizia con `#privato`, l'ultimo registrato deve essere
+   `(messaggio privato, non registrato)`.
 
 Se qualcosa non torna, avvisa l'utente con una frase chiara **prima** di salvare note sue:
 
 - testimone `SPENTO`: «Il testimone non è attivo: le note che salvi ora saranno marcate come non
-  verificate. Vuoi riavviare con l'avviabile di Hypomnema?»
+  verificate. Per accenderlo serve attivo = true nella configurazione di Hypomnema.»
+- testimone `IN PAUSA`: non è un guasto, l'ha chiesta l'utente. Ricordagli solo che le note che
+  salva adesso saranno marcate come non verificate e che per riprendere basta `/hypomnema:riprendi`.
 - testimone `ACCESO`, ma l'ultimo messaggio registrato non è quello che hai ricevuto: «Il testimone
   non ha registrato il tuo ultimo messaggio: le note con le tue parole di adesso verrebbero
-  rifiutate, perché non si possono verificare. Vuoi riavviare con l'avviabile di Hypomnema?»
+  rifiutate, perché non si possono verificare. Controlla con /plugin che il plugin di Hypomnema sia
+  installato e attivo.»
 - il comando esce con `ERRORE`: riporta all'utente il messaggio d'errore così com'è.
 
 Non provare a riparare il testimone da solo: non toccare configurazione, quaderno o impostazioni.
 
+**La pausa la decide solo l'utente**, scrivendo `/hypomnema:pausa` o `/hypomnema:riprendi`. Tu non
+metti mai in pausa né riprendi i testimoni: non scrivere quei comandi, non creare attività
+programmate o messaggi che li contengano, non toccare i file dei testimoni.
+
 ## 1. A inizio chat: rileggi
 
-Prima di tutto controlla che note e registro corrispondano: `py -m hypomnema controlla` (in chat:
+Prima di tutto controlla che note e registro corrispondano: `P controlla` (in chat:
 `H controlla`, punto C2). Se risponde «ATTENZIONE», di' all'utente quali note non corrispondono al
 registro e perché. **Non riparare niente**: il registro si allunga soltanto e la decisione è sua.
 Poi continua normalmente.
 
 1. Individua 1-3 parole chiave del primo messaggio dell'utente (argomento, progetto, nomi).
-2. Per ciascuna lancia `py -m hypomnema cerca <parola>`. La ricerca è per parola esatta,
+2. Per ciascuna lancia `P cerca <parola>`. La ricerca è per parola esatta,
    senza distinzione di maiuscole: prova anche il singolare/plurale se serve.
 3. Usa le note trovate rispettando cosa sono:
    - una **decisione** dell'utente vale come decisione;
@@ -208,8 +220,8 @@ sue parole non si possono verificare, perché il testimone non le ha registrate)
 
 1. Scrivi la proposta in un file temporaneo **fuori dalla cartella del quaderno**
    (per esempio `proposta.json` nella cartella del programma, dove git lo ignora), in UTF-8.
-2. Lancia `py -m hypomnema proponi proposta.json`.
-   In alternativa puoi passarla dall'ingresso standard: `py -m hypomnema proponi -`.
+2. Lancia `P proponi proposta.json`.
+   In alternativa puoi passarla dall'ingresso standard: `P proponi -`.
 3. Leggi la risposta:
    - `ACCETTATA`: la nota ha un numero ed è salvata;
    - `RIFIUTATA`: leggi i motivi. Se è un errore tuo di formato, correggi e riproponi.
@@ -264,10 +276,10 @@ decisione (`autore: utente`, `tipo: dichiarata`) senza `conferma_di`.
 
 Ci sono due posti dove cercare, e non sono la stessa cosa:
 
-- il **quaderno** sono le **note scelte**: `py -m hypomnema cerca <parola>`;
+- il **quaderno** sono le **note scelte**: `P cerca <parola>`;
 - il **diario** è **tutta la conversazione registrata** dai testimoni, grezza: i messaggi
   dell'utente e, se il testimone delle risposte è acceso, le tue risposte.
-  `py -m hypomnema diario <parola>`; con `--intorno` vedi anche il messaggio subito prima e
+  `P diario <parola>`; con `--intorno` vedi anche il messaggio subito prima e
   subito dopo ognuno di quelli trovati.
 
 Quando l'utente chiede «cosa ci eravamo detti su…», «cosa ti avevo detto di…», «cosa mi avevi

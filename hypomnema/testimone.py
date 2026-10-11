@@ -1,7 +1,7 @@
 """Il testimone: registra le parole esatte dei messaggi dell'utente.
 
 Claude Code lancia ``hypomnema testimone`` ogni volta che l'utente invia un messaggio,
-prima che Claude lo legga (aggancio "UserPromptSubmit" in ``plugin/hooks/hooks.json``).
+prima che Claude lo legga (aggancio "UserPromptSubmit" in ``hooks/hooks.json``).
 Il programma riceve il messaggio in formato JSON e lo aggiunge in fondo al file del
 testimone, una riga JSON per messaggio. Il file si apre solo in aggiunta.
 
@@ -27,6 +27,15 @@ from datetime import datetime
 from hypomnema.configurazione import Configurazione
 
 DICITURA_PRIVATO = "messaggio privato, non registrato"
+
+# Pausa dei testimoni: la chiede l'utente scrivendo il comando, che Claude Code passa al testimone
+# così com'è. Lo stato non sta in un file a parte: lo dice l'ultima riga di pausa o di ripresa del
+# testimone, che si allunga soltanto.
+COMANDO_PAUSA = "/hypomnema:pausa"
+COMANDO_RIPRESA = "/hypomnema:riprendi"
+DICITURA_PAUSA = "pausa chiesta dall'utente: da qui i testimoni non registrano"
+DICITURA_RIPRESA = "ripresa chiesta dall'utente: da qui i testimoni registrano di nuovo"
+DICITURA_IN_PAUSA = "messaggio durante la pausa, non registrato"
 
 
 class ErroreTestimone(Exception):
@@ -60,6 +69,25 @@ def righe_marcate(testo: str, segno: str) -> list[int]:
     return [n for n, riga in enumerate(_righe(testo), start=1) if riga.lstrip().startswith(segno)]
 
 
+def comando(testo: str) -> str | None:
+    """Il comando di pausa o di ripresa con cui comincia il messaggio, oppure None."""
+    pulito = testo.strip()
+    for cercato in (COMANDO_PAUSA, COMANDO_RIPRESA):
+        if pulito == cercato or pulito.startswith(cercato + " ") or pulito.startswith(cercato + "\n"):
+            return cercato
+    return None
+
+
+def in_pausa(messaggi: list["Messaggio"]) -> "Messaggio | None":
+    """La riga di pausa ancora valida (non seguita da una ripresa), oppure None."""
+    for messaggio in reversed(messaggi):
+        if messaggio.privato == DICITURA_PAUSA:
+            return messaggio
+        if messaggio.privato == DICITURA_RIPRESA:
+            return None
+    return None
+
+
 def registra(config: Configurazione, adesso: datetime, contenuto: bytes) -> bool:
     """Aggiunge il messaggio al testimone. Restituisce False se il testimone è spento."""
     if not config.testimone_attivo:
@@ -73,7 +101,14 @@ def registra(config: Configurazione, adesso: datetime, contenuto: bytes) -> bool
 
     testo = dati["prompt"]
     voce: dict[str, object] = {"quando": adesso.isoformat(timespec="seconds")}
-    if testo.lstrip().startswith(config.prefisso_privato):
+    richiesto = comando(testo)
+    if richiesto == COMANDO_PAUSA:
+        voce["privato"] = DICITURA_PAUSA
+    elif richiesto == COMANDO_RIPRESA:
+        voce["privato"] = DICITURA_RIPRESA
+    elif in_pausa(leggi_messaggi(config)) is not None:
+        voce["privato"] = DICITURA_IN_PAUSA
+    elif testo.lstrip().startswith(config.prefisso_privato):
         voce["privato"] = DICITURA_PRIVATO
     else:
         voce["testo"] = testo

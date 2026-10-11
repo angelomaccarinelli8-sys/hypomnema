@@ -13,6 +13,8 @@
     python -m hypomnema risposte                # registra una risposta di Claude (lo lancia Claude Code)
     python -m hypomnema impronta FILE           # l'impronta di un file, come per i blocchi di codice omessi
     python -m hypomnema diario PAROLA           # cerca nei messaggi e nelle risposte (--intorno: con i vicini)
+    python -m hypomnema avvio                   # inizio sessione (lo lancia Claude Code): prima volta e avvisi
+    python -m hypomnema protezione              # ferma gli strumenti di Claude sul quaderno (lo lancia Claude Code)
 
 Anche il comando "risposte", come "testimone", non esce mai con 2: per Claude Code, alla fine
 di una risposta, il codice 2 vorrebbe dire costringere Claude a continuare.
@@ -99,6 +101,12 @@ def _parser() -> argparse.ArgumentParser:
     cerca_diario.add_argument("parola", help="la parola (o le parole) da cercare, così come sono")
     cerca_diario.add_argument(
         "--intorno", action="store_true", help="mostra anche il messaggio subito prima e subito dopo"
+    )
+    comandi.add_parser(
+        "avvio", help="inizio sessione (lo lancia Claude Code): crea la configurazione la prima volta e avvisa"
+    )
+    comandi.add_parser(
+        "protezione", help="ferma gli strumenti di Claude sui file del quaderno (lo lancia Claude Code)"
     )
     comandi.add_parser(
         "impostazioni-claude",
@@ -190,7 +198,14 @@ def _stato(argomenti, config, uscita: TextIO) -> int:
         f"Configurazione: {configurazione.trova(argomenti.config).resolve()}",
         f"Quaderno: {config.cartella_quaderno}",
     ]
-    if config.testimone_attivo:
+    pausa = testimone.in_pausa(testimone.leggi_messaggi(config)) if config.testimone_attivo else None
+    if pausa is not None:
+        righe.append(
+            f"Testimone: IN PAUSA dal {pausa.quando} (comando /hypomnema:pausa): i messaggi e le risposte "
+            "non vengono registrati e le note con autore «utente» saranno marcate «autore non verificato "
+            "(testimone spento)». Per riprendere: /hypomnema:riprendi."
+        )
+    elif config.testimone_attivo:
         righe.append("Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).")
     elif config.in_chat:
         righe.append(
@@ -208,7 +223,7 @@ def _stato(argomenti, config, uscita: TextIO) -> int:
     if not messaggi:
         righe.append("Ultimo messaggio registrato: nessuno.")
     elif messaggi[-1].testo is None:
-        righe.append(f"Ultimo messaggio registrato: {messaggi[-1].quando} ({testimone.DICITURA_PRIVATO}).")
+        righe.append(f"Ultimo messaggio registrato: {messaggi[-1].quando} ({messaggi[-1].privato or testimone.DICITURA_PRIVATO}).")
     else:
         righe.append(f"Ultimo messaggio registrato: {messaggi[-1].quando}")
         righe.append("Testo dell'ultimo messaggio:")
@@ -326,10 +341,54 @@ def _impostazioni_claude(argomenti, config, uscita: TextIO) -> int:
     return 0
 
 
+def _avvio(argomenti, uscita: TextIO) -> int:
+    """Aggancio SessionStart: avvisi all'utente (systemMessage) e a Claude. Esce sempre con 0."""
+    file_config = configurazione.trova(argomenti.config)
+    try:
+        avvisi = avvio.prepara(file_config)
+    except OSError as errore:
+        avvisi = [f"Hypomnema: non riesco a preparare la configurazione «{file_config}»: {errore}"]
+    if avvisi:
+        testo = "\n".join(avvisi)
+        print(json.dumps({
+            "systemMessage": testo,
+            "hookSpecificOutput": {"hookEventName": "SessionStart", "additionalContext": testo},
+        }, ensure_ascii=False), file=uscita)
+    return 0
+
+
+def _protezione(argomenti, errori: TextIO) -> int:
+    """Aggancio PreToolUse: 2 ferma lo strumento, 0 lo lascia passare."""
+    try:
+        dati = json.loads(sys.stdin.buffer.read().decode("utf-8-sig"))
+        ingresso = dati.get("tool_input") or {}
+        percorso = ingresso.get("file_path") or ingresso.get("notebook_path")
+    except (UnicodeDecodeError, json.JSONDecodeError, AttributeError):
+        return 0
+    if not isinstance(percorso, str) or not percorso:
+        return 0
+    if avvio.protetto(configurazione.trova(argomenti.config), percorso):
+        print(f"Hypomnema: «{percorso}» fa parte del quaderno o della sua configurazione, e Claude non lo "
+              "modifica mai con i suoi strumenti. Le note entrano solo dallo sportello (proponi).", file=errori)
+        return 2
+    return 0
+
+
+def _quaderno_nel_programma(config, errori: TextIO, cosa: str) -> bool:
+    if avvio.quaderno_nel_programma(config):
+        print(f"ERRORE del testimone{cosa}: il quaderno «{config.cartella_quaderno}» è dentro la cartella del "
+              "programma, che un aggiornamento sostituisce: non registro niente. Cambia «cartella» nella "
+              "configurazione.", file=errori)
+        return True
+    return False
+
+
 def _risposte(argomenti, adesso: datetime, errori: TextIO) -> int:
     # Come il testimone: niente a schermo e mai il codice 2 (costringerebbe Claude a continuare).
     try:
         config = configurazione.carica(argomenti.config)
+        if config.risposte_attive and _quaderno_nel_programma(config, errori, " delle risposte"):
+            return 1
         if argomenti.file == "-":
             dati = sys.stdin.buffer.read()
         else:
@@ -392,6 +451,8 @@ def _testimone(argomenti, adesso: datetime, errori: TextIO) -> int:
     # Su successo non scrive niente: per Claude Code, ciò che esce qui finirebbe nella chat.
     try:
         config = configurazione.carica(argomenti.config)
+        if config.testimone_attivo and _quaderno_nel_programma(config, errori, ""):
+            return 1
         if argomenti.file == "-":
             dati = sys.stdin.buffer.read()
         else:
@@ -426,7 +487,9 @@ def main(
     except SystemExit as uscita_argparse:
         # Un comando scritto male esce con 2; per il testimone vorrebbe dire bloccare il messaggio.
         elenco = sys.argv[1:] if argv is None else argv
-        if uscita_argparse.code == 2 and ("testimone" in elenco or "risposte" in elenco):
+        # Lo stesso per gli altri agganci: mai il codice 2 per sbaglio (per la protezione vorrebbe dire
+        # fermare uno strumento).
+        if uscita_argparse.code == 2 and any(c in elenco for c in ("testimone", "risposte", "avvio", "protezione")):
             return 1
         raise
     adesso = adesso or datetime.now().astimezone()
@@ -434,6 +497,10 @@ def main(
         return _testimone(argomenti, adesso, errori)
     if argomenti.comando == "risposte":
         return _risposte(argomenti, adesso, errori)
+    if argomenti.comando == "avvio":
+        return _avvio(argomenti, uscita)
+    if argomenti.comando == "protezione":
+        return _protezione(argomenti, errori)
     if argomenti.comando == "confronta":
         return _confronta(argomenti, uscita)
     if argomenti.comando == "impronta":

@@ -361,7 +361,7 @@ class TestControlla(ConQuaderno):
 
 class TestSkillModalitaChat(unittest.TestCase):
     def test_sezione_nella_skill(self):
-        skill = (RADICE / "plugin" / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("## Modalità chat", skill)
         for comando in ("istantanea >", "cambiati", "chat/hypomnema-chat.toml", "H controlla"):
             self.assertIn(comando, skill)

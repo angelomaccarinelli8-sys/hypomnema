@@ -1,0 +1,84 @@
+$ hypomnema testimone 01-messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 02-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema testimone 03-pausa.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 04-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema testimone 05-messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 06-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema stato
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Testimone: IN PAUSA dal 2026-01-15T10:02:00+01:00 (comando /hypomnema:pausa): i messaggi e le risposte non vengono registrati e le note con autore «utente» saranno marcate «autore non verificato (testimone spento)». Per riprendere: /hypomnema:riprendi.
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 3
+Ultimo messaggio registrato: 2026-01-15T10:04:00+01:00 (messaggio durante la pausa, non registrato).
+Testimone delle risposte: ACCESO (registra le risposte di Claude, con i blocchi di codice omessi).
+File delle risposte: <cartella di prova>/quaderno/risposte.jsonl
+Risposte registrate: 3
+Ultima risposta registrata: 2026-01-15T10:05:00+01:00 (risposta durante la pausa, non registrata).
+[codice di uscita: 0]
+
+$ hypomnema proponi 07-nota.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema testimone 08-riprendi.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 09-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema testimone 10-messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema risposte 11-risposta.json
+[codice di uscita: 0]
+
+$ hypomnema stato
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 5
+Ultimo messaggio registrato: 2026-01-15T10:10:00+01:00
+Testo dell'ultimo messaggio:
+  Domani annaffio i pomodori.
+Testimone delle risposte: ACCESO (registra le risposte di Claude, con i blocchi di codice omessi).
+File delle risposte: <cartella di prova>/quaderno/risposte.jsonl
+Risposte registrate: 5
+Ultima risposta registrata: 2026-01-15T10:11:00+01:00
+[codice di uscita: 0]
+
+$ hypomnema diario pomodori --intorno
+Trovati 2 messaggi con «pomodori» nel diario (la conversazione registrata, non le note).
+
+--- 2026-01-15T10:00:00+01:00 · utente (trovato) ---
+  Oggi ho seminato i pomodori.
+
+--- 2026-01-15T10:01:00+01:00 · claude ---
+  Bene: tienili al caldo per una settimana.
+
+[...]
+
+--- 2026-01-15T10:09:00+01:00 · claude ---
+  (risposta a un comando di pausa o di ripresa, non registrata)
+
+--- 2026-01-15T10:10:00+01:00 · utente (trovato) ---
+  Domani annaffio i pomodori.
+
+--- 2026-01-15T10:11:00+01:00 · claude ---
+  Annaffiali al mattino presto.
+[codice di uscita: 0]
+

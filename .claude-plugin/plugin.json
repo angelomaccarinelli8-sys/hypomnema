@@ -1,0 +1,11 @@
+{
+  "name": "hypomnema",
+  "displayName": "Hypomnema",
+  "description": "Memoria permanente in file Markdown: Claude propone le note, i programmi decidono se entrano. Skill, testimone dei messaggi e delle risposte, comandi /hypomnema:pausa e /hypomnema:riprendi.",
+  "author": {
+    "name": "Angelo Maccarinelli"
+  },
+  "homepage": "https://github.com/angelomaccarinelli8-sys/hypomnema",
+  "repository": "https://github.com/angelomaccarinelli8-sys/hypomnema",
+  "license": "MIT"
+}

@@ -1,0 +1,5 @@
+{"quando": "2026-01-15T10:00:00+01:00", "testo": "Oggi ho seminato i pomodori.", "prompt_id": "turno-1"}
+{"quando": "2026-01-15T10:02:00+01:00", "privato": "pausa chiesta dall'utente: da qui i testimoni non registrano", "prompt_id": "turno-2"}
+{"quando": "2026-01-15T10:04:00+01:00", "privato": "messaggio durante la pausa, non registrato", "prompt_id": "turno-3"}
+{"quando": "2026-01-15T10:08:00+01:00", "privato": "ripresa chiesta dall'utente: da qui i testimoni registrano di nuovo", "prompt_id": "turno-4"}
+{"quando": "2026-01-15T10:10:00+01:00", "testo": "Domani annaffio i pomodori.", "prompt_id": "turno-5"}
