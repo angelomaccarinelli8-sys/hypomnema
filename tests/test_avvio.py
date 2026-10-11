@@ -251,5 +251,73 @@ class TestAvviabileWindows(unittest.TestCase):
         self.assertFalse((RADICE / "quaderno-di-prova").exists())
 
 
+
+# Un git e un py finti, come file .cmd: annotano cosa ricevono e da quale cartella.
+FINTO_GIT = r"""@echo off
+echo git %* @ %CD%>>"%FINTI_REGISTRO%"
+if "%1"=="rev-parse" (echo %FINTO_RAMO%& exit /b 0)
+if "%1"=="pull" exit /b %FINTO_ESITO_PULL%
+exit /b 0
+"""
+FINTO_PY = r"""@echo off
+echo py %* @ %CD%>>"%FINTI_REGISTRO%"
+exit /b 0
+"""
+
+
+@unittest.skipIf(os.name != "nt", "l'aggiornamento è un comando di Windows")
+class TestAggiornamentoWindows(unittest.TestCase):
+    """aggiorna-hypomnema.cmd vero, su una copia in una cartella temporanea, con git e py finti."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        cartella = Path(self._tmp.name).resolve()
+        self.programma = cartella / "programma"
+        (self.programma / "windows").mkdir(parents=True)
+        self.script = self.programma / "windows" / "aggiorna-hypomnema.cmd"
+        shutil.copy(RADICE / "windows" / "aggiorna-hypomnema.cmd", self.script)
+        self.finti = cartella / "finti"
+        self.finti.mkdir()
+        for nome, testo in (("git.cmd", FINTO_GIT), ("py.cmd", FINTO_PY)):
+            (self.finti / nome).write_bytes(testo.replace("\n", "\r\n").encode("ascii"))
+        self.registro = cartella / "registro.txt"
+
+    def tearDown(self):
+        self._tmp.cleanup()
+
+    def aggiorna(self, ramo, esito_pull=0):
+        ambiente = dict(os.environ, FINTI_REGISTRO=str(self.registro), FINTO_RAMO=ramo,
+                        FINTO_ESITO_PULL=str(esito_pull))
+        ambiente["PATH"] = f"{self.finti}{os.pathsep}{os.environ['PATH']}"
+        # L'invio risponde al "pause" finale.
+        risultato = subprocess.run(["cmd", "/c", str(self.script)], input=b"\r\n",
+                                   capture_output=True, env=ambiente, cwd=self._tmp.name)
+        chiamate = self.registro.read_text(encoding="ascii").splitlines() if self.registro.exists() else []
+        return risultato.stdout.decode("ascii", errors="replace"), chiamate
+
+    def test_ramo_diverso_da_main_non_aggiorna(self):
+        uscita, chiamate = self.aggiorna("prova")
+        self.assertIn('Questa copia non e\' sulla versione principale (main) ma su "prova".', uscita)
+        self.assertIn("non aggiorno niente", uscita)
+        self.assertEqual(chiamate, [f"git rev-parse --abbrev-ref HEAD @ {self.programma}"])
+
+    def test_download_fallito_si_ferma(self):
+        uscita, chiamate = self.aggiorna("main", esito_pull=1)
+        self.assertIn("Aggiornamento NON riuscito", uscita)
+        self.assertEqual(chiamate, [
+            f"git rev-parse --abbrev-ref HEAD @ {self.programma}",
+            f"git pull --ff-only origin main @ {self.programma}",
+        ])
+
+    def test_download_riuscito_lancia_i_test(self):
+        uscita, chiamate = self.aggiorna("main")
+        self.assertNotIn("NON riuscito", uscita)
+        self.assertEqual(chiamate, [
+            f"git rev-parse --abbrev-ref HEAD @ {self.programma}",
+            f"git pull --ff-only origin main @ {self.programma}",
+            f"py -m unittest -q @ {self.programma}",
+        ])
+
+
 if __name__ == "__main__":
     unittest.main()
