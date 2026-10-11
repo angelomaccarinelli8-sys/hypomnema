@@ -9,10 +9,22 @@ Ordine di ricerca del file:
 import os
 import tomllib
 from dataclasses import dataclass
-from pathlib import Path
+from pathlib import Path, PurePosixPath, PureWindowsPath
 
 NOME_FILE = "hypomnema.toml"
 VARIABILE_AMBIENTE = "HYPOMNEMA_CONFIG"
+
+
+# Le righe di hypomnema.toml del repository, citate nei messaggi d'errore per dire
+# esattamente cosa aggiungere. Non sono valori di riserva: se manca, il programma si ferma.
+RIGHE_DI_ESEMPIO = {
+    "cartella": 'cartella = "quaderno"',
+    "cartella_note": 'cartella_note = "note"',
+    "file_registro": 'file_registro = "registro.md"',
+    "file": 'file = "testimone.jsonl"',
+    "prefisso_privato": 'prefisso_privato = "#privato"',
+    "segno_citazione": 'segno_citazione = ">"',
+}
 
 
 class ErroreConfigurazione(Exception):
@@ -63,13 +75,32 @@ def carica(percorso: str | None = None) -> Configurazione:
 
     testimone = dati.get("testimone")
     if not isinstance(testimone, dict):
-        raise ErroreConfigurazione(f"nel file «{file}» manca la sezione [testimone].")
+        raise ErroreConfigurazione(
+            f"nel file «{file}» manca la sezione [testimone]: copiala dal file hypomnema.toml "
+            "del repository (con attivo = false il testimone resta spento)."
+        )
 
     def testo(chiave: str, origine: dict = sezione) -> str:
         valore = origine.get(chiave)
         if not isinstance(valore, str) or not valore.strip():
+            nome_sezione = "[testimone]" if origine is testimone else "[quaderno]"
             raise ErroreConfigurazione(
-                f"nel file «{file}» manca l'impostazione «{chiave}» (deve essere un testo)."
+                f"nel file «{file}» manca l'impostazione «{chiave}» della sezione {nome_sezione} "
+                f"(deve essere un testo). Aggiungi alla sezione {nome_sezione} questa riga, "
+                f"come nel file hypomnema.toml del repository:  {RIGHE_DI_ESEMPIO[chiave]}"
+            )
+        return valore
+
+    def dentro_il_quaderno(chiave: str, origine: dict = sezione) -> str:
+        valore = testo(chiave, origine)
+        # Si controllano entrambe le forme, Windows e macOS/Linux, perché il file può viaggiare.
+        come_windows = PureWindowsPath(valore)
+        if come_windows.anchor or PurePosixPath(valore).is_absolute() or ".." in come_windows.parts:
+            raise ErroreConfigurazione(
+                f"nel file «{file}» l'impostazione «{chiave}» deve indicare un posto dentro la "
+                f"cartella del quaderno, per esempio  {RIGHE_DI_ESEMPIO[chiave]}  : niente percorsi "
+                "completi (come C:/... o /home/...) e niente «..». Per spostare tutto il quaderno "
+                "cambia l'impostazione «cartella»."
             )
         return valore
 
@@ -90,11 +121,11 @@ def carica(percorso: str | None = None) -> Configurazione:
     quaderno = base / testo("cartella")
     return Configurazione(
         cartella_quaderno=quaderno,
-        cartella_note=quaderno / testo("cartella_note"),
-        file_registro=quaderno / testo("file_registro"),
+        cartella_note=quaderno / dentro_il_quaderno("cartella_note"),
+        file_registro=quaderno / dentro_il_quaderno("file_registro"),
         cifre_numero_nota=cifre,
         testimone_attivo=attivo,
-        file_testimone=quaderno / testo("file", testimone),
+        file_testimone=quaderno / dentro_il_quaderno("file", testimone),
         prefisso_privato=testo("prefisso_privato", testimone).strip(),
         segno_citazione=testo("segno_citazione", testimone).strip(),
     )

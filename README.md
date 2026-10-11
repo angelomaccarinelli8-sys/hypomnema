@@ -30,7 +30,9 @@ Sophia e non ne contiene il codice, ma ne segue le regole:
   Stessi ingressi, stesso risultato.
 - **I dati restano tuoi**: i programmi non si collegano a internet.
 
-Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN) <!-- da aggiungere -->
+<!-- Da rendere visibile quando c'è il link all'articolo di Angelo:
+Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
+-->
 
 ## Cosa c'è dentro
 

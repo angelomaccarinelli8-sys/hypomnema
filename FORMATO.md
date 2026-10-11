@@ -163,3 +163,5 @@ accettato o rifiutato. Si apre solo in aggiunta.
 
 L'ora è quella del computer al momento del passaggio. `da:` è il nome del file proposto,
 oppure `(ingresso diretto)` se la nota arriva dall'ingresso standard.
+Ogni passaggio occupa sempre una sola riga: se il nome del file o un motivo contengono un
+"a capo" (per esempio un nome di campo inventato), al suo posto viene scritto il segno ⏎.

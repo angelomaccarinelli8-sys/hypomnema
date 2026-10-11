@@ -5,7 +5,7 @@ la salva come file Markdown se è completa, e annota sempre il passaggio nel reg
 """
 
 import json
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 
@@ -93,9 +93,19 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         verifica=regole.verifica(autore, testo, citazione, messaggi, config.segno_citazione),
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)
-    percorso = config.cartella_note / f"{id_nota}.md"
-    # Modo "x": se il file esistesse già, Python si ferma invece di sovrascriverlo.
-    with open(percorso, "x", encoding="utf-8", newline="\n") as f:
-        f.write(nota.in_markdown())
+    numero = int(id_nota)
+    while True:
+        nota = replace(nota, id=str(numero).zfill(config.cifre_numero_nota))
+        percorso = config.cartella_note / f"{nota.id}.md"
+        try:
+            # Modo "x": se il file esiste già, Python si ferma invece di sovrascriverlo.
+            with open(percorso, "x", encoding="utf-8", newline="\n") as f:
+                f.write(nota.in_markdown())
+            break
+        except FileExistsError:
+            # Un altro passaggio ha appena preso questo numero: si prova il successivo.
+            # Finisce sempre, perché i file già presenti sono in numero finito.
+            numero += 1
+    id_nota = nota.id
     registro.annota(config, adesso, origine, id_nota, [])
     return Esito(accettata=True, id_nota=id_nota, percorso=percorso, motivi=[])
