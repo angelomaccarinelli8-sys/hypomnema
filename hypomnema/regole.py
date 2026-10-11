@@ -212,21 +212,24 @@ SENZA_TESTIMONE_IN_CHAT = "chat, senza testimone"
 
 
 SENZA_RISPOSTE = "registro delle risposte spento"
+# Note prese mentre l'utente ha messo in pausa i testimoni (/hypomnema:pausa).
+SENZA_TESTIMONE_IN_PAUSA = "testimoni in pausa"
 
 
 def verifica(
     autore: str, testo: str, citazione: str | None, messaggi: list[Messaggio] | None, segno: str,
     in_chat: bool = False, da_risposta: bool = False, risposte: list[Messaggio] | None = None,
+    in_pausa: bool = False,
 ) -> str | None:
     """La dicitura "verifica" da scrivere nella nota accettata (None = nessuna dicitura)."""
     if da_risposta:
         if risposte is None:
-            perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_RISPOSTE
+            perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_RISPOSTE
             return f"risposta non verificata ({perche})"
         trovato = trova_citazione(risposte, testo, segno)
         return f"testo trovato nella risposta di Claude del {trovato.messaggio.quando}"
     if messaggi is None:
-        perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE
+        perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_TESTIMONE
         if autore == "utente":
             return f"autore non verificato ({perche})"
         if citazione is not None:

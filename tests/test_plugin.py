@@ -302,11 +302,21 @@ class TestPausa(unittest.TestCase):
         self.dice("/hypomnema:pausa")
         esito = sportello.ricevi(json.dumps(NOTA_BUONA).encode("utf-8"), "prova.json", self.config, self.adesso())
         self.assertTrue(esito.accettata)
-        self.assertIn("- verifica: autore non verificato (testimone spento)", esito.percorso.read_text(encoding="utf-8"))
+        self.assertIn("- verifica: autore non verificato (testimoni in pausa)", esito.percorso.read_text(encoding="utf-8"))
         nota = dict(NOTA_BUONA, autore="claude", tipo="dedotta", natura="idea", da_risposta="sì",
                     testo="Una risposta di prova.")
         esito = sportello.ricevi(json.dumps(nota).encode("utf-8"), "prova.json", self.config, self.adesso())
-        self.assertIn("risposta non verificata (registro delle risposte spento)", esito.percorso.read_text(encoding="utf-8"))
+        self.assertIn("risposta non verificata (testimoni in pausa)", esito.percorso.read_text(encoding="utf-8"))
+        nota = dict(NOTA_BUONA, autore="claude", tipo="dedotta", natura="idea", citazione="Una nota di prova.")
+        esito = sportello.ricevi(json.dumps(nota).encode("utf-8"), "prova.json", self.config, self.adesso())
+        self.assertIn("citazione non verificata (testimoni in pausa)", esito.percorso.read_text(encoding="utf-8"))
+
+    def test_dopo_la_ripresa_si_verifica_di_nuovo(self):
+        self.dice("/hypomnema:pausa")
+        self.dice("/hypomnema:riprendi")
+        self.dice("Una nota di prova.")
+        esito = sportello.ricevi(json.dumps(NOTA_BUONA).encode("utf-8"), "prova.json", self.config, self.adesso())
+        self.assertIn("- verifica: testo trovato nel messaggio del", esito.percorso.read_text(encoding="utf-8"))
 
     def test_avviso_di_pausa_a_inizio_sessione(self):
         self.dice("/hypomnema:pausa")

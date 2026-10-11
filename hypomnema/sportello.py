@@ -68,8 +68,10 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
     note_esistenti = quaderno.leggi_note(config)
     messaggi = testimone.leggi_messaggi(config) if config.testimone_attivo else None
     risposte = testimone_risposte.leggi_risposte(config) if config.risposte_attive else None
-    if messaggi is not None and testimone.in_pausa(messaggi) is not None:
-        # In pausa i testimoni non registrano: si fa come con il testimone spento.
+    in_pausa = messaggi is not None and testimone.in_pausa(messaggi) is not None
+    if in_pausa:
+        # In pausa i testimoni non registrano: niente verifica, e la nota lo dice
+        # («autore non verificato (testimoni in pausa)»).
         messaggi = risposte = None
     proposta, motivi = _leggi_proposta(contenuto)
     if proposta is not None:
@@ -102,7 +104,7 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         da_risposta=proposta["da_risposta"].strip() if proposta.get("da_risposta") is not None else None,
         verifica=regole.verifica(
             autore, testo, citazione, messaggi, config.segno_citazione, config.in_chat,
-            da_risposta=proposta.get("da_risposta") is not None, risposte=risposte,
+            da_risposta=proposta.get("da_risposta") is not None, risposte=risposte, in_pausa=in_pausa,
         ),
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)

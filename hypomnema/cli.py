@@ -203,7 +203,7 @@ def _stato(argomenti, config, uscita: TextIO) -> int:
         righe.append(
             f"Testimone: IN PAUSA dal {pausa.quando} (comando /hypomnema:pausa): i messaggi e le risposte "
             "non vengono registrati e le note con autore «utente» saranno marcate «autore non verificato "
-            "(testimone spento)». Per riprendere: /hypomnema:riprendi."
+            "(testimoni in pausa)». Per riprendere: /hypomnema:riprendi."
         )
     elif config.testimone_attivo:
         righe.append("Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).")
