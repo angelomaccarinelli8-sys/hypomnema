@@ -1,0 +1,12 @@
+$ hypomnema confronta a.md b.md
+UGUALI: «<esempio>/a.md» e «<esempio>/b.md» sono identici byte per byte (72 byte).
+[codice di uscita: 0]
+
+$ hypomnema confronta a.md c.md
+DIVERSI: «<esempio>/a.md» (72 byte) e «<esempio>/c.md» (72 byte) non sono uguali: la prima differenza è al byte 51.
+[codice di uscita: 1]
+
+$ hypomnema confronta a.md manca.md
+ERRORE: non trovo il file «<esempio>/manca.md».
+[codice di uscita: 2]
+

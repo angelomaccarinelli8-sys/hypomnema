@@ -16,8 +16,9 @@ cartella dell'esempio:
 ``testimone FILE`` simula un messaggio dell'utente come lo manderebbe Claude Code.
 
 I percorsi della cartella temporanea (che cambiano da computer a computer, per esempio
-nell'uscita di ``stato``) vengono scritti come ``<cartella di prova>/...``, con le barre
-"/" anche su Windows.
+nell'uscita di ``stato``) vengono scritti come ``<cartella di prova>/...``, e quelli della
+cartella dell'esempio come ``<esempio>/...``, con le barre "/" anche su Windows.
+``confronta A B`` confronta due file della cartella dell'esempio.
 
 Per avere risultati ripetibili l'ora di ogni comando è fissa:
 il primo comando avviene il 15 gennaio 2026 alle 10:00 (ora italiana),
@@ -55,10 +56,14 @@ segno_citazione = ">"
 CARTELLA_DI_PROVA = "<cartella di prova>"
 
 
-def senza_cartella_di_prova(testo: str, lavoro: Path) -> str:
-    radice = str(lavoro.resolve())
-    schema = re.compile(re.escape(radice) + r"[^\s«»]*")
-    return schema.sub(lambda m: CARTELLA_DI_PROVA + m.group(0)[len(radice):].replace("\\", "/"), testo)
+def senza_cartella_di_prova(testo: str, lavoro: Path, esempio: Path | None = None) -> str:
+    for cartella, etichetta in ((lavoro, CARTELLA_DI_PROVA), (esempio, "<esempio>")):
+        if cartella is None:
+            continue
+        radice = str(cartella.resolve())
+        schema = re.compile(re.escape(radice) + r"[^\s«»]*")
+        testo = schema.sub(lambda m: etichetta + m.group(0)[len(radice):].replace("\\", "/"), testo)
+    return testo
 
 
 def elenco_esempi() -> list[Path]:
@@ -87,6 +92,8 @@ def esegui(esempio: Path, lavoro: Path) -> str:
             argomenti = [parti[0], str(esempio / parti[1])]
         elif parti[0] == "cambiati":
             argomenti = [parti[0], str(lavoro / parti[1])]
+        elif parti[0] == "confronta":
+            argomenti = [parti[0], *(str(esempio.resolve() / p) for p in parti[1:])]
         else:
             argomenti = parti
         uscita.write(f"$ hypomnema {riga}\n")
@@ -100,7 +107,7 @@ def esegui(esempio: Path, lavoro: Path) -> str:
         if destinazione:
             destinazione.write_text(uscita_comando.getvalue(), encoding="utf-8")
         uscita.write(f"[codice di uscita: {codice}]\n\n")
-    return senza_cartella_di_prova(uscita.getvalue(), lavoro)
+    return senza_cartella_di_prova(uscita.getvalue(), lavoro, esempio)
 
 
 def file_di(cartella: Path) -> dict[str, str]:

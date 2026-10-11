@@ -163,6 +163,34 @@ In una nota con `autore: claude` il `testo` è tuo. Se si basa su parole dell'ut
 quelle parole esatte in `citazione`: con il testimone acceso viene controllata allo stesso modo.
 Non usare `contesto` nelle tue note: è già tutto tuo.
 
+### Salvare le risposte di Claude
+
+L'utente può chiederti di conservare una tua risposta. Sono due casi diversi, da non confondere.
+
+**«Salva questa risposta di Claude»** (o simili: «salvami questa spiegazione», «tieni nota di quello
+che hai detto»): la nota è **tua**.
+- `autore: claude`; `testo`: il pezzo della tua risposta che l'utente indica, copiato così com'è
+  (se non è chiaro quale pezzo, chiediglielo);
+- `tipo`: `dedotta` se era un tuo ragionamento o una proposta, `osservata` se riportava ciò che hai
+  visto (un file, un risultato);
+- `natura`: `idea` o `fatto`, **mai** `decisione` (lo sportello la rifiuterebbe);
+- `fonte`: «risposta di Claude del <data> su <argomento>».
+
+**«Questa risposta la faccio mia»** (o simili: «sono d'accordo, salvala come mia», «adotto questa
+parte»), con il pezzo **incollato nel messaggio**: la nota è **dell'utente**, perché l'adozione è sua.
+- `autore: utente`, `tipo: dichiarata`; `testo`: il pezzo incollato, parola per parola come compare
+  nel messaggio dell'utente;
+- `fonte`: da quale tua risposta viene, per esempio «risposta di Claude dell'11 ottobre 2026 su
+  <argomento>»;
+- `natura`: quella che dice l'utente; può essere anche `decisione`, perché l'adozione è sua;
+- con il testimone acceso il testo viene verificato come sempre, sul messaggio in cui l'utente l'ha
+  incollato;
+- se l'utente dice «la faccio mia» senza incollare niente, chiedigli di incollare il pezzo: le
+  parole di una nota dell'utente devono stare in un suo messaggio.
+
+In tutti e due i casi consiglia all'utente di indicare o incollare **solo il pezzo che conta**, non
+tutta la risposta: le note brevi si ritrovano meglio.
+
 ### Messaggi privati
 
 Un messaggio che inizia con `#privato` (o con il prefisso scelto dall'utente in `hypomnema.toml`)
@@ -308,9 +336,24 @@ Per ogni nota, in quest'ordine:
      **Prima `registro.md`, poi le note create.** Ogni proposta allunga il registro: se la sua
      scrittura riesce, vuol dire che nessun'altra chat ha scritto nel quaderno dopo la tua copia,
      e puoi scrivere le note. Anche una nota rifiutata allunga il registro: va riportato.
+     Per **ogni** file da riportare:
+     1. copialo in una **cartella nuova** del computer di lavoro, mai usata prima in questa chat, e
+        riportalo da lì: per esempio `/mnt/user-data/outputs/riporto-<numero progressivo>/registro.md`.
+        Ripartendo da un percorso già usato, lo strumento può rimandare una copia vecchia anche se
+        risponde che ha scritto;
+     2. subito dopo, ricopia dal computer dell'utente il file appena scritto in un'altra cartella
+        nuova (per esempio `~/hypomnema-lavoro/verifica-<numero>/`) e confrontalo con quello del
+        computer di lavoro:
+        `H confronta ~/hypomnema-lavoro/quaderno/registro.md ~/hypomnema-lavoro/verifica-<numero>/registro.md`
+        Deve rispondere `UGUALI`;
+     3. se risponde `DIVERSI`, o se non riesci a ricopiarlo: **fermati, non scrivere altri file** e
+        dillo all'utente: sul suo computer quel file non è quello giusto.
    - Risponde «Nessun file del quaderno è cambiato»: non c'è niente da riportare.
    - Risponde `ERRORE`: **non riportare niente**. Dillo all'utente con il messaggio ricevuto,
      ricopia il quaderno dal suo computer (C2) e riparti dal punto 1.
+   Se già lo sportello risponde `ERRORE: il registro è stato toccato a mano`, non ha scritto
+   niente: dillo all'utente con le sue parole e non riprovare finché l'utente non ha sistemato il
+   registro (`H controlla` mostra la riga da guardare).
 4. Se il controllo **rifiuta la scrittura del registro** (il registro sul computer dell'utente è
    cambiato nel frattempo, per esempio per un'altra chat): **non forzare e non scrivere le note**.
    Sul computer dell'utente non è cambiato niente. Dillo all'utente, ricopia il quaderno (C2) e

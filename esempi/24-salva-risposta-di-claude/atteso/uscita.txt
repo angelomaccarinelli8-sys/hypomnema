@@ -1,0 +1,13 @@
+$ hypomnema proponi 1-idea.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-come-decisione.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- una nota scritta da Claude non può essere una decisione: le decisioni le prende solo l'utente. Se è una proposta di Claude, salvala come idea.
+- una decisione deve essere dichiarata dall'utente: non può essere «dedotta».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+

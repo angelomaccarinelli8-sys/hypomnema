@@ -59,7 +59,12 @@ def _leggi_proposta(contenuto: bytes) -> tuple[dict | None, list[str]]:
 
 
 def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datetime) -> Esito:
-    """Esamina una proposta e restituisce l'esito. Annota sempre il passaggio nel registro."""
+    """Esamina una proposta e restituisce l'esito. Annota sempre il passaggio nel registro.
+
+    Se il registro è stato toccato a mano (non finisce con un a capo) non scrive niente e solleva
+    registro.RegistroToccato.
+    """
+    registro.controlla_fine(config)
     note_esistenti = quaderno.leggi_note(config)
     messaggi = testimone.leggi_messaggi(config) if config.testimone_attivo else None
     proposta, motivi = _leggi_proposta(contenuto)

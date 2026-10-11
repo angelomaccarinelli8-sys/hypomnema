@@ -75,10 +75,12 @@ quaderno, sul tuo computer.
    Il registro si allunga a ogni proposta, quindi se la sua scrittura riesce nessun'altra chat ha
    scritto nel frattempo; se viene rifiutata, Claude non forza e non scrive la nota, ricopia il
    quaderno, riprova e te lo dice. Anche le proposte rifiutate finiscono nel registro, che quindi
-   viene riportato anche dopo un rifiuto.
+   viene riportato anche dopo un rifiuto. Ogni file riportato parte da una cartella nuova del
+   computer di lavoro e, appena scritto, Claude lo ricopia e lo confronta byte per byte con
+   `confronta`: se non è identico si ferma e te lo dice.
 4. Quando chiedi «cosa avevo deciso su…», Claude cerca nel quaderno con il cercatore.
 5. A inizio chat Claude controlla che ogni nota abbia la sua riga ACCETTATA nel registro, e
-   viceversa (`controlla`). Se qualcosa non corrisponde, per esempio per un salvataggio rimasto a
+   viceversa, e che nel registro non ci siano righe estranee (`controlla`). Se qualcosa non corrisponde, per esempio per un salvataggio rimasto a
    metà, te lo dice; non ripara niente da solo.
 
 **Il permesso richiesto.** Solo la cartella `Hypomnema`. In chat Claude non lancia comandi sul tuo
@@ -275,7 +277,8 @@ python -m hypomnema testimone messaggio.json   # di solito lo lancia Claude Code
 python -m hypomnema stato                      # testimone acceso? ultimo messaggio registrato?
 python -m hypomnema istantanea > prima.json    # chat: fotografa il quaderno prima di una proposta
 python -m hypomnema cambiati prima.json        # chat: quali file riportare sul computer
-python -m hypomnema controlla                  # ogni nota ha la sua riga nel registro, e viceversa?
+python -m hypomnema controlla                  # note e registro corrispondono? righe estranee?
+python -m hypomnema confronta a.md b.md        # due file identici byte per byte?
 ```
 
 Su Windows scrivi `py` al posto di `python`:
@@ -333,6 +336,20 @@ nota è tua (`autore: utente`). **Da dove viene lo dice il campo `fonte`**, per 
 - `"fonte": "mio pensiero"`
 
 Non c'è nessuna regola che distingua il testo scritto da quello incollato.
+
+### Salvare le risposte di Claude
+
+Puoi chiedere a Claude di conservare una sua risposta, in due modi:
+
+- **«Salva questa risposta di Claude»**: la nota è **di Claude** (`autore: claude`). Il testo è il
+  pezzo di risposta che indichi; è un'idea o un fatto, mai una decisione.
+- **«Questa risposta la faccio mia»**, incollando il pezzo nel messaggio: la nota è **tua**
+  (`autore: utente`), con la fonte che dice da quale risposta di Claude viene (per esempio
+  «risposta di Claude dell'11 ottobre 2026»). Può essere anche una decisione, perché l'adozione è
+  tua. Con il testimone acceso il testo incollato viene verificato come sempre.
+
+Indica o incolla **solo il pezzo che conta**, non tutta la risposta: le note brevi si ritrovano
+meglio.
 
 ### Il segno `>` per le citazioni (facoltativo)
 

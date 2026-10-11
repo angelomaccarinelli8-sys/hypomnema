@@ -134,6 +134,11 @@ def cambiati(config: Configurazione, prima: dict[str, tuple[int, str]]) -> list[
         if len(dati) > byte and _impronta(dati[:byte]) == impronta:
             cambiamenti.append(Cambiamento(percorso, "allungato"))
             aggiunte[percorso] = dati[byte:]
+            if byte > 0 and dati[byte - 1:byte] != b"\n":
+                problemi.append(
+                    f"il pezzo aggiunto al file «{percorso}» non comincia all'inizio di una riga: "
+                    "prima il file non finiva con un a capo (era stato toccato a mano)."
+                )
         else:
             problemi.append(f"il file «{percorso}» è stato cambiato in modo diverso da un'aggiunta in fondo.")
 

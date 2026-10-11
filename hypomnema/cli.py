@@ -8,7 +8,8 @@
     python -m hypomnema impostazioni-claude     # le regole che l'avviabile passa a Claude Code
     python -m hypomnema istantanea > prima.json # chat: fotografa il quaderno prima di una proposta
     python -m hypomnema cambiati prima.json     # chat: i file da riportare sul computer dell'utente
-    python -m hypomnema controlla               # ogni nota ha la sua riga nel registro, e viceversa?
+    python -m hypomnema controlla               # note e registro corrispondono? righe estranee?
+    python -m hypomnema confronta FILE1 FILE2   # due file identici byte per byte? (non serve configurazione)
 
 Codici di uscita: 0 = tutto bene, 1 = nota rifiutata, 2 = errore di uso o di configurazione.
 Il comando "testimone" non esce mai con 2: per Claude Code vorrebbe dire bloccare il
@@ -67,8 +68,12 @@ def _parser() -> argparse.ArgumentParser:
     )
     cambiati.add_argument("file", help="il file dell'istantanea fatta prima della proposta")
     comandi.add_parser(
-        "controlla", help="controlla che ogni nota abbia la sua riga ACCETTATA nel registro, e viceversa"
+        "controlla",
+        help="controlla che note e registro corrispondano e che il registro abbia solo righe dello sportello",
     )
+    confronta = comandi.add_parser("confronta", help="dice se due file sono identici, byte per byte")
+    confronta.add_argument("file1")
+    confronta.add_argument("file2")
     comandi.add_parser(
         "impostazioni-claude",
         help="scrive le regole che vietano a Claude di modificare quaderno e configurazione (per l'avviabile)",
@@ -217,7 +222,7 @@ def _cambiati(argomenti, config, uscita: TextIO) -> int:
 def _controlla(config, uscita: TextIO) -> int:
     """Solo lettura: segnala, non ripara. 0 = in ordine, 1 = qualcosa non corrisponde."""
     esito = controllo.controlla(config)
-    if not esito.senza_riga and not esito.senza_nota:
+    if esito.in_ordine:
         if esito.note == 0:
             print("Quaderno in ordine: nessuna nota.", file=uscita)
         elif esito.note == 1:
@@ -227,11 +232,39 @@ def _controlla(config, uscita: TextIO) -> int:
                   file=uscita)
         return 0
     print("ATTENZIONE: note e registro non corrispondono.", file=uscita)
+    if esito.senza_intestazione:
+        print("- il registro non comincia con la sua intestazione.", file=uscita)
+    for numero, riga in esito.righe_estranee:
+        print(f"- registro, riga {numero}: «{registro.su_una_riga(riga)}» non è una riga dello sportello.",
+              file=uscita)
+    if esito.senza_a_capo_finale:
+        print("- il registro non finisce con un a capo: lo sportello non scriverà finché non è sistemato.",
+              file=uscita)
     for numero in esito.senza_riga:
         print(f"- nota {numero}: la nota c'è, ma nel registro manca la sua riga ACCETTATA.", file=uscita)
     for numero in esito.senza_nota:
         print(f"- nota {numero}: il registro dice ACCETTATA, ma la nota non c'è.", file=uscita)
     print("Non è stato riparato niente: decide l'utente.", file=uscita)
+    return 1
+
+
+def _confronta(argomenti, uscita: TextIO) -> int:
+    """Solo lettura. 0 = identici, 1 = diversi, 2 = un file manca."""
+    contenuti = []
+    for nome in (argomenti.file1, argomenti.file2):
+        file = Path(nome)
+        if not file.is_file():
+            print(f"ERRORE: non trovo il file «{file}».", file=uscita)
+            return 2
+        contenuti.append(file.read_bytes())
+    primo, secondo = contenuti
+    if primo == secondo:
+        print(f"UGUALI: «{argomenti.file1}» e «{argomenti.file2}» sono identici byte per byte "
+              f"({len(primo)} byte).", file=uscita)
+        return 0
+    posizione = next((i for i, (a, b) in enumerate(zip(primo, secondo)) if a != b), min(len(primo), len(secondo)))
+    print(f"DIVERSI: «{argomenti.file1}» ({len(primo)} byte) e «{argomenti.file2}» ({len(secondo)} byte) "
+          f"non sono uguali: la prima differenza è al byte {posizione + 1}.", file=uscita)
     return 1
 
 
@@ -290,6 +323,8 @@ def main(
     adesso = adesso or datetime.now().astimezone()
     if argomenti.comando == "testimone":
         return _testimone(argomenti, adesso, errori)
+    if argomenti.comando == "confronta":
+        return _confronta(argomenti, uscita)
     try:
         config = configurazione.carica(argomenti.config)
     except configurazione.ErroreConfigurazione as errore:
@@ -313,6 +348,6 @@ def main(
         print(f"ERRORE: il quaderno contiene un file non valido: {errore}. "
               "Controlla se è stato modificato a mano.", file=uscita)
         return 2
-    except testimone.ErroreTestimone as errore:
+    except (testimone.ErroreTestimone, registro.RegistroToccato) as errore:
         print(f"ERRORE: {errore}", file=uscita)
         return 2

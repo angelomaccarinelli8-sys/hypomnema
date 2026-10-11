@@ -1,0 +1,7 @@
+$ hypomnema controlla
+ATTENZIONE: note e registro non corrispondono.
+- registro, riga 6: «riga scritta a mano- 2026-01-14T09:10:00+01:00 | ACCETTATA | nota 0002 | da: proposta.json» non è una riga dello sportello.
+- nota 0002: la nota c'è, ma nel registro manca la sua riga ACCETTATA.
+Non è stato riparato niente: decide l'utente.
+[codice di uscita: 1]
+
