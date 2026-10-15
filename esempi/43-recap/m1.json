@@ -1,0 +1,5 @@
+{
+  "session_id": "sessione-di-esempio",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "Ho deciso: il compost va girato ogni settimana."
+}

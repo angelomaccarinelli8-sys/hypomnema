@@ -1,14 +1,15 @@
 """Il diario: i messaggi dell'utente e le risposte di Claude, insieme e in ordine di tempo.
 
 Il diario è la conversazione grezza registrata dai due testimoni; il quaderno sono le note scelte.
-Solo lettura. La ricerca segue le regole del cercatore: parola esatta, maiuscole indifferenti.
+Solo lettura. La ricerca segue le regole del cercatore: parola esatta, maiuscole indifferenti,
+parole composte spezzate su trattino basso, punto, trattino e barra.
 """
 
-import re
 from dataclasses import dataclass
 from datetime import datetime
 
 from hypomnema import archivio, risposte, testimone
+from hypomnema.cercatore import schema_parola
 from hypomnema.configurazione import Configurazione
 from hypomnema.testimone import ErroreTestimone
 
@@ -54,7 +55,7 @@ def cerca(config: Configurazione, parola: str) -> tuple[list[Voce], list[int]]:
     parola = parola.strip()
     if not parola:
         raise ValueError("serve una parola da cercare.")
-    schema = re.compile(r"(?<!\w)" + re.escape(parola) + r"(?!\w)", re.IGNORECASE)
+    schema = schema_parola(parola)
     tutte = voci(config)
     trovate = [i for i, voce in enumerate(tutte) if voce.testo is not None and schema.search(voce.testo)]
     return tutte, trovate

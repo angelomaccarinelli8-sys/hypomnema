@@ -1,0 +1,63 @@
+# Configurazione per la CHAT di Claude (claude.ai, app desktop e mobile).
+# Claude la usa nel computer di lavoro della chat, che sparisce a fine conversazione:
+# la copia accanto alla copia del quaderno (vedi la skill, "Modalità chat").
+# I percorsi relativi partono dalla cartella che contiene il file copiato.
+
+[quaderno]
+# Cartella dove vivono le note e il registro.
+# Puoi mettere un percorso assoluto, per esempio "C:/Users/nome/Documenti/quaderno".
+cartella = "quaderno"
+
+# Sottocartella del quaderno con una nota per file.
+cartella_note = "note"
+
+# File del registro degli ingressi (si allunga soltanto).
+file_registro = "registro.md"
+
+# Quante cifre usare per il numero delle note (4 => 0001, 0002, ...).
+cifre_numero_nota = 4
+
+[testimone]
+# Il testimone registra le parole esatte di ogni tuo messaggio a Claude, con data e ora,
+# in un file dentro la cartella del quaderno. Serve allo sportello per controllare che
+# una nota con autore "utente" riporti parole che hai detto davvero.
+# In chat il testimone non esiste: attivo deve restare false.
+attivo = false
+
+# Nella chat il testimone non esiste: i messaggi arrivano solo a Claude.
+# Con modalita = "chat" le note con autore "utente" sono marcate
+# "autore non verificato (chat, senza testimone)", diverse da quelle dell'avviabile.
+modalita = "chat"
+
+# File del testimone, dentro la cartella del quaderno (si allunga soltanto).
+file = "testimone.jsonl"
+
+# I messaggi che iniziano con questo prefisso non vengono registrati:
+# il testimone annota solo data e ora con "messaggio privato, non registrato".
+prefisso_privato = "#privato"
+
+# Facoltativo: le righe di un messaggio che iniziano con questo segno sono parole riportate
+# da altri (per esempio un passo di un libro). Il testimone le registra come le altre e in più
+# annota quali righe erano marcate; una nota presa tutta da righe marcate viene salvata con
+# la dicitura "citazione riportata dall'utente".
+segno_citazione = ">"
+
+[archivio]
+# Nella chat Claude può rileggere la conversazione dall'archivio delle chat di Claude (serve il
+# permesso «cerca e consulta le chat passate»). Con il comando «archivio» copia nel quaderno i
+# messaggi dell'utente e le sue risposte, con l'indirizzo della chat: le note dell'utente il cui
+# testo si trova lì sono «riscontrate sull'archivio della chat». Il testo passa da Claude: per questo
+# ogni nota riscontrata porta l'indirizzo della chat, che chiunque può aprire per controllare.
+
+# File dei messaggi dell'utente copiati dall'archivio (si allunga soltanto).
+file = "archivio-chat.jsonl"
+
+# File delle risposte di Claude copiate dall'archivio: il diario della chat (si allunga soltanto).
+file_diario = "diario-chat.jsonl"
+
+# true: nelle risposte ogni blocco di codice diventa una riga con la sua impronta, come nel
+# testimone delle risposte; false: viene copiato intero.
+ometti_codice = true
+
+# Ogni quanti scambi Claude copia dall'archivio i messaggi nuovi (lo fa anche quando chiudi la chat).
+copia_ogni = 5

@@ -26,6 +26,9 @@ Una proposta è **una sola nota** scritta in JSON, salvata in UTF-8.
 | `contesto` | no; **solo** con `autore: utente` | testo, anche su più righe | Ciò che Claude aggiunge alle parole dell'utente (spiegazioni, di cosa si parlava). Mostrato come "Contesto scritto da Claude". |
 | `citazione` | no; **solo** con `autore: claude` | testo, anche su più righe | Le parole esatte dell'utente su cui Claude basa la sua nota. |
 | `conferma_di` | no | numero di una nota esistente, per esempio `"0001"` | Solo per una decisione che conferma un'idea già nel quaderno. |
+| `corregge` | no | numero di una nota esistente, per esempio `"0007"` | Questa nota corregge quella indicata («era sbagliata»). La nota vecchia resta; il cercatore la mostra sempre con la sua correzione. |
+| `riprendere_il` | no | solo il giorno: `AAAA-MM-GG` | Promemoria: il giorno in cui riprendere la nota. Il comando `promemoria` elenca quelli arrivati o passati. |
+| `done` | no | numero di un promemoria esistente (una nota con `riprendere_il`) | Questa nota segna come fatto il promemoria indicato («era giusto ed è fatto»): esce dagli scaduti. |
 | `da_risposta` | no; **solo** con `autore: claude`, mai insieme a `citazione` | `"sì"` | Il `testo` è un pezzo di una risposta di Claude («Salva questa risposta di Claude»). Con il testimone delle risposte acceso, lo sportello lo cerca nelle risposte registrate. |
 
 Le parole dell'utente e quelle di Claude non stanno mai nello stesso campo: in una nota
@@ -55,7 +58,11 @@ La nota viene **rifiutata** se:
 13. con il testimone acceso, ha `autore: utente` e il `testo` non si trova parola per parola in
     nessun messaggio registrato (vale anche per le decisioni, che sono sempre dell'utente);
 14. con il testimone acceso, è una nota di Claude con una `citazione` che non si trova parola
-    per parola in nessun messaggio registrato.
+    per parola in nessun messaggio registrato;
+15. ha `corregge` con il numero di una nota che non esiste;
+16. ha `riprendere_il` con una data che non esiste o che non è solo un giorno (`AAAA-MM-GG`);
+17. ha `done` con il numero di una nota che non esiste, o di una nota che non è un promemoria
+    (senza `riprendere_il`).
 
 Tutti i motivi trovati vengono elencati insieme, sempre nello stesso ordine.
 
@@ -159,6 +166,11 @@ archivio-chat.jsonl  {"quando": "…", "chat": "https://…", "turno": 12, "test
 diario-chat.jsonl    {"quando": "…", "chat": "https://…", "turno": 13, "testo": "…", "origine": "copiato dall'archivio della chat da Claude"}
 ```
 
+Lo strumento che rilegge la chat scrive `<`, `>` e `&` come `&lt;`, `&gt;` e `&amp;`. Claude copia il
+testo così com'è; il programma, prima di tutto il resto e con una regola fissa, riporta `&lt;` a `<`,
+`&gt;` a `>` e infine `&amp;` a `&` (in quest'ordine, così `&amp;lt;` diventa `&lt;`). Vale per i
+messaggi dell'utente e per le risposte di Claude. Limite: un `&lt;` scritto davvero diventa `<`.
+
 Dai messaggi dell'utente si tolgono, con una regola fissa, gli avvisi tecnici dell'app: ogni blocco
 da `<system-reminder>` a `</system-reminder>`, poi gli spazi e gli a capo rimasti all'inizio e alla
 fine. Si fa prima di controllare il prefisso privato. Un segno di avviso senza la sua coppia ferma
@@ -170,6 +182,47 @@ dell'utente con il numero di turno più alto, non più alto del suo).
 Nelle risposte i blocchi di codice sono sostituiti dalla loro impronta se `ometti_codice = true`.
 Lo sportello cerca il testo delle note dell'utente nell'archivio con le stesse regole del testimone;
 se non lo trova la nota resta non verificata, non viene rifiutata.
+
+## Note collegate: correzioni, conferme, promemoria fatti
+
+Tre campi collegano una nota a una nota precedente: `corregge`, `conferma_di` e `done`. Il cercatore
+(`cerca`) mostra, sotto ogni nota trovata e rientrate di quattro spazi, **tutte** le note collegate,
+anche a catena (la correzione di una correzione), dalla più recente alla più vecchia, anche se non
+contengono la parola cercata. Nella nota trovata compaiono le righe `corretta da: nota …`,
+`confermata da: nota …` e `segnata come fatta da: nota …`. Una nota collegata che è già comparsa
+più sopra si indica con una riga sola: `(nota 0002, che corregge la nota 0001: già mostrata sopra)`.
+
+Le note trovate vanno dalla più recente alla più vecchia, cioè dal numero più alto: è l'ordine in
+cui sono entrate nel quaderno, non il campo `data`.
+
+La ricerca è per parola esatta, senza distinzione di maiuscole; una parola è delimitata da
+qualunque segno che non sia una lettera o una cifra, compresi il trattino basso, il punto, il
+trattino e la barra: `orto` trova `orto_balcone.py`. Il diario segue la stessa regola.
+
+## I promemoria
+
+Un promemoria è una nota con `riprendere_il`. Insieme alle sue correzioni (`corregge`, anche a
+catena) forma un gruppo, che il comando `promemoria` mostra una volta sola, sotto la prima nota:
+
+- vale la data della nota **più recente** del gruppo che ha un suo `riprendere_il`: una correzione
+  senza data lascia il promemoria com'era, una correzione con una data nuova lo sposta;
+- se una nota segna come fatta (`done`) una nota del gruppo, il promemoria non è più tra gli scaduti;
+- sono scaduti i promemoria con la data uguale o precedente a oggi (la data del computer), dal più
+  vecchio al più recente; a parità di data decide il numero della nota.
+
+## Il recap
+
+Il comando `recap` («dove eravamo rimasti») mostra, con regole fisse, una riga per nota (numero,
+data, prima riga del testo, con `…` se il testo continua) e sotto, con `↳`, le note collegate:
+
+1. i promemoria scaduti, tutti;
+2. gli ultimi discorsi aperti (`natura: discorso aperto`), dal più recente;
+3. le ultime decisioni, dalla più recente;
+4. le ultime voci del diario, nell'ordine in cui sono state dette, con la prima riga del testo.
+
+Quante voci mostrare per i blocchi 2, 3 e 4 si regola nella sezione facoltativa `[recap]`
+(`discorsi_aperti`, `decisioni`, `voci_diario`, numeri interi maggiori di zero). Se la sezione o
+un'impostazione mancano valgono 5, 5 e 10. Se le voci sono di più, il recap dice quante non ha mostrato.
 
 ## Da idea a decisione
 

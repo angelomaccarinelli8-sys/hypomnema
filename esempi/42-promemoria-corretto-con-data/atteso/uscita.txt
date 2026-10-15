@@ -1,0 +1,81 @@
+$ hypomnema proponi 1-promemoria.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema promemoria
+1 promemoria scaduto al 2026-01-15 (dal più vecchio).
+
+=== Da riprendere il 2026-01-10 ===
+
+--- Nota 0001 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+riprendere il: 2026-01-10
+verifica: autore non verificato (testimone spento)
+testo:
+  Ricordami di seminare il basilico.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-correzione-con-data.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema promemoria
+Nessun promemoria scaduto al 2026-01-15.
+
+(1 promemoria ha una data non ancora arrivata.)
+[codice di uscita: 0]
+
+$ hypomnema proponi 3-seconda-correzione.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema promemoria
+1 promemoria scaduto al 2026-01-15 (dal più vecchio).
+
+=== Da riprendere il 2026-01-12 (data della nota 0003, che corregge) ===
+
+--- Nota 0001 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+riprendere il: 2026-01-10
+corretta da: nota 0002
+verifica: autore non verificato (testimone spento)
+testo:
+  Ricordami di seminare il basilico.
+
+    --- Nota 0003 (corregge la nota 0002) ---
+    data: 2026-01-15
+    fonte: chat del 14 gennaio 2026 sull'orto
+    autore: utente
+    tipo: dichiarata
+    natura: fatto
+    corregge: nota 0002
+    riprendere il: 2026-01-12
+    verifica: autore non verificato (testimone spento)
+    testo:
+      Anticipo: lo semino al chiuso già da domenica.
+
+    --- Nota 0002 (corregge la nota 0001) ---
+    data: 2026-01-15
+    fonte: chat del 14 gennaio 2026 sull'orto
+    autore: utente
+    tipo: dichiarata
+    natura: fatto
+    corregge: nota 0001
+    riprendere il: 2026-03-01
+    corretta da: nota 0003
+    verifica: autore non verificato (testimone spento)
+    testo:
+      Troppo presto: il basilico si semina a marzo.
+[codice di uscita: 0]
+

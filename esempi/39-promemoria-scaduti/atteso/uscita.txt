@@ -1,0 +1,56 @@
+$ hypomnema promemoria
+Nessun promemoria scaduto al 2026-01-15.
+[codice di uscita: 0]
+
+$ hypomnema proponi 1-futuro.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-scaduto.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 3-oggi.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 4-data-sbagliata.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- la data «2026-02-30» di «riprendere_il» non è valida: scrivi solo il giorno, come AAAA-MM-GG (per esempio 2026-01-20).
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema promemoria
+2 promemoria scaduti al 2026-01-15 (dal più vecchio).
+
+=== Da riprendere il 2026-01-01 ===
+
+--- Nota 0002 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: claude
+tipo: dedotta
+natura: idea
+riprendere il: 2026-01-01
+testo:
+  Ricordare di ordinare il terriccio.
+
+=== Da riprendere il 2026-01-15 ===
+
+--- Nota 0003 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: claude
+tipo: dedotta
+natura: idea
+riprendere il: 2026-01-15
+testo:
+  Ricordare di controllare i semenzai.
+
+(1 promemoria ha una data non ancora arrivata.)
+[codice di uscita: 0]
+

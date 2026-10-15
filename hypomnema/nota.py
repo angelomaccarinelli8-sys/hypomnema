@@ -26,9 +26,11 @@ TITOLO_TESTO = "## Testo"
 TITOLO_CONTESTO = "## Contesto scritto da Claude"
 
 # Ordine fisso dei campi di intestazione nel file Markdown.
-# "conferma_di", "citazione" e "verifica" compaiono solo se presenti.
+# Gli altri campi compaiono solo se presenti.
 CAMPI_SEMPRE_PRESENTI = ("data", "fonte", "autore", "tipo", "natura")
-CAMPI_INTESTAZIONE = CAMPI_SEMPRE_PRESENTI + ("conferma_di", "citazione", "da_risposta", "verifica")
+CAMPI_INTESTAZIONE = CAMPI_SEMPRE_PRESENTI + (
+    "conferma_di", "corregge", "done", "riprendere_il", "citazione", "da_risposta", "verifica",
+)
 
 
 class NotaIlleggibile(Exception):
@@ -45,6 +47,12 @@ class Nota:
     natura: str
     testo: str
     conferma_di: str | None = None
+    # Il numero della nota che questa corregge ("era sbagliata").
+    corregge: str | None = None
+    # Il numero del promemoria che questa segna come fatto ("era giusto ed è fatto").
+    done: str | None = None
+    # Promemoria: la data (AAAA-MM-GG) in cui riprendere la nota.
+    riprendere_il: str | None = None
     citazione: str | None = None
     contesto: str | None = None
     # "sì" in una nota di Claude che salva un pezzo di una sua risposta.

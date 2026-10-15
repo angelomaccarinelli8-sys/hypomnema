@@ -59,6 +59,16 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `34-archivio-messaggio-privato` | La copia comprende un messaggio `#privato` con la sua risposta, poi un messaggio normale con la sua risposta; poi gli ultimi 4 del diario. | Del messaggio privato e della sua risposta restano solo data e ora («non copiato»); gli altri due sono copiati. Le righe del diario dicono da quale chat vengono. |
 | `35-archivio-senza-doppioni` | La stessa copia fatta due volte: la seconda ha anche un messaggio nuovo nello stesso minuto e una risposta con lo stesso turno ma un testo diverso. | I doppioni si riconoscono dal turno, non dall'ora: la seconda volta copia solo il messaggio nuovo (stesso minuto, turno diverso); i 2 già presenti non sono duplicati e il programma avvisa che uno ha un testo diverso, senza toccarlo. `controlla` dice che è tutto in ordine. |
 | `36-diario-tre-livelli` | Parte da un quaderno con una nota verificata dal testimone di Claude Code; in chat copia dall'archivio e salva una nota riscontrata e una non verificata; poi la ricerca e il diario. | La ricerca mostra i tre livelli: «testo trovato nel messaggio…» (testimone), «testo riscontrato sull'archivio della chat…» e «autore non verificato». Nel diario la riga del testimone non ha indicazioni, quelle copiate dicono «archivio della chat …, copiato da Claude». |
+| `37-correzioni-insieme` | La nota 0001, la sua correzione 0002 e la correzione della correzione 0003; un'altra nota 0004; una correzione di una nota che non c'è. Poi due ricerche. | La correzione di una nota che non c'è è rifiutata. «pomodoro» trova 0004 e 0001, dalla più recente; sotto la 0001, rientrate, compaiono 0003 e 0002, anche se non contengono la parola. «alterni» trova la 0002 con sotto la 0003. |
+| `38-parole-composte` | Una nota con «orto_balcone.py» e «semi-orto/vasi»; una con «caffèlatte». | «orto», «balcone», «vasi» e «orto_balcone» trovano la prima nota; «caffè» non trova «caffèlatte». |
+| `39-promemoria-scaduti` | Oggi è il 15/01/2026. Promemoria per il 20/01, l'01/01 e il 15/01; uno con la data 30/02. | La data che non esiste è rifiutata. `promemoria` mostra l'01/01 e poi il 15/01, e dice che 1 promemoria ha una data non ancora arrivata. |
+| `40-promemoria-fatto` | Un promemoria scaduto, poi una nota con `done`; poi `done` su una nota che non è un promemoria e su una nota che non c'è. | Dopo il `done` il promemoria non è più tra gli scaduti. I due `done` sbagliati sono rifiutati. La ricerca mostra il promemoria con sotto la nota che lo segna come fatto. |
+| `41-promemoria-corretto` | Un promemoria scaduto e una sua correzione senza data. | Il promemoria resta tra gli scaduti, con la correzione sotto. |
+| `42-promemoria-corretto-con-data` | Un promemoria scaduto; una correzione che lo sposta a marzo; una seconda correzione che lo riporta al 12/01. | Dopo la prima correzione non è scaduto («1 promemoria ha una data non ancora arrivata»); dopo la seconda torna scaduto «il 2026-01-12 (data della nota 0003, che corregge)», con le due correzioni sotto. |
+| `43-recap` | Testimone acceso, `[recap]` con 2 decisioni e 3 righe del diario. Quattro messaggi (l'ultimo privato), tre decisioni, due discorsi aperti (uno corretto), un promemoria scaduto. | Il recap mostra il promemoria, i 2 discorsi aperti (con la correzione sotto, `↳`), 2 decisioni su 3 con «1 decisione più vecchia non mostrata», le ultime 3 righe del diario con la privata come «(messaggio privato, non registrato)». |
+| `44-recap-quaderno-vuoto` | Quaderno vuoto. | Il recap dice «nessuno»/«nessuna» per ogni blocco; nessun promemoria scaduto. |
+| `45-archivio-segni-html` | In chat, una copia dell'archivio con «&lt;», «&gt;» e «&amp;», e un avviso tecnico scritto in quella forma; poi una nota con «<» e «&». | Nell'archivio finiscono i segni veri e l'avviso è tolto; la nota è riscontrata sull'archivio. |
+| `46-quaderno-vecchio` | Un quaderno di prima della 0.4.0 (le note dell'esempio 05) con la configurazione di prima. | `controlla`, `cerca`, `promemoria` e `recap` funzionano senza modifiche; una correzione nuova entra e compare sotto la nota corretta. |
 | `26-confronta` | `confronta` tra due file uguali, due diversi e un file che manca. | `UGUALI` (codice 0); `DIVERSI` con il primo byte diverso (codice 1); errore (codice 2). |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
@@ -70,3 +80,8 @@ carattere, con la cartella `atteso/`.
 Dal compito 3, negli esempi 06, 07, 08 e 09 le note dell'utente hanno le parole dell'utente nel
 `testo` (non più nel campo `citazione`, che ora è solo per le note di Claude): cambiano le note
 proposte, i motivi di rifiuto e la riga «verifica» («testo trovato» invece di «citazione trovata»).
+
+Dalla versione 0.4.0 il cercatore mostra le note **dalla più recente alla più vecchia** e, sotto
+ogni nota, le note collegate: cambia l'ordine delle ricerche con più risultati negli esempi 04, 05 e
+36 (e nel 04 la nota 0001 ha in più «confermata da: nota 0002»). Nell'esempio 15 l'elenco dei campi
+ammessi comprende i tre campi nuovi (`corregge`, `done`, `riprendere_il`).

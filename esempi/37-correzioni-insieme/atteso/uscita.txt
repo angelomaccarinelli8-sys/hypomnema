@@ -1,0 +1,102 @@
+$ hypomnema proponi 1-pomodoro.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-correzione.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 3-correzione-della-correzione.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 4-altra-nota.json
+ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 5-corregge-inesistente.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- la nota «0099» indicata in «corregge» non esiste nel quaderno.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema cerca pomodoro
+Trovate 2 note con «pomodoro» (dalla più recente).
+
+--- Nota 0004 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: autore non verificato (testimone spento)
+testo:
+  Il pomodoro nano sta bene anche in un vaso piccolo.
+
+--- Nota 0001 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+corretta da: nota 0002
+verifica: autore non verificato (testimone spento)
+testo:
+  Il pomodoro va annaffiato ogni giorno.
+
+    --- Nota 0003 (corregge la nota 0002) ---
+    data: 2026-01-14
+    fonte: chat del 14 gennaio 2026 sull'orto
+    autore: utente
+    tipo: dichiarata
+    natura: fatto
+    corregge: nota 0002
+    verifica: autore non verificato (testimone spento)
+    testo:
+      Correggo ancora: d'inverno due volte a settimana.
+
+    --- Nota 0002 (corregge la nota 0001) ---
+    data: 2026-01-14
+    fonte: chat del 14 gennaio 2026 sull'orto
+    autore: utente
+    tipo: dichiarata
+    natura: fatto
+    corregge: nota 0001
+    corretta da: nota 0003
+    verifica: autore non verificato (testimone spento)
+    testo:
+      No, a giorni alterni basta.
+[codice di uscita: 0]
+
+$ hypomnema cerca alterni
+Trovata 1 nota con «alterni».
+
+--- Nota 0002 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+corregge: nota 0001
+corretta da: nota 0003
+verifica: autore non verificato (testimone spento)
+testo:
+  No, a giorni alterni basta.
+
+    --- Nota 0003 (corregge la nota 0002) ---
+    data: 2026-01-14
+    fonte: chat del 14 gennaio 2026 sull'orto
+    autore: utente
+    tipo: dichiarata
+    natura: fatto
+    corregge: nota 0002
+    verifica: autore non verificato (testimone spento)
+    testo:
+      Correggo ancora: d'inverno due volte a settimana.
+[codice di uscita: 0]
+

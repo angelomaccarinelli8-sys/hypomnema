@@ -1,0 +1,12 @@
+testimone m1.json
+testimone m2.json
+testimone m3.json
+testimone m4.json
+proponi 1.json
+proponi 2.json
+proponi 3.json
+proponi 4.json
+proponi 5.json
+proponi 6.json
+proponi 7.json
+recap

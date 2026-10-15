@@ -3,4 +3,4 @@
 Claude propone le note, i programmi decidono se entrano.
 """
 
-__version__ = "0.1.0"
+__version__ = "0.4.0"

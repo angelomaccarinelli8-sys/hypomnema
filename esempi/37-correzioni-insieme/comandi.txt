@@ -1,0 +1,7 @@
+proponi 1-pomodoro.json
+proponi 2-correzione.json
+proponi 3-correzione-della-correzione.json
+proponi 4-altra-nota.json
+proponi 5-corregge-inesistente.json
+cerca pomodoro
+cerca alterni

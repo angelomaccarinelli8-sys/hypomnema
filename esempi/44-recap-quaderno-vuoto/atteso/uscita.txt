@@ -1,0 +1,16 @@
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+[codice di uscita: 0]
+
+$ hypomnema promemoria
+Nessun promemoria scaduto al 2026-01-15.
+[codice di uscita: 0]
+
