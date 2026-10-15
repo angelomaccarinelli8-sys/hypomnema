@@ -80,15 +80,23 @@ Prima di tutto controlla che note e registro corrispondano: `P controlla` (in ch
 registro e perché. **Non riparare niente**: il registro si allunga soltanto e la decisione è sua.
 Poi continua normalmente.
 
-1. Individua 1-3 parole chiave del primo messaggio dell'utente (argomento, progetto, nomi).
-2. Per ciascuna lancia `P cerca <parola>`. La ricerca è per parola esatta,
-   senza distinzione di maiuscole: prova anche il singolare/plurale se serve.
-3. Usa le note trovate rispettando cosa sono:
+1. **Dove eravamo rimasti**: lancia `P recap` (in chat `H recap`). Con regole fisse mostra i
+   promemoria scaduti, i discorsi aperti, le ultime decisioni e le ultime righe del diario: non
+   devi scegliere tu le parole da cercare. Riferisci all'utente **in poche righe** cosa c'è,
+   distinguendo le note (scelte dall'utente) dal diario (solo la conversazione).
+2. Quando poi serve un argomento preciso, lancia `P cerca <parola>`. La ricerca è per parola
+   esatta, senza distinzione di maiuscole: prova anche il singolare/plurale se serve. Trova anche
+   le parole dentro i nomi composti (`orto` trova `orto_balcone.py`). Le note arrivano **dalla più
+   recente alla più vecchia**.
+3. Sotto ogni nota trovata compaiono, rientrate, le note che la **correggono**, la **confermano** o
+   la **segnano come fatta**, anche se non contengono la parola cercata. **Leggile sempre**: se una
+   nota è stata corretta, vale la correzione più recente, non la nota di partenza.
+4. Usa le note trovate rispettando cosa sono:
    - una **decisione** dell'utente vale come decisione;
    - un'**idea** è solo una proposta, non una decisione;
    - una nota **dedotta** è un'ipotesi: non presentarla come certa;
    - cita il numero della nota quando la usi ("dalla nota 0004 ...").
-4. Non inventare note che il cercatore non ha restituito.
+5. Non inventare note che il cercatore non ha restituito.
 
 ## 2. Durante la chat: prepara le note
 
@@ -123,6 +131,15 @@ Formato (JSON, UTF-8), con **tutti** questi campi:
   mescolano mai nello stesso campo.
 - `contesto` (facoltativo, solo nelle note dell'utente): le tue spiegazioni.
 - `citazione` (facoltativo, solo nelle tue note): le parole dell'utente su cui ti basi.
+- `corregge` (facoltativo): il numero di una nota che questa **corregge** («era sbagliata»).
+  Usalo quando l'utente corregge qualcosa già nel quaderno: la nota vecchia resta, e il
+  cercatore la mostrerà sempre insieme alla correzione.
+- `riprendere_il` (facoltativo): un **promemoria**, la data `AAAA-MM-GG` in cui riprendere la nota
+  (per esempio quando l'utente dice «ricordamelo lunedì»). `P promemoria` elenca quelli scaduti.
+- `done` (facoltativo): il numero di un promemoria che questa nota **segna come fatto** («era
+  giusto ed è fatto»). Da lì il promemoria non compare più tra gli scaduti. Non confonderlo con
+  `corregge`: una correzione lascia il promemoria tra gli scaduti (se la correzione ha un suo
+  `riprendere_il`, vale la sua data).
 
 ### Note dell'utente: il testo sono le sue parole
 
@@ -192,6 +209,8 @@ che hai detto»): la nota è **tua**.
   risposte registrate e rifiuta la nota se non lo trova. Se è spento (o in chat), la nota viene
   salvata come «risposta non verificata». Nel file delle risposte i blocchi di codice possono
   essere sostituiti dalla loro impronta: se il pezzo contiene codice, salvalo senza il codice.
+- Una nota con `da_risposta` **non può avere anche `citazione`**: lo sportello la rifiuta, perché
+  viene da una tua risposta oppure dalle parole dell'utente, non da tutte e due.
 
 **«Questa risposta la faccio mia»** (o simili: «sono d'accordo, salvala come mia», «adotto questa
 parte»), con il pezzo **incollato nel messaggio**: la nota è **dell'utente**, perché l'adozione è sua.
@@ -366,11 +385,11 @@ python3 --version
      contengono parole private.
 3. Controlla il quaderno copiato: `H controlla` (vedi la sezione 1). Serve ad accorgersi di un
    salvataggio rimasto a metà in una chat precedente, o di un file toccato a mano.
-4. **Dove eravamo rimasti.** Prima di rispondere al primo messaggio: cerca le note utili
-   (`H cerca <parola>`, sezione 1) e leggi l'ultima parte del diario: `H diario --ultimi 10`.
-   Poi di' all'utente, **in tre righe al massimo**, dove eravamo rimasti: cosa c'era in corso, cosa
-   era stato deciso (solo dalle note), cosa restava aperto. Distingui le note (scelte dall'utente)
-   dal diario (solo la conversazione).
+4. **Dove eravamo rimasti.** Prima di rispondere al primo messaggio lancia `H recap` (sezione 1):
+   promemoria scaduti, discorsi aperti, ultime decisioni e ultime righe del diario, scelti con
+   regole fisse. Poi di' all'utente, **in tre righe al massimo**, dove eravamo rimasti: cosa c'era
+   in corso, cosa era stato deciso (solo dalle note), cosa restava aperto. Distingui le note
+   (scelte dall'utente) dal diario (solo la conversazione).
 
 **Se non hai gli strumenti per il computer dell'utente** (chat sul web, app mobile): è la
 **modalità prova**. Prima di cominciare dillo chiaramente: «Qui non posso accedere al tuo
@@ -405,13 +424,17 @@ Per ogni nota, in quest'ordine:
      allunga il registro: va riportato.
      Per **ogni** file da riportare:
      1. copialo in una **cartella nuova** del computer di lavoro, mai usata prima in questa chat, e
-        riportalo da lì: per esempio `/mnt/user-data/outputs/riporto-<numero progressivo>/registro.md`.
-        Ripartendo da un percorso già usato, lo strumento può rimandare una copia vecchia anche se
-        risponde che ha scritto;
+        riportalo da lì. Il nome della cartella è `riporto-<AAAAMMGG>-<hhmm>-<lettera>`, con la data
+        e l'ora del computer di lavoro (`date +%Y%m%d-%H%M`) e la lettera `a`; per esempio
+        `/mnt/user-data/outputs/riporto-20261015-1243-a/registro.md`. Crea la cartella con `mkdir`
+        **senza** `-p`: se risponde che esiste già, usa la lettera successiva (`b`, `c`…). Niente
+        numeri progressivi: nelle chat lunghe si ripetono. Ripartendo da un percorso già usato, lo
+        strumento può rimandare una copia vecchia anche se risponde che ha scritto;
      2. subito dopo, ricopia dal computer dell'utente il file appena scritto in un'altra cartella
-        nuova (per esempio `~/hypomnema-lavoro/verifica-<numero>/`) e confrontalo con quello del
-        computer di lavoro:
-        `H confronta ~/hypomnema-lavoro/quaderno/registro.md ~/hypomnema-lavoro/verifica-<numero>/registro.md`
+        nuova, con la stessa regola per il nome (per esempio
+        `~/hypomnema-lavoro/verifica-20261015-1243-a/`), e confrontalo con quello del computer di
+        lavoro:
+        `H confronta ~/hypomnema-lavoro/quaderno/registro.md ~/hypomnema-lavoro/verifica-20261015-1243-a/registro.md`
         Deve rispondere `UGUALI`;
      3. se risponde `DIVERSI`, o se non riesci a ricopiarlo: **fermati, non scrivere altri file** e
         dillo all'utente: sul suo computer quel file non è quello giusto.
@@ -456,7 +479,11 @@ Così la conversazione finisce nel quaderno da sola. Fallo **ogni `copia_ogni` s
    ```
 
    Non togliere niente dal testo: gli avvisi tecnici che l'app inserisce tra `<system-reminder>` e
-   `</system-reminder>` li toglie il programma, con una regola fissa. Metti anche i messaggi già
+   `</system-reminder>` li toglie il programma, con una regola fissa.
+   **Non convertire niente**: lo strumento scrive `<`, `>` e `&` come `&lt;`, `&gt;` e `&amp;`.
+   Copia il testo così com'è, con `&lt;` e `&gt;`: li converte il programma `archivio` (e così
+   riconosce anche gli avvisi tecnici scritti in quella forma). Nel quaderno finiscono i segni veri:
+   quando poi prendi dalla copia il `testo` di una nota, scrivi `<` e `>`, non `&lt;` e `&gt;`. Metti anche i messaggi già
    copiati: il programma riconosce i doppioni dall'indirizzo della chat e dal numero del turno, e
    non li duplica. Metti anche i messaggi che cominciano con `#privato`: il programma ne tiene solo
    data e ora, e così anche per la tua risposta.

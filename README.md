@@ -55,11 +55,13 @@ Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
 |---|---|
 | **Sportello** (`proponi`) | Riceve una nota proposta, la controlla, la salva come file Markdown se è completa, altrimenti la rifiuta spiegando perché. |
 | **Registro** (`registro.md`) | Annota ogni passaggio dallo sportello, accettato o rifiutato, con data e motivo. Solo aggiunta. |
-| **Cercatore** (`cerca`) | Trova le note che contengono una parola. Solo lettura. |
+| **Cercatore** (`cerca`) | Trova le note che contengono una parola, dalla più recente; sotto ogni nota mostra le note che la correggono, la confermano o la segnano come fatta. Solo lettura. |
+| **Promemoria** (`promemoria`) | Elenca le note con la data «riprendere il» arrivata o già passata, dalla più vecchia. Solo lettura. |
+| **Recap** (`recap`) | «Dove eravamo rimasti»: promemoria scaduti, discorsi aperti, ultime decisioni e ultime righe del diario, scelti con regole fisse. Solo lettura. |
 | **Testimone** (`testimone`) | Se lo accendi, registra le parole esatte dei tuoi messaggi, così lo sportello può controllare che una nota "dell'utente" riporti parole che hai detto davvero. |
 | **Stato** (`stato`) | Dice se il testimone è acceso, dov'è il quaderno e quale messaggio ha registrato per ultimo. Solo lettura. |
 | **Skill** (`skills/hypomnema/SKILL.md`) | Le istruzioni per Claude: quando leggere, come controllare il testimone, come preparare le note, come confermare una decisione. |
-| **Plugin** (`.claude-plugin/`, `hooks/`, `commands/`, `programma.py`) | Il repository stesso è un plugin di Claude Code: la skill, i programmi, gli agganci dei testimoni e i comandi `/hypomnema:pausa` e `/hypomnema:riprendi`. Vedi «Installa il plugin in Claude Code». |
+| **Plugin** (`.claude-plugin/`, `hooks/`, `commands/`, `programma.py`) | Il repository stesso è un plugin di Claude Code: la skill, i programmi, gli agganci dei testimoni e i comandi `/hypomnema:pausa`, `/hypomnema:riprendi` e `/hypomnema:recap`. Vedi «Installa il plugin in Claude Code». |
 | **Modalità chat** (`chat/`, `istantanea`, `cambiati`) | La configurazione per la chat di Claude e i due comandi, in sola lettura, che dicono quali file del quaderno riportare sul tuo computer dopo una proposta. Vedi «Usarlo nella chat di Claude». |
 | **Avviabile** (`windows/Hypomnema.cmd`) | Alternativa al plugin installato, solo Windows: un doppio clic per aprire Claude Code con Hypomnema acceso. Vedi «Alternativa: l'avviabile di Windows». |
 
@@ -170,10 +172,14 @@ quaderno, sul tuo computer.
    in `diario-chat.jsonl`, con la data, l'ora, il numero del turno e l'indirizzo della chat. Lo
    strumento dà al massimo 50 turni per volta: Claude legge a pezzi. I doppioni si riconoscono dal
    numero del turno (l'ora arriva solo al minuto), e dai tuoi messaggi si tolgono gli avvisi tecnici
-   che l'app inserisce tra `<system-reminder>` e `</system-reminder>`. Lo fa ogni 5 scambi (si
+   che l'app inserisce tra `<system-reminder>` e `</system-reminder>`. Lo strumento dell'archivio
+   scrive «<», «>» e «&» come «&lt;», «&gt;» e «&amp;»: Claude copia il testo così com'è, e il
+   programma `archivio` lo riporta ai segni veri con una regola fissa (così riconosce anche gli
+   avvisi scritti in quella forma). Unico limite: se tu scrivessi davvero «&lt;» a mano, nel
+   quaderno diventerebbe «<». Lo fa ogni 5 scambi (si
    regola con `copia_ogni`), prima di salvare una nota e quando dici che chiudi. Così la
-   conversazione finisce nel quaderno da sola, e all'inizio di una chat nuova Claude ti dice in tre
-   righe dove eravate rimasti.
+   conversazione finisce nel quaderno da sola, e all'inizio di una chat nuova Claude lancia `recap`
+   e ti dice in tre righe dove eravate rimasti.
 
 **Tre livelli di fiducia.** Ogni nota tua dice quanto è sicuro che quelle parole siano tue:
 
@@ -196,7 +202,8 @@ computer: legge e scrive solo lì, e non copia il file del testimone (`testimone
 - **Niente testimoni.** In chat i tuoi messaggi e le risposte di Claude arrivano solo a Claude:
   nessun programma li registra mentre scrivi. Al loro posto c'è la copia dall'archivio della chat
   (punto 6), che però **passa da Claude**: Claude potrebbe alterarla. Per questo le note
-  riscontrate così portano l'indirizzo della chat, e chiunque può aprirla per controllare. Le tue note sono salvate come «autore non verificato (chat, senza testimone)», così si
+  riscontrate così portano l'indirizzo della chat, e chiunque può aprirla per controllare. Senza
+  archivio, le tue note sono salvate come «autore non verificato (chat, senza testimone)», così si
   distinguono da quelle dell'avviabile con il testimone spento («testimone spento»).
 - **Dal telefono o da un altro computer** Hypomnema funziona solo se la chat è collegata al tuo PC,
   con il PC acceso e l'app desktop di Claude aperta; altrimenti è la modalità prova.
@@ -269,6 +276,8 @@ Dalla cartella di Hypomnema:
 ```
 python -m hypomnema proponi esempi/01-nota-accettata/nota.json
 python -m hypomnema cerca orto
+python -m hypomnema promemoria                 # i promemoria con la data arrivata o passata
+python -m hypomnema recap                      # dove eravamo rimasti
 python -m hypomnema testimone messaggio.json   # di solito lo lancia Claude Code da solo
 python -m hypomnema stato                      # testimone acceso? ultimo messaggio registrato?
 python -m hypomnema istantanea > prima.json    # chat: fotografa il quaderno prima di una proposta
@@ -300,6 +309,37 @@ Una nota proposta è un piccolo file JSON:
 
 Lo sportello risponde `ACCETTATA` (e dice il numero della nota) oppure `RIFIUTATA` con i motivi.
 Il formato completo è in [FORMATO.md](FORMATO.md).
+
+### Correzioni, promemoria e «dove eravamo rimasti»
+
+Niente si cancella, quindi una nota sbagliata resta nel quaderno. Per correggerla si salva una
+**nota nuova** con `"corregge": "0007"`. Da lì in poi, quando il cercatore trova la nota 0007, mostra
+**sempre subito sotto** la correzione (e la correzione della correzione, se c'è), anche se la
+correzione non contiene la parola cercata. Lo stesso per le conferme (`conferma_di`). Così Claude
+non può più ripetere un errore che una correzione aveva già sistemato.
+
+Il cercatore elenca le note **dalla più recente alla più vecchia** (cioè dal numero più alto), e
+trova anche le parole dentro i nomi composti: `orto` trova `orto_balcone.py`, `semi-orto` e
+`orto/vasi`. Le note restano scritte in fondo al quaderno come sempre: cambia solo l'ordine in cui
+si mostrano.
+
+**Promemoria.** Una nota con `"riprendere_il": "2026-10-20"` è un promemoria. Il comando
+`promemoria` elenca quelli con la data arrivata o già passata, dal più vecchio. Per chiuderlo si
+salva una nota con `"done": "0007"` («era giusto ed è fatto»): il promemoria esce dagli scaduti.
+Una correzione invece («era sbagliato») lo lascia tra gli scaduti, con la correzione sotto; se la
+correzione ha un suo `riprendere_il`, vale quella data.
+
+**Dove eravamo rimasti.** Il comando `recap` (nel plugin anche `/hypomnema:recap`) mostra in poche
+righe, con regole fisse: i promemoria scaduti, gli ultimi 5 discorsi aperti, le ultime 5 decisioni e
+le ultime 10 righe del diario. Claude lo lancia a inizio chat, così non deve scegliere da solo le
+parole da cercare. I numeri si regolano nella sezione facoltativa `[recap]` di `hypomnema.toml`:
+
+```toml
+[recap]
+discorsi_aperti = 5
+decisioni = 5
+voci_diario = 10
+```
 
 ### Le tue parole e quelle di Claude restano separate
 
@@ -633,6 +673,10 @@ L'avviabile:
 
 Per smettere di usarlo: cancella il collegamento sul desktop e, se vuoi, la cartella `programma`.
 Il quaderno resta dov'è: decidi tu se tenerlo.
+
+## Versioni
+
+La storia delle versioni è in [STORIA.md](STORIA.md).
 
 ## Esempi
 
