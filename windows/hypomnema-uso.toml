@@ -53,8 +53,9 @@ ometti_codice = true
 
 [recap]
 # Facoltativa. Il comando «recap» («dove eravamo rimasti») mostra i promemoria scaduti e, dal più
-# recente, questi numeri di discorsi aperti, decisioni e righe del diario. Se la sezione manca
-# valgono 5, 5 e 10.
+# recente, questi numeri di discorsi aperti, cose da fare (todo), decisioni e righe del diario.
+# Se la sezione manca valgono 5, 5, 5 e 10.
 discorsi_aperti = 5
+todo = 5
 decisioni = 5
 voci_diario = 10

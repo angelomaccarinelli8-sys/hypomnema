@@ -11,11 +11,11 @@ $ hypomnema promemoria
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 riprendere il: 2026-01-10
-verifica: autore non verificato (testimone spento)
+verifica: author not verified (witness off)
 testo:
   Ricordami di comprare i semi di zucca.
 [codice di uscita: 0]
@@ -32,43 +32,30 @@ Nessun promemoria scaduto al 2026-01-15.
 $ hypomnema proponi 3-fatto-di-una-nota-qualsiasi.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- la nota «0002» indicata in «done» non è un promemoria (non ha «riprendere_il»): «done» segna come fatto solo un promemoria.
+- note «0002» is a «fact»: «done» closes only open, todo and reminder notes (with «remind»). A fact, a decision or an idea is not closed: write a new note with «corrects».
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
 $ hypomnema proponi 4-fatto-di-una-nota-che-non-c-e.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- la nota «0099» indicata in «done» non esiste nel quaderno.
+- note «0099» named in «done» does not exist in the notebook.
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
 $ hypomnema cerca zucca
-Trovate 2 note con «zucca» (dalla più recente).
+Trovata 1 nota con «zucca».
+(1 nota chiusa non mostrata: aggiungi --all per vederla.)
 
 --- Nota 0002 ---
 data: 2026-01-15
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
-segna come fatta: nota 0001
-verifica: autore non verificato (testimone spento)
+autore: user
+tipo: stated
+natura: fact
+chiude: nota 0001
+verifica: author not verified (witness off)
 testo:
   Semi di zucca comprati.
-
---- Nota 0001 ---
-data: 2026-01-14
-fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
-riprendere il: 2026-01-10
-segnata come fatta da: nota 0002
-verifica: autore non verificato (testimone spento)
-testo:
-  Ricordami di comprare i semi di zucca.
-
-    (nota 0002, che segna come fatta la nota 0001: già mostrata sopra)
 [codice di uscita: 0]
 

@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" avvio; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" avvio; fi"
+            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" start; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" start; fi"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" testimone; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" testimone; fi"
+            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" witness; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" witness; fi"
           }
         ]
       }
@@ -25,7 +25,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" risposte; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" risposte; fi"
+            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" replies; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" replies; fi"
           }
         ]
       }
@@ -36,7 +36,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" protezione; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" protezione; fi"
+            "command": "if command -v py >/dev/null 2>&1; then py \"${CLAUDE_PLUGIN_ROOT}/programma.py\" protect; else python3 \"${CLAUDE_PLUGIN_ROOT}/programma.py\" protect; fi"
           }
         ]
       }

@@ -12,7 +12,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema proponi 4-nota-mai-detta.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- il testo non si trova, parola per parola, in nessuna risposta di Claude registrata: copia il pezzo esatto della tua risposta. Nel file delle risposte i blocchi di codice possono essere sostituiti dalla loro impronta: se il pezzo contiene codice, salvalo senza il codice.
+- the text is not found, word for word, in any recorded reply of Claude: copy the exact piece of your reply. In the replies file code blocks may be replaced by their fingerprint: if the piece contains code, save it without the code.
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
@@ -23,10 +23,10 @@ Trovata 1 nota con «fragole».
 data: 2026-01-15
 fonte: risposta di Claude del 15 gennaio 2026 sul progetto dell'orto
 autore: claude
-tipo: dedotta
+tipo: inferred
 natura: idea
-da una risposta di Claude: sì
-verifica: testo trovato nella risposta di Claude del 2026-01-15T10:01:00+01:00
+da una risposta di Claude: yes
+verifica: text found in Claude's reply of 2026-01-15T10:01:00+01:00
 testo:
   Per proteggere le fragole dalle lumache conviene una barriera di cenere attorno alle piante.
 [codice di uscita: 0]

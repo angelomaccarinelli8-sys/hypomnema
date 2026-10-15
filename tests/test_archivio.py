@@ -214,40 +214,40 @@ class TestTreLivelli(ConArchivio):
     def test_nota_dell_utente_riscontrata(self):
         self.copia_da_file(copia_json(UTENTE))
         self.assertEqual(self.riga_verifica(self.proponi(testo="provare i peperoncini")),
-                         f"- verifica: testo riscontrato sull'archivio della chat {CHAT}, messaggio del turno 0 "
-                         "(2026-01-15T09:00:00+01:00, copiato da Claude)")
+                         f"- verification: text matched in the chat archive {CHAT}, message of turn 0 "
+                         "(2026-01-15T09:00:00+01:00, copied by Claude)")
 
     def test_testo_assente_non_verificato_e_non_rifiutato(self):
         self.copia_da_file(copia_json(UTENTE))
         esito = self.proponi(testo="i peperoni dolci")
         self.assertTrue(esito.accettata)
-        self.assertEqual(self.riga_verifica(esito), "- verifica: autore non verificato (chat, senza testimone)")
+        self.assertEqual(self.riga_verifica(esito), "- verification: author not verified (chat, no witness)")
 
     def test_non_si_cerca_nelle_risposte_di_claude(self):
         self.copia_da_file(copia_json(UTENTE, CLAUDE))
-        self.assertIn("non verificato", self.riga_verifica(self.proponi(testo="mettili al sole.")))
+        self.assertIn("not verified", self.riga_verifica(self.proponi(testo="mettili al sole.")))
 
     def test_messaggio_privato_non_riscontrabile(self):
         self.copia_da_file(copia_json((0, "Thu 2026-01-15 09:00", "utente", "#privato parole segrete")))
-        self.assertIn("non verificato", self.riga_verifica(self.proponi(testo="parole segrete")))
+        self.assertIn("not verified", self.riga_verifica(self.proponi(testo="parole segrete")))
 
     def test_citazione_di_claude_riscontrata(self):
         self.copia_da_file(copia_json(UTENTE))
         esito = self.proponi(autore="claude", tipo="dedotta", natura="idea", citazione="i peperoncini sul balcone")
-        self.assertIn("- verifica: citazione riscontrata sull'archivio della chat", esito.percorso.read_text(encoding="utf-8"))
+        self.assertIn("- verification: quote matched in the chat archive", esito.percorso.read_text(encoding="utf-8"))
 
     def test_risposta_di_claude_riscontrata_sul_diario_della_chat(self):
         self.copia_da_file(copia_json(UTENTE, CLAUDE))
         esito = self.proponi(autore="claude", tipo="dedotta", natura="idea", da_risposta="sì", testo="mettili al sole.")
         self.assertEqual(self.riga_verifica(esito),
-                         f"- verifica: testo riscontrato sull'archivio della chat {CHAT}, risposta del turno 1 "
-                         "(2026-01-15T09:00:00+01:00, copiato da Claude)")
+                         f"- verification: text matched in the chat archive {CHAT}, reply of turn 1 "
+                         "(2026-01-15T09:00:00+01:00, copied by Claude)")
         esito = self.proponi(autore="claude", tipo="dedotta", natura="idea", da_risposta="sì", testo="mai detto")
-        self.assertEqual(self.riga_verifica(esito), "- verifica: risposta non verificata (chat, senza testimone)")
+        self.assertEqual(self.riga_verifica(esito), "- verification: reply not verified (chat, no witness)")
 
     def test_senza_sezione_come_prima(self):
         self.scrivi_config(CONFIG_CHAT)
-        self.assertEqual(self.riga_verifica(self.proponi()), "- verifica: autore non verificato (chat, senza testimone)")
+        self.assertEqual(self.riga_verifica(self.proponi()), "- verification: author not verified (chat, no witness)")
 
 
 class TestDiarioEStato(ConArchivio):

@@ -20,7 +20,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema proponi 4-data-sbagliata.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- la data «2026-02-30» di «riprendere_il» non è valida: scrivi solo il giorno, come AAAA-MM-GG (per esempio 2026-01-20).
+- the date «2026-02-30» in «remind» is not valid: write only the day, as YYYY-MM-DD (for example 2026-01-20).
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
@@ -33,7 +33,7 @@ $ hypomnema promemoria
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: claude
-tipo: dedotta
+tipo: inferred
 natura: idea
 riprendere il: 2026-01-01
 testo:
@@ -45,7 +45,7 @@ testo:
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: claude
-tipo: dedotta
+tipo: inferred
 natura: idea
 riprendere il: 2026-01-15
 testo:

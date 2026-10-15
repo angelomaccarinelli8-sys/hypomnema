@@ -1,7 +1,7 @@
 $ hypomnema proponi nota.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- una nota scritta da Claude non può essere una decisione: le decisioni le prende solo l'utente. Se è una proposta di Claude, salvala come idea.
+- a note written by Claude cannot be a decision: only the user makes decisions. If it is Claude's proposal, save it as an idea.
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 

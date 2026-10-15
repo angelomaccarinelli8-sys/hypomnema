@@ -12,10 +12,10 @@ Trovata 1 nota con «orto».
 --- Nota 0001 ---
 data: 2026-01-15
 fonte: dal libro «Il quaderno dell'ortolano» (libro inventato per l'esempio)
-autore: utente
-tipo: dichiarata
+autore: user
+tipo: stated
 natura: idea
-verifica: citazione riportata dall'utente, trovata nel messaggio del 2026-01-15T10:00:00+01:00
+verifica: quote reported by the user, found in the message of 2026-01-15T10:00:00+01:00
 testo:
   Un orto non si finisce mai: si continua, una stagione dopo l'altra.
 [codice di uscita: 0]

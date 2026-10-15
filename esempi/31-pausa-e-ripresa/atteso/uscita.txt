@@ -19,7 +19,7 @@ $ hypomnema risposte 06-risposta.json
 $ hypomnema stato
 Configurazione: <cartella di prova>/hypomnema.toml
 Quaderno: <cartella di prova>/quaderno
-Testimone: IN PAUSA dal 2026-01-15T10:02:00+01:00 (comando /hypomnema:pausa): i messaggi e le risposte non vengono registrati e le note con autore «utente» saranno marcate «autore non verificato (testimoni in pausa)». Per riprendere: /hypomnema:riprendi.
+Testimone: IN PAUSA dal 2026-01-15T10:02:00+01:00 (comando /hypomnema:pause): i messaggi e le risposte non vengono registrati e le note con autore «user» saranno marcate «author not verified (witnesses paused)». Per riprendere: /hypomnema:resume (o /hypomnema:riprendi).
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 3
 Ultimo messaggio registrato: 2026-01-15T10:04:00+01:00 (messaggio durante la pausa, non registrato).

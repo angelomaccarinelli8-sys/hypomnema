@@ -3,8 +3,9 @@ description: Mette in pausa i testimoni di Hypomnema: messaggi e risposte non ve
 disable-model-invocation: true
 ---
 
-L'utente ha scritto /hypomnema:pausa. Il testimone di Hypomnema riceve questo stesso messaggio prima di te
-e annota la pausa: da qui i testimoni non registrano: tu non devi fare niente, e non devi mai mettere in pausa o riprendere i testimoni da solo.
+The user wrote /hypomnema:pausa (the same as /hypomnema:pause). Hypomnema's witness receives this very message
+before you and records the pause: from here on the witnesses do not record. You do not have to do anything, and you
+must never pause or resume the witnesses on your own.
 
-Controlla con `py "${CLAUDE_PLUGIN_ROOT}/programma.py" stato` (su macOS e Linux `python3` al posto
-di `py`) e riferisci all'utente, in una o due frasi, cosa dice la riga `Testimone:`.
+Check with `py "${CLAUDE_PLUGIN_ROOT}/programma.py" status` (on macOS and Linux `python3` instead of `py`) and
+tell the user, in Italian, in one or two sentences, what the `Testimone:` line says.

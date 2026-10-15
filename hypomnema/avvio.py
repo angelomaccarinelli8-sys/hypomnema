@@ -61,7 +61,7 @@ def prepara(file_config: Path) -> list[str]:
             "dei tuoi messaggi e quello delle risposte di Claude ACCESI: da ora registrano tutto quello "
             "che scrivi in Claude Code, in ogni progetto, nel quaderno accanto alla configurazione. "
             "Un messaggio che comincia con #privato non viene registrato; per una pausa scrivi "
-            "/hypomnema:pausa e per riprendere /hypomnema:riprendi; per spegnerli metti attivo = false "
+            "/hypomnema:pause (o /hypomnema:pausa) e per riprendere /hypomnema:resume (o /hypomnema:riprendi); per spegnerli metti attivo = false "
             "nella configurazione."
         )
     try:
@@ -88,7 +88,7 @@ def prepara(file_config: Path) -> list[str]:
             pausa = None
         if pausa is not None:
             avvisi.append(f"Hypomnema: i testimoni sono in pausa dal {pausa.quando}. "
-                          "Per riprendere scrivi /hypomnema:riprendi.")
+                          "Per riprendere scrivi /hypomnema:resume (o /hypomnema:riprendi).")
     return avvisi
 
 

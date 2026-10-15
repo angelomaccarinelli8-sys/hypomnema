@@ -5,10 +5,11 @@ da qualunque segno che non sia una lettera o una cifra (spazi, punteggiatura, ma
 trattino basso, il punto, il trattino e la barra delle parole composte): "orto" trova
 "orto_balcone.py", ma "caffè" non trova "caffèlatte". Si cerca nel testo delle note e nel
 contesto scritto da Claude. Le note trovate vanno dalla più recente (numero più alto) alla
-più vecchia.
+più vecchia. Le note chiuse con «done» (open, todo, promemoria) non si mostrano, a meno di
+chiederle tutte (``tutte=True``, cioè ``search --all``).
 
 Ogni nota si porta dietro le note collegate: quelle che la correggono (``corregge``), che la
-confermano (``conferma_di``) e che la segnano come fatta (``done``), anche a catena (la
+confermano (``conferma_di``) e che la chiudono (``done``), anche a catena (la
 correzione di una correzione), dalla più recente alla più vecchia.
 """
 
@@ -17,13 +18,13 @@ from dataclasses import dataclass
 
 from hypomnema import quaderno
 from hypomnema.configurazione import Configurazione
-from hypomnema.nota import Nota
+from hypomnema.nota import Nota, chiuse
 
 # Il campo che collega una nota a un'altra, e come si legge il legame.
 LEGAMI = (
     ("corregge", "corregge la nota", "corretta da"),
     ("conferma_di", "conferma la nota", "confermata da"),
-    ("done", "segna come fatta la nota", "segnata come fatta da"),
+    ("done", "chiude la nota", "chiusa da"),
 )
 
 
@@ -43,15 +44,25 @@ def dal_piu_recente(note: list[Nota]) -> list[Nota]:
     return sorted(note, key=lambda n: (int(n.id), n.id), reverse=True)
 
 
-def cerca(config: Configurazione, parola: str) -> list[Nota]:
+def cerca(config: Configurazione, parola: str, tutte: bool = False) -> list[Nota]:
     parola = parola.strip()
     if not parola:
         raise ValueError("serve una parola da cercare.")
     schema = schema_parola(parola)
+    note = quaderno.leggi_note(config)
+    chiusa = chiuse(note)
     return dal_piu_recente([
-        n for n in quaderno.leggi_note(config)
-        if schema.search(n.testo) or (n.contesto is not None and schema.search(n.contesto))
+        n for n in note
+        if (schema.search(n.testo) or (n.contesto is not None and schema.search(n.contesto)))
+        and (tutte or n.id not in chiusa)
     ])
+
+
+def _bersagli(nota: Nota, campo: str) -> tuple[str, ...]:
+    valore = getattr(nota, campo)
+    if valore is None:
+        return ()
+    return valore if isinstance(valore, tuple) else (valore,)
 
 
 def legami_diretti(note: list[Nota]) -> dict[str, list[Collegata]]:
@@ -59,8 +70,7 @@ def legami_diretti(note: list[Nota]) -> dict[str, list[Collegata]]:
     diretti: dict[str, list[Collegata]] = {}
     for nota in note:
         for campo, come, _ in LEGAMI:
-            bersaglio = getattr(nota, campo)
-            if bersaglio is not None:
+            for bersaglio in _bersagli(nota, campo):
                 diretti.setdefault(bersaglio, []).append(Collegata(nota, f"{come} {bersaglio}"))
     return diretti
 
@@ -82,8 +92,31 @@ def righe_dei_legami(id_nota: str, diretti: dict[str, list[Collegata]]) -> list[
     """Le righe «corretta da: nota …», «confermata da: nota …» di una nota (solo i legami diretti)."""
     righe = []
     for campo, _, letto in LEGAMI:
-        numeri = sorted((c.nota.id for c in diretti.get(id_nota, []) if getattr(c.nota, campo) == id_nota),
+        numeri = sorted((c.nota.id for c in diretti.get(id_nota, []) if id_nota in _bersagli(c.nota, campo)),
                         key=lambda n: (int(n), n), reverse=True)
         if numeri:
             righe.append(f"{letto}: " + ", ".join(f"nota {n}" for n in numeri))
     return righe
+
+
+# L'ordine delle priorità: prima le alte. Una nota senza priorità vale «normal».
+ORDINE_PRIORITA = {"high": 0, "normal": 1, "low": 2}
+
+
+def priorita_in_vigore(nota: Nota, note: list[Nota]) -> str:
+    """La priorità della nota: quella della sua correzione più recente (anche a catena) che ne ha una."""
+    correzioni = {n.corregge: [] for n in note}
+    for n in note:
+        if n.corregge is not None:
+            correzioni[n.corregge].append(n)
+    gruppo, da_guardare, visti = [nota], [nota.id], {nota.id}
+    while da_guardare:
+        for correzione in correzioni.get(da_guardare.pop(), []):
+            if correzione.id not in visti:
+                visti.add(correzione.id)
+                gruppo.append(correzione)
+                da_guardare.append(correzione.id)
+    con_priorita = [n for n in gruppo if n.priorita is not None]
+    if not con_priorita:
+        return "normal"
+    return max(con_priorita, key=lambda n: (int(n.id), n.id)).priorita

@@ -106,12 +106,12 @@ class TestMarcaturaInChat(ConQuaderno):
 
     def test_nota_dell_utente(self):
         self.assertEqual(self.riga_verifica(self.proponi()),
-                         "- verifica: autore non verificato (chat, senza testimone)")
+                         "- verification: author not verified (chat, no witness)")
 
     def test_nota_di_claude_con_citazione(self):
         esito = self.proponi(autore="claude", tipo="dedotta", citazione="parole dell'utente")
         self.assertEqual(self.riga_verifica(esito),
-                         "- verifica: citazione non verificata (chat, senza testimone)")
+                         "- verification: quote not verified (chat, no witness)")
 
     def test_nota_di_claude_senza_citazione(self):
         self.assertIsNone(self.riga_verifica(self.proponi(autore="claude", tipo="dedotta")))
@@ -119,13 +119,13 @@ class TestMarcaturaInChat(ConQuaderno):
     def test_le_regole_restano_le_stesse(self):
         esito = self.proponi(autore="claude", natura="decisione")
         self.assertFalse(esito.accettata)
-        self.assertIn("Claude non può essere una decisione", esito.motivi[0])
+        self.assertIn("Claude cannot be a decision", esito.motivi[0])
 
     def test_fuori_dalla_chat_niente_cambia(self):
         self.file_config.write_text(CONFIG_DI_PROVA, encoding="utf-8")
         self.config = configurazione.carica(str(self.file_config))
         self.assertEqual(self.riga_verifica(self.proponi()),
-                         "- verifica: autore non verificato (testimone spento)")
+                         "- verification: author not verified (witness off)")
 
     def test_stato_in_chat(self):
         codice, uscita = self.comando("stato")
@@ -210,7 +210,7 @@ class TestIstantaneaECambiati(ConQuaderno):
     def test_nota_scritta_a_mano(self):
         self.proponi()
         prima = self.istantanea()
-        (self.config.cartella_note / "0002.md").write_text("# Nota 0002\n", encoding="utf-8")
+        (self.config.cartella_note / "0002.md").write_text("# Note 0002\n", encoding="utf-8")
         self.assert_rifiuta(prima, "«note/0002.md» (creato) non l'ha scritto lo sportello")
 
     def test_riga_accettata_falsa_nel_nome_del_file(self):
@@ -218,7 +218,7 @@ class TestIstantaneaECambiati(ConQuaderno):
         self.proponi()
         prima = self.istantanea()
         sportello.ricevi(b"{}", "x | ACCETTATA | nota 0002 | da: y.json", self.config, ADESSO)
-        (self.config.cartella_note / "0002.md").write_text("# Nota 0002\n", encoding="utf-8")
+        (self.config.cartella_note / "0002.md").write_text("# Note 0002\n", encoding="utf-8")
         self.assert_rifiuta(prima, "«note/0002.md» (creato) non l'ha scritto lo sportello")
 
     def test_registro_senza_nota(self):
@@ -329,7 +329,7 @@ class TestControlla(ConQuaderno):
     def test_nota_senza_riga_e_riga_senza_nota(self):
         self.proponi()
         self.proponi(testo="seconda")
-        (self.config.cartella_note / "0005.md").write_text("# Nota 0005\n", encoding="utf-8")
+        (self.config.cartella_note / "0005.md").write_text("# Note 0005\n", encoding="utf-8")
         (self.config.cartella_note / "0002.md").unlink()
         self.assertEqual(self.comando("controlla"), (1,
             "ATTENZIONE: note e registro non corrispondono.\n"
@@ -347,7 +347,7 @@ class TestControlla(ConQuaderno):
     def test_accettata_finta_nel_nome_del_file_non_conta(self):
         sportello.ricevi(b"{}", "x | ACCETTATA | nota 0001 | da: y.json", self.config, ADESSO)
         self.config.cartella_note.mkdir()
-        (self.config.cartella_note / "0001.md").write_text("# Nota 0001\n", encoding="utf-8")
+        (self.config.cartella_note / "0001.md").write_text("# Note 0001\n", encoding="utf-8")
         codice, uscita = self.comando("controlla")
         self.assertEqual(codice, 1)
         self.assertIn("- nota 0001: la nota c'è, ma nel registro manca", uscita)

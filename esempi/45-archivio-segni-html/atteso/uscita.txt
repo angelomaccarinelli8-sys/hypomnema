@@ -14,10 +14,10 @@ Trovata 1 nota con «umidità».
 --- Nota 0001 ---
 data: 2026-01-15
 fonte: chat del 15 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00045, messaggio del turno 0 (2026-01-15T09:00:00+01:00, copiato da Claude)
+autore: user
+tipo: stated
+natura: fact
+verifica: text matched in the chat archive https://claude.ai/chat/00000000-0000-0000-0000-esempio00045, message of turn 0 (2026-01-15T09:00:00+01:00, copied by Claude)
 testo:
   Annaffia solo se l'umidità è < 30% & il vaso è asciutto.
 [codice di uscita: 0]

@@ -45,8 +45,8 @@ class TestCatalogoEManifesto(unittest.TestCase):
 
     def test_agganci_usano_il_percorso_del_plugin(self):
         agganci = json.loads((RADICE / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
-        attesi = {"SessionStart": "avvio", "UserPromptSubmit": "testimone", "Stop": "risposte",
-                  "PreToolUse": "protezione"}
+        attesi = {"SessionStart": "start", "UserPromptSubmit": "witness", "Stop": "replies",
+                  "PreToolUse": "protect"}
         self.assertEqual(set(agganci), set(attesi))
         for evento, comando in attesi.items():
             with self.subTest(evento=evento):
@@ -291,8 +291,8 @@ class TestPausa(unittest.TestCase):
     def test_stato_in_pausa(self):
         self.dice("/hypomnema:pausa")
         stato = self.stato()
-        self.assertIn("Testimone: IN PAUSA dal 2026-01-15T10:01:00+01:00 (comando /hypomnema:pausa)", stato)
-        self.assertIn("Per riprendere: /hypomnema:riprendi.", stato)
+        self.assertIn("Testimone: IN PAUSA dal 2026-01-15T10:01:00+01:00 (comando /hypomnema:pause)", stato)
+        self.assertIn("Per riprendere: /hypomnema:resume (o /hypomnema:riprendi).", stato)
         self.dice("/hypomnema:riprendi")
         self.assertIn("Testimone: ACCESO", self.stato())
 
@@ -302,21 +302,21 @@ class TestPausa(unittest.TestCase):
         self.dice("/hypomnema:pausa")
         esito = sportello.ricevi(json.dumps(NOTA_BUONA).encode("utf-8"), "prova.json", self.config, self.adesso())
         self.assertTrue(esito.accettata)
-        self.assertIn("- verifica: autore non verificato (testimoni in pausa)", esito.percorso.read_text(encoding="utf-8"))
+        self.assertIn("- verification: author not verified (witnesses paused)", esito.percorso.read_text(encoding="utf-8"))
         nota = dict(NOTA_BUONA, autore="claude", tipo="dedotta", natura="idea", da_risposta="sì",
                     testo="Una risposta di prova.")
         esito = sportello.ricevi(json.dumps(nota).encode("utf-8"), "prova.json", self.config, self.adesso())
-        self.assertIn("risposta non verificata (testimoni in pausa)", esito.percorso.read_text(encoding="utf-8"))
+        self.assertIn("reply not verified (witnesses paused)", esito.percorso.read_text(encoding="utf-8"))
         nota = dict(NOTA_BUONA, autore="claude", tipo="dedotta", natura="idea", citazione="Una nota di prova.")
         esito = sportello.ricevi(json.dumps(nota).encode("utf-8"), "prova.json", self.config, self.adesso())
-        self.assertIn("citazione non verificata (testimoni in pausa)", esito.percorso.read_text(encoding="utf-8"))
+        self.assertIn("quote not verified (witnesses paused)", esito.percorso.read_text(encoding="utf-8"))
 
     def test_dopo_la_ripresa_si_verifica_di_nuovo(self):
         self.dice("/hypomnema:pausa")
         self.dice("/hypomnema:riprendi")
         self.dice("Una nota di prova.")
         esito = sportello.ricevi(json.dumps(NOTA_BUONA).encode("utf-8"), "prova.json", self.config, self.adesso())
-        self.assertIn("- verifica: testo trovato nel messaggio del", esito.percorso.read_text(encoding="utf-8"))
+        self.assertIn("- verification: text found in the message of", esito.percorso.read_text(encoding="utf-8"))
 
     def test_avviso_di_pausa_a_inizio_sessione(self):
         self.dice("/hypomnema:pausa")

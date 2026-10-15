@@ -9,8 +9,8 @@ Trovate 2 note con «caffè» (dalla più recente).
 data: 2026-01-13
 fonte: chat del 13 gennaio 2026 sulle abitudini
 autore: claude
-tipo: osservata
-natura: fatto
+tipo: observed
+natura: fact
 testo:
   Caffè nominato tre volte parlando del pomeriggio.
   Ogni volta verso le 16.
@@ -18,9 +18,9 @@ testo:
 --- Nota 0001 ---
 data: 2026-01-12
 fonte: chat del 12 gennaio 2026 sulle abitudini
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 verifica: autore non verificato (testimone spento)
 testo:
   La mattina bevo un caffè prima di qualsiasi altra cosa.
@@ -36,6 +36,8 @@ Dove eravamo rimasti (recap del 2026-01-15).
 Promemoria scaduti: nessuno.
 
 Discorsi aperti: nessuno.
+
+Cose da fare: nessuna.
 
 Ultime decisioni: nessuna.
 
@@ -53,11 +55,11 @@ Trovate 3 note con «caffè» (dalla più recente).
 --- Nota 0004 ---
 data: 2026-01-15
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 corregge: nota 0001
-verifica: autore non verificato (testimone spento)
+verifica: author not verified (witness off)
 testo:
   Ora bevo il caffè solo dopo colazione.
 
@@ -65,8 +67,8 @@ testo:
 data: 2026-01-13
 fonte: chat del 13 gennaio 2026 sulle abitudini
 autore: claude
-tipo: osservata
-natura: fatto
+tipo: observed
+natura: fact
 testo:
   Caffè nominato tre volte parlando del pomeriggio.
   Ogni volta verso le 16.
@@ -74,9 +76,9 @@ testo:
 --- Nota 0001 ---
 data: 2026-01-12
 fonte: chat del 12 gennaio 2026 sulle abitudini
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 corretta da: nota 0004
 verifica: autore non verificato (testimone spento)
 testo:

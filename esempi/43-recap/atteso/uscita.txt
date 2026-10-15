@@ -48,15 +48,17 @@ Il passaggio è annotato nel registro.
 $ hypomnema recap
 Dove eravamo rimasti (recap del 2026-01-15).
 
-Promemoria scaduti: 1 (dal più vecchio)
+Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)
 - [0006] da riprendere il 2026-01-10: Controllare se le fragole hanno attecchito.
 
-Discorsi aperti: 2 di 2 (dal più recente)
+Discorsi aperti: 2 di 2 (prima la priorità alta, poi dal più recente)
 - [0005] 2026-01-15: Da decidere se aggiungere un secondo vaso di fragole.
 - [0004] 2026-01-15: Resta da capire dove mettere la compostiera.
     ↳ [0007] corregge la nota 0004: La compostiera è stata messa nell'angolo nord.
 
-Ultime decisioni: 2 di 3 (dal più recente)
+Cose da fare: nessuna.
+
+Ultime decisioni: 2 di 3 (prima la priorità alta, poi dal più recente)
 - [0003] 2026-01-15: le fragole vanno in vaso grande. …
 - [0002] 2026-01-15: niente pesticidi sul balcone
 (1 decisione più vecchia non mostrata)
@@ -65,6 +67,6 @@ Ultime voci del diario: 3 di 4 (la conversazione registrata, non le note)
 - 2026-01-15T10:01:00+01:00 · utente: Ho deciso: niente pesticidi sul balcone.
 - 2026-01-15T10:02:00+01:00 · utente: Ho deciso: le fragole vanno in vaso grande. …
 - 2026-01-15T10:03:00+01:00 · utente: (messaggio privato, non registrato)
-(per leggerle intere: diario --ultimi 3)
+(per leggerle intere: diary --last 3)
 [codice di uscita: 0]
 

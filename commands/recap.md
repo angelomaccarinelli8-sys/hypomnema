@@ -1,9 +1,9 @@
 ---
-description: Dove eravamo rimasti: promemoria scaduti, discorsi aperti, ultime decisioni e ultimo diario di Hypomnema
+description: Dove eravamo rimasti: promemoria scaduti, discorsi aperti, cose da fare, ultime decisioni e ultimo diario di Hypomnema
 ---
 
-L'utente ha scritto /hypomnema:recap. Lancia `py "${CLAUDE_PLUGIN_ROOT}/programma.py" recap` (su macOS e
-Linux `python3` al posto di `py`) e riferisci all'utente, in poche righe, cosa mostra: i promemoria
-scaduti, i discorsi aperti, le ultime decisioni e le ultime righe del diario. Distingui le note (scelte
-dall'utente) dal diario (solo la conversazione registrata), e cita il numero delle note. Non aggiungere
-niente che il comando non abbia mostrato.
+The user wrote /hypomnema:recap. Run `py "${CLAUDE_PLUGIN_ROOT}/programma.py" recap` (on macOS and Linux `python3`
+instead of `py`) and report to the user, in Italian and in a few lines, what it shows: overdue reminders, open
+questions, things to do (todo), the latest decisions and the last lines of the diary. Keep the notes (chosen by the
+user) apart from the diary (only the recorded conversation), and cite the note numbers. Add nothing the command did
+not show.

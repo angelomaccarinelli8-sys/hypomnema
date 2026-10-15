@@ -33,6 +33,11 @@ DICITURA_PRIVATO = "messaggio privato, non registrato"
 # testimone, che si allunga soltanto.
 COMANDO_PAUSA = "/hypomnema:pausa"
 COMANDO_RIPRESA = "/hypomnema:riprendi"
+# Dalla 0.5.0 i comandi hanno anche il nome inglese; quello italiano vale per sempre.
+COMANDI = {
+    "/hypomnema:pause": COMANDO_PAUSA, COMANDO_PAUSA: COMANDO_PAUSA,
+    "/hypomnema:resume": COMANDO_RIPRESA, COMANDO_RIPRESA: COMANDO_RIPRESA,
+}
 DICITURA_PAUSA = "pausa chiesta dall'utente: da qui i testimoni non registrano"
 DICITURA_RIPRESA = "ripresa chiesta dall'utente: da qui i testimoni registrano di nuovo"
 DICITURA_IN_PAUSA = "messaggio durante la pausa, non registrato"
@@ -73,11 +78,11 @@ def righe_marcate(testo: str, segno: str) -> list[int]:
 
 
 def comando(testo: str) -> str | None:
-    """Il comando di pausa o di ripresa con cui comincia il messaggio, oppure None."""
+    """Il comando di pausa o di ripresa con cui comincia il messaggio (nel nome italiano), oppure None."""
     pulito = testo.strip()
-    for cercato in (COMANDO_PAUSA, COMANDO_RIPRESA):
+    for cercato, significato in COMANDI.items():
         if pulito == cercato or pulito.startswith(cercato + " ") or pulito.startswith(cercato + "\n"):
-            return cercato
+            return significato
     return None
 
 

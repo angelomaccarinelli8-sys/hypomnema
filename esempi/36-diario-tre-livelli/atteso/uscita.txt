@@ -18,29 +18,29 @@ Trovate 3 note con «fragole» (dalla più recente).
 --- Nota 0003 ---
 data: 2026-01-15
 fonte: chat del 15 gennaio 2026 sul balcone
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: autore non verificato (chat, senza testimone)
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (chat, no witness)
 testo:
   Le fragole vanno raccolte la mattina.
 
 --- Nota 0002 ---
 data: 2026-01-15
 fonte: chat del 15 gennaio 2026 sul balcone
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, messaggio del turno 0 (2026-01-15T09:00:00+01:00, copiato da Claude)
+autore: user
+tipo: stated
+natura: fact
+verifica: text matched in the chat archive https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, message of turn 0 (2026-01-15T09:00:00+01:00, copied by Claude)
 testo:
   Le fragole in vaso vogliono un terriccio acido.
 
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: sessione di Claude Code del 14 gennaio 2026
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 verifica: testo trovato nel messaggio del 2026-01-14T18:00:00+01:00
 testo:
   Le fragole le copro con la paglia d'inverno.

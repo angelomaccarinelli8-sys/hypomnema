@@ -20,8 +20,8 @@ Trovate 2 note con «caffè» (dalla più recente).
 data: 2026-01-13
 fonte: chat del 13 gennaio 2026 sulle abitudini
 autore: claude
-tipo: osservata
-natura: fatto
+tipo: observed
+natura: fact
 testo:
   Caffè nominato tre volte parlando del pomeriggio.
   Ogni volta verso le 16.
@@ -29,10 +29,10 @@ testo:
 --- Nota 0001 ---
 data: 2026-01-12
 fonte: chat del 12 gennaio 2026 sulle abitudini
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: autore non verificato (testimone spento)
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
 testo:
   La mattina bevo un caffè prima di qualsiasi altra cosa.
 [codice di uscita: 0]

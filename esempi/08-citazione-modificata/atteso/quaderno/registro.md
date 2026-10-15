@@ -2,4 +2,4 @@
 
 Ogni riga è un passaggio dallo sportello. Questo file si allunga soltanto.
 
-- 2026-01-15T10:01:00+01:00 | RIFIUTATA | da: nota.json | motivi: il testo non si trova, parola per parola, in nessun messaggio registrato dal testimone: in una nota dell'utente il testo sono le sue parole esatte; spiegazioni e riassunti di Claude vanno nel campo «contesto».
+- 2026-01-15T10:01:00+01:00 | RIFIUTATA | da: nota.json | motivi: the text is not found, word for word, in any message recorded by the witness: in a note by the user the text is their exact words; Claude's explanations and summaries go in the field «context».

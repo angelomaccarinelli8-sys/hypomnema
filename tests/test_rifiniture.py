@@ -60,7 +60,7 @@ class TestCampiNuovi(ConQuaderno):
         self.nota()
         self.assertTrue(self.proponi(corregge="0001").accettata)
         self.assertEqual(self.proponi(corregge="0099").motivi,
-                         ["la nota «0099» indicata in «corregge» non esiste nel quaderno."])
+                         ["note «0099» named in «corrects» does not exist in the notebook."])
 
     def test_riprendere_il_solo_giorno_valido(self):
         for giorno, valida in (("2026-01-20", True), ("2026-02-30", False), ("2026-01-20T10:00", False),
@@ -72,22 +72,22 @@ class TestCampiNuovi(ConQuaderno):
         self.nota(riprendere_il="2026-01-10")
         self.nota()
         self.assertTrue(self.proponi(done="0001").accettata)
-        self.assertIn("non è un promemoria", self.proponi(done="0002").motivi[0])
-        self.assertIn("non esiste nel quaderno", self.proponi(done="0099").motivi[0])
+        self.assertIn("«done» closes only open, todo and reminder notes", self.proponi(done="0002").motivi[0])
+        self.assertIn("does not exist in the notebook", self.proponi(done="0099").motivi[0])
 
     def test_campi_scritti_e_riletti(self):
         self.nota(riprendere_il="2026-01-10")
         numero = self.nota(corregge="0001", riprendere_il="2026-02-01")
         self.nota(done="0001")
         testo = (self.config.cartella_note / f"{numero}.md").read_text(encoding="utf-8")
-        self.assertIn("- corregge: 0001\n- riprendere_il: 2026-02-01\n", testo)
+        self.assertIn("- corrects: 0001\n- remind: 2026-02-01\n", testo)
         rilette = quaderno.leggi_note(self.config)
         self.assertEqual((rilette[1].corregge, rilette[1].riprendere_il, rilette[2].done),
-                         ("0001", "2026-02-01", "0001"))
+                         ("0001", "2026-02-01", ("0001",)))
 
     def test_nota_vecchia_senza_campi_nuovi(self):
-        vecchia = ("# Nota 0001\n\n- data: 2026-01-10\n- fonte: f\n- autore: utente\n- tipo: dichiarata\n"
-                   "- natura: fatto\n\n## Testo\n\nVecchia.\n")
+        vecchia = ("# Note 0001\n\n- data: 2026-01-10\n- fonte: f\n- autore: utente\n- tipo: dichiarata\n"
+                   "- natura: fatto\n\n## Text\n\nVecchia.\n")
         nota = da_markdown("0001", vecchia)
         self.assertEqual((nota.corregge, nota.done, nota.riprendere_il), (None, None, None))
 
@@ -131,9 +131,9 @@ class TestCercatore(ConQuaderno):
     def test_done_mostrato_sotto_il_promemoria(self):
         self.nota("comprare i semi", riprendere_il="2026-01-10")
         self.nota("fatto", done="0001")
-        _, uscita = self.comando("cerca", "semi")
-        self.assertIn("segnata come fatta da: nota 0002", uscita)
-        self.assertIn("--- Nota 0002 (segna come fatta la nota 0001) ---", uscita)
+        _, uscita = self.comando("cerca", "semi", "--all")
+        self.assertIn("chiusa da: nota 0002", uscita)
+        self.assertIn("--- Nota 0002 (chiude la nota 0001) ---", uscita)
 
 
 class TestDiarioParoleComposte(ConQuaderno):
@@ -214,14 +214,14 @@ class TestRecap(ConQuaderno):
         codice, uscita = self.comando("recap")
         self.assertEqual(codice, 0)
         self.assertEqual(uscita, "Dove eravamo rimasti (recap del 2026-01-15).\n\nPromemoria scaduti: nessuno.\n\n"
-                                 "Discorsi aperti: nessuno.\n\nUltime decisioni: nessuna.\n\n"
+                                 "Discorsi aperti: nessuno.\n\nCose da fare: nessuna.\n\nUltime decisioni: nessuna.\n\n"
                                  "Ultime voci del diario: nessuna.\n")
 
     def test_numeri_di_base_senza_sezione(self):
         for _ in range(7):
             self.nota(natura="discorso aperto")
         _, uscita = self.comando("recap")
-        self.assertIn("Discorsi aperti: 5 di 7 (dal più recente)\n- [0007]", uscita)
+        self.assertIn("Discorsi aperti: 5 di 7 (prima la priorità alta, poi dal più recente)\n- [0007]", uscita)
         self.assertIn("(2 discorsi aperti più vecchi non mostrati)", uscita)
         self.assertNotIn("[0002]", uscita)
 
@@ -232,7 +232,7 @@ class TestRecap(ConQuaderno):
         for _ in range(2):
             self.nota(autore="utente", tipo="dichiarata", natura="decisione")
         _, uscita = self.comando("recap")
-        self.assertIn("Ultime decisioni: 1 di 2 (dal più recente)\n- [0002] 2026-01-15: Una nota.\n"
+        self.assertIn("Ultime decisioni: 1 di 2 (prima la priorità alta, poi dal più recente)\n- [0002] 2026-01-15: Una nota.\n"
                       "(1 decisione più vecchia non mostrata)", uscita)
 
     def test_sezione_recap_sbagliata(self):
@@ -248,7 +248,7 @@ class TestRecap(ConQuaderno):
         self.nota("Messa nell'angolo nord.", corregge="0001")
         self.nota("Controllare le fragole.", riprendere_il="2026-01-10")
         _, uscita = self.comando("recap")
-        self.assertIn("Promemoria scaduti: 1 (dal più vecchio)\n- [0003] da riprendere il 2026-01-10: "
+        self.assertIn("Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)\n- [0003] da riprendere il 2026-01-10: "
                       "Controllare le fragole.\n", uscita)
         self.assertIn("- [0001] 2026-01-15: Resta da capire …\n"
                       "    ↳ [0002] corregge la nota 0001: Messa nell'angolo nord.\n", uscita)
@@ -265,7 +265,7 @@ class TestRecapDiario(ConQuaderno):
         self.assertIn("Ultime voci del diario: 2 di 3 (la conversazione registrata, non le note)\n"
                       "- 2026-01-15T10:01:00+01:00 · utente: secondo …\n"
                       "- 2026-01-15T10:02:00+01:00 · utente: (messaggio privato, non registrato)\n"
-                      "(per leggerle intere: diario --ultimi 2)\n", uscita)
+                      "(per leggerle intere: diary --last 2)\n", uscita)
 
 
 class TestSegniDellArchivio(ConQuaderno):
@@ -290,7 +290,7 @@ class TestSegniDellArchivio(ConQuaderno):
         esito = sportello.ricevi(json.dumps({
             "data": "2026-01-15", "fonte": "prova", "autore": "utente", "tipo": "dichiarata", "natura": "fatto",
             "testo": "umidità < 30%"}).encode("utf-8"), "prova.json", self.config, ADESSO)
-        self.assertIn("- verifica: testo riscontrato sull'archivio della chat",
+        self.assertIn("- verification: text matched in the chat archive",
                       esito.percorso.read_text(encoding="utf-8"))
 
     def test_avviso_html_senza_chiusura_rifiutato(self):
@@ -319,8 +319,8 @@ class TestQuadernoVecchio(unittest.TestCase):
 
 class TestVersioneEDocumenti(unittest.TestCase):
     def test_versione(self):
-        self.assertEqual(__version__, "0.4.0")
-        self.assertIn('version = "0.4.0"', (RADICE / "pyproject.toml").read_text(encoding="utf-8"))
+        self.assertEqual(__version__, "0.5.0")
+        self.assertIn('version = "0.5.0"', (RADICE / "pyproject.toml").read_text(encoding="utf-8"))
 
     def test_comando_recap_del_plugin(self):
         testo = (RADICE / "commands" / "recap.md").read_text(encoding="utf-8")

@@ -16,23 +16,23 @@ $ hypomnema promemoria
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 riprendere il: 2026-01-10
 corretta da: nota 0002
-verifica: autore non verificato (testimone spento)
+verifica: author not verified (witness off)
 testo:
   Ricordami di rinvasare il limone.
 
     --- Nota 0002 (corregge la nota 0001) ---
     data: 2026-01-15
     fonte: chat del 14 gennaio 2026 sull'orto
-    autore: utente
-    tipo: dichiarata
-    natura: fatto
+    autore: user
+    tipo: stated
+    natura: fact
     corregge: nota 0001
-    verifica: autore non verificato (testimone spento)
+    verifica: author not verified (witness off)
     testo:
       Non il limone: l'arancio.
 [codice di uscita: 0]

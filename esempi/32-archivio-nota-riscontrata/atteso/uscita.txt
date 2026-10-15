@@ -14,10 +14,10 @@ Trovata 1 nota con «peperoncini».
 --- Nota 0001 ---
 data: 2026-01-15
 fonte: chat del 15 gennaio 2026 sul balcone
-autore: utente
-tipo: dichiarata
+autore: user
+tipo: stated
 natura: idea
-verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, messaggio del turno 0 (2026-01-15T09:00:00+01:00, copiato da Claude)
+verifica: text matched in the chat archive https://claude.ai/chat/00000000-0000-0000-0000-esempio00001, message of turn 0 (2026-01-15T09:00:00+01:00, copied by Claude)
 testo:
   voglio provare i peperoncini piccanti sul balcone
 contesto scritto da Claude:
@@ -27,7 +27,7 @@ contesto scritto da Claude:
 $ hypomnema stato
 Configurazione: <cartella di prova>/hypomnema.toml
 Quaderno: <cartella di prova>/quaderno
-Testimone: NON C'È (configurazione per la chat di Claude): i messaggi arrivano solo a Claude e le note con autore «utente» saranno marcate «autore non verificato (chat, senza testimone)».
+Testimone: NON C'È (configurazione per la chat di Claude): i messaggi arrivano solo a Claude e le note con autore «user» saranno marcate «author not verified (chat, no witness)».
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 0
 Ultimo messaggio registrato: nessuno.

@@ -7,7 +7,7 @@ $ hypomnema testimone 2-normale.json
 $ hypomnema proponi nota.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- il testo non si trova, parola per parola, in nessun messaggio registrato dal testimone: in una nota dell'utente il testo sono le sue parole esatte; spiegazioni e riassunti di Claude vanno nel campo «contesto».
+- the text is not found, word for word, in any message recorded by the witness: in a note by the user the text is their exact words; Claude's explanations and summaries go in the field «context».
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 

@@ -3,8 +3,9 @@ description: Riprende i testimoni di Hypomnema dopo una pausa
 disable-model-invocation: true
 ---
 
-L'utente ha scritto /hypomnema:riprendi. Il testimone di Hypomnema riceve questo stesso messaggio prima di te
-e annota la ripresa: da qui i testimoni registrano di nuovo: tu non devi fare niente, e non devi mai mettere in pausa o riprendere i testimoni da solo.
+The user wrote /hypomnema:riprendi (the same as /hypomnema:resume). Hypomnema's witness receives this very message
+before you and records the resumption: from here on the witnesses record again. You do not have to do anything, and
+you must never pause or resume the witnesses on your own.
 
-Controlla con `py "${CLAUDE_PLUGIN_ROOT}/programma.py" stato` (su macOS e Linux `python3` al posto
-di `py`) e riferisci all'utente, in una o due frasi, cosa dice la riga `Testimone:`.
+Check with `py "${CLAUDE_PLUGIN_ROOT}/programma.py" status` (on macOS and Linux `python3` instead of `py`) and
+tell the user, in Italian, in one or two sentences, what the `Testimone:` line says.
