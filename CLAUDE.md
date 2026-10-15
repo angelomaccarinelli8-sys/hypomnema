@@ -45,12 +45,14 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 - **Niente si cancella e niente si riscrive**: note create con apertura esclusiva (`"x"`),
   registro aperto solo in aggiunta (`"a"`).
 - **Provenienza sempre**: data, fonte, autore (utente o claude) in ogni nota.
-- **Parole dell'utente e di Claude mai mescolate**: in una nota dell'utente `testo` = sue parole
-  esatte, `contesto` = aggiunte di Claude; in una nota di Claude `citazione` = parole dell'utente.
-- **L'incerto resta incerto**: tipo `osservata`, `dichiarata` o `dedotta`. Una nota di Claude
+- **Parole dell'utente e di Claude mai mescolate**: in una nota dell'utente `text` = sue parole
+  esatte, `context` = aggiunte di Claude; in una nota di Claude `quote` = parole dell'utente.
+- **L'incerto resta incerto**: `knowledge` `observed`, `stated` o `inferred`. Una nota di Claude
   non può mai essere una decisione dell'utente.
 - **Idee separate dalle decisioni**: un'idea diventa decisione solo con conferma esplicita
-  dell'utente (nuova nota con `conferma_di`).
+  dell'utente (nuova nota con `confirms`).
+- **Chiudere**: `open`, `todo` e promemoria si chiudono solo con una nota nuova (`done`), una volta
+  sola; gli `open` li chiude solo l'utente. `fact`, `decision`, `idea` si correggono, non si chiudono.
 - **Il testimone non si fida di Claude**: il comando `testimone` non scrive mai a schermo (finirebbe
   nella chat) e non esce mai con codice 2 (bloccherebbe il messaggio dell'utente). Lo stesso vale per
   `risposte`: con l'aggancio Stop il codice 2 costringerebbe Claude a continuare.
@@ -68,7 +70,7 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 
 | File | Ruolo |
 |---|---|
-| `hypomnema/cli.py` | Riga di comando (`proponi`, `cerca`, `promemoria`, `recap`, `testimone`, `stato`, `istantanea`, `cambiati`, `controlla`, `confronta`, `risposte`, `impronta`, `diario`, `archivio`, `avvio`, `protezione`, `impostazioni-claude`), messaggi a schermo. `confronta` (due file identici byte per byte?) non usa la configurazione. |
+| `hypomnema/cli.py` | Riga di comando, messaggi a schermo (in italiano). Dalla 0.5.0 i comandi hanno il nome inglese e quello italiano come sinonimo per sempre (`INGLESE`): `propose`/`proponi`, `search`/`cerca` (`--all`/`--tutte`), `reminders`/`promemoria`, `recap`, `witness`/`testimone`, `status`/`stato`, `snapshot`/`istantanea`, `changed`/`cambiati`, `check`/`controlla`, `compare`/`confronta`, `replies`/`risposte`, `fingerprint`/`impronta`, `diary`/`diario` (`--last`/`--ultimi`, `--around`/`--intorno`), `archive`/`archivio`, `start`/`avvio`, `protect`/`protezione`, `claude-settings`/`impostazioni-claude`. `confronta` (due file identici byte per byte?) non usa la configurazione. |
 | `hypomnema/cambiamenti.py` | `istantanea` e `cambiati` (solo lettura): i file del quaderno da riportare dopo una proposta, con il controllo che sia successo solo ciò che fa lo sportello. |
 | `chat/hypomnema-chat.toml` | Modello della configurazione per la chat: testimone spento e `modalita = "chat"` (note dell'utente marcate «chat, senza testimone»). |
 | `hypomnema/controllo.py` | `controlla` (solo lettura): ogni nota ha la sua riga ACCETTATA nel registro, e viceversa; righe del registro estranee (con il numero) e registro senza a capo finale. Segnala, non ripara. |
@@ -77,8 +79,8 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `hypomnema/archivio.py` | Il testimone dell'archivio (modalità chat): il comando `archivio` aggiunge a `archivio-chat.jsonl` e `diario-chat.jsonl` la copia della conversazione presa da Claude dall'archivio delle chat, senza doppioni e con i privati ridotti a data e ora. Le note dell'utente il cui testo si trova lì sono «riscontrate sull'archivio della chat». |
 | `hypomnema/avvio.py` | Configurazione di base `~/Hypomnema`, prima volta (creata dal modello `windows/hypomnema-uso.toml`), avvisi (quaderno nel plugin, OneDrive, pausa), protezione del quaderno; le regole per l'avviabile. |
 | `hypomnema/sportello.py` | Legge la proposta, applica le regole, salva la nota, annota nel registro. |
-| `hypomnema/regole.py` | Le regole fisse e i motivi di rifiuto in italiano semplice. |
-| `hypomnema/nota.py` | La nota e il suo formato Markdown (scrittura e rilettura). |
+| `hypomnema/regole.py` | Le regole fisse; i nomi e i valori italiani delle proposte portati all'inglese (`in_inglese`); i motivi di rifiuto in inglese (li legge Claude); chiusure (`done`) e priorità. |
+| `hypomnema/nota.py` | La nota e il suo formato Markdown: scrive in inglese (`# Note`, `- date:`, `## Text`), legge anche il formato italiano di prima (valori portati all'inglese) senza mai riscriverlo; `chiuse()`. |
 | `hypomnema/quaderno.py` | Elenco delle note salvate e numero della prossima. |
 | `hypomnema/registro.py` | Registro degli ingressi, solo aggiunta; le due forme di riga (ACCETTATA, RIFIUTATA) che riconoscono `cambiati` e `controlla`; lo sportello si ferma se il registro non finisce con un a capo. |
 | `hypomnema/cercatore.py` | Ricerca per parola esatta (parole composte spezzate su `_ . - /`), dalla nota più recente, solo lettura; le note collegate (`corregge`, `conferma_di`, `done`, anche a catena). |
@@ -87,15 +89,15 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `programma.py` | Punto d'ingresso del plugin: lo lanciano gli agganci e Claude (`py "${CLAUDE_PLUGIN_ROOT}/programma.py" …`); i programmi stanno nel plugin, la configurazione di base è `~/Hypomnema/hypomnema.toml`. |
 | `.claude-plugin/` | `plugin.json` (il manifesto, senza versione: ogni aggiornamento di `main` arriva con l'update) e `marketplace.json` (il catalogo; il plugin è la radice del repository, `source: "./"`). |
 | `hooks/hooks.json` | Gli agganci: SessionStart (`avvio`: prima volta e avvisi), UserPromptSubmit (`testimone`), Stop (`risposte`), PreToolUse (`protezione`: blocca Edit/Write sul quaderno). |
-| `commands/` | `/hypomnema:pausa` e `/hypomnema:riprendi`, che Claude non può lanciare (`disable-model-invocation`). La pausa la riconosce il testimone nel messaggio dell'utente. `/hypomnema:recap` lancia il recap. |
+| `commands/` | `/hypomnema:pause` e `/hypomnema:resume` (con i sinonimi `/hypomnema:pausa` e `/hypomnema:riprendi`), che Claude non può lanciare (`disable-model-invocation`). La pausa la riconosce il testimone nel messaggio dell'utente. `/hypomnema:recap` lancia il recap. Istruzioni per Claude in inglese. |
 | `STORIA.md` | La storia delle versioni e le note di rilascio. |
-| `skills/hypomnema/SKILL.md` | La skill. |
+| `skills/hypomnema/SKILL.md` | La skill, in inglese (istruzioni per Claude); le frasi da dire all'utente restano in italiano. |
 | `windows/` | L'avviabile (`Hypomnema.cmd` → `avvia-hypomnema.ps1`), il modello della configurazione in uso (`hypomnema-uso.toml`) e l'aggiornamento della copia in uso (`aggiorna-hypomnema.cmd`). I `.cmd` sono ASCII con fine riga CRLF; il `.ps1` è UTF-8 con BOM. |
 | `.claude/settings.json` | Nella copia di sviluppo vieta a Claude di modificare `quaderno/`. Nessun aggancio. |
 | `hypomnema/configurazione.py` | Lettura di `hypomnema.toml`. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |
-| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`); `test_risposte.py` il testimone delle risposte, il filtro sul codice, `impronta`, il diario e `da_risposta`; `test_plugin.py` il plugin installabile (catalogo, agganci da una copia del plugin, prima volta, protezione, pausa); `test_archivio.py` l'archivio della chat e i tre livelli; `test_rifiniture.py` le rifiniture della 0.4.0 (correzioni, ordine, parole composte, promemoria, recap, segni dell'archivio, quaderno vecchio). |
+| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`); `test_risposte.py` il testimone delle risposte, il filtro sul codice, `impronta`, il diario e `da_risposta`; `test_plugin.py` il plugin installabile (catalogo, agganci da una copia del plugin, prima volta, protezione, pausa); `test_archivio.py` l'archivio della chat e i tre livelli; `test_rifiniture.py` le rifiniture della 0.4.0 (correzioni, ordine, parole composte, promemoria, recap, segni dell'archivio, quaderno vecchio); `test_lingua_chiusure.py` la 0.5.0 (nomi inglesi e italiani, kind, chiusure, priorità, quaderno vecchio in italiano). |
 
 ## Metodo di lavoro
 
@@ -128,8 +130,11 @@ Prossimo passo proposto:
 
 ## Da ricordare per i compiti futuri
 
-- **Lingua per ruolo** (decisione di Angelo, 15/10/2026): in un compito successivo comandi e campi
-  passeranno all'inglese. Per ora solo `recap` e `done` sono in inglese; il resto resta in italiano.
+- **Lingua per ruolo** (decisione di Angelo, fatta nella 0.5.0): italiano per il contenuto e per ciò
+  che legge l'utente (messaggi dei comandi, README, FORMATO, STORIA); inglese per la struttura
+  (comandi, campi, valori, motivi di rifiuto, diciture `verification`, skill). I nomi italiani
+  valgono per sempre; le note vecchie non si toccano. Restano in italiano, per ora, i formati
+  interni: righe del registro, file dei testimoni, chiavi di `hypomnema.toml` (possibile compito futuro).
 
 - **Versioni delle note** (segnalato dalla revisione della PR #3): il formato della nota non ha
   un numero di versione. Una nota salvata prima del compito 3 che contenesse nel testo la riga

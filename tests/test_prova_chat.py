@@ -199,14 +199,14 @@ class TestSkill(unittest.TestCase):
         self.skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
 
     def test_riporto_da_cartella_nuova_e_verifica(self):
-        self.assertIn("copialo in una **cartella nuova** del computer di lavoro, mai usata prima in questa chat", self.skill)
-        self.assertIn("H confronta ", self.skill)
-        self.assertIn("**fermati, non scrivere altri file**", self.skill)
+        self.assertIn("copy it into a **new folder** of the work computer, never used before in this chat", self.skill)
+        self.assertIn("H compare ", self.skill)
+        self.assertIn("**stop, do not write other files**", self.skill)
 
     def test_salvare_le_risposte_di_claude(self):
         self.assertIn("**«Salva questa risposta di Claude»**", self.skill)
         self.assertIn("**«Questa risposta la faccio mia»**", self.skill)
-        self.assertIn("**solo il pezzo che conta**", self.skill)
+        self.assertIn("**only the piece that matters**", self.skill)
 
 
 if __name__ == "__main__":

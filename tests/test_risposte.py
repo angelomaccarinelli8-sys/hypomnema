@@ -455,10 +455,10 @@ class TestNoteDaRisposta(ConQuaderno):
 class TestSkillDiario(unittest.TestCase):
     def test_skill(self):
         skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("## 6. Cosa ci eravamo detti: quaderno e diario (Claude Code)", skill)
-        self.assertIn("`P diario <parola>`", skill)
-        self.assertIn('`da_risposta: "sì"`', skill)
-        self.assertIn("**i testimoni non ci sono**", skill)
+        self.assertIn("## 6. What we said: notebook and diary (Claude Code)", skill)
+        self.assertIn("`P diary <word>`", skill)
+        self.assertIn('`from_reply: "yes"`', skill)
+        self.assertIn("**there are no witnesses**", skill)
 
 
 if __name__ == "__main__":

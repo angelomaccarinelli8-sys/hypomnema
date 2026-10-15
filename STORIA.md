@@ -3,6 +3,47 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.5.0 (prototipo) — lingua per ruolo e chiusure
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **Lingua per ruolo.** L'italiano resta per il contenuto (le tue parole nelle note, i messaggi che
+  leggi, il README); la struttura passa all'inglese: comandi (`search`, `propose`, `recap`,
+  `reminders`, `status`, `check`, `diary`…), campi delle note (`date`, `source`, `author`,
+  `knowledge`, `kind`, `text`, `context`, `quote`, `confirms`, `corrects`, `remind`, `done`,
+  `from_reply`), motivi di rifiuto dello sportello e istruzioni della skill per Claude. **I nomi
+  italiani funzionano per sempre** (`cerca`, `autore: utente`, `/hypomnema:pausa`…). Le note che hai
+  già non si convertono e non si toccano: il programma legge tutte e due le forme; le note nuove si
+  scrivono in inglese, con diciture come «author not verified (witness off)».
+- **Che cos'è una nota.** Il campo `kind` ha cinque valori: `fact`, `idea`, `decision`, `open`
+  (prima «discorso aperto») e il nuovo `todo`.
+- **Chiudere questioni aperte e cose da fare.** Una nota nuova con `done: <numero>` (anche più numeri:
+  `done: 0012, 0015`) chiude un `open`, un `todo` o un promemoria; il testo è il motivo e il `kind`
+  dice che cosa è diventata la questione. Gli `open` li chiudi solo tu; una nota si chiude una volta
+  sola. Il recap e la ricerca non mostrano più le note chiuse (`search --all` sì); il recap ha un
+  blocco nuovo, «Cose da fare».
+- **Priorità.** Campo facoltativo `priority: high | normal | low`, solo tuo; si cambia con una nota
+  che ha `corrects`. Il recap mostra prima le cose a priorità alta.
+- **La nota-regola.** Quando cambiano le regole del quaderno, salvi una decisione che dice «Da
+  questa nota in poi…»: il README e la skill spiegano come.
+- Nuovi comandi del plugin `/hypomnema:pause` e `/hypomnema:resume` (restano `/hypomnema:pausa` e
+  `/hypomnema:riprendi`).
+
+Il quaderno e la configurazione che hai funzionano senza modifiche (la sezione `[recap]` accetta
+in più `todo`, facoltativo).
+
+**Aggiornare il plugin in Claude Code:**
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+La nuova versione vale dalla sessione successiva (o dopo `/reload-plugins`).
+
+**Nella chat di claude.ai:** scarica il nuovo `hypomnema-skill.zip` e caricalo tra le skill nelle
+impostazioni di Claude, sostituendo quello vecchio.
+
 ## 0.4.0 (prototipo) — rifiniture nate dall'uso
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*

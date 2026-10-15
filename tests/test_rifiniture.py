@@ -333,11 +333,11 @@ class TestVersioneEDocumenti(unittest.TestCase):
         self.assertIn("H recap", skill)
         self.assertIn("riporto-<AAAAMMGG>-<hhmm>-<lettera>", skill)
         self.assertNotIn("riporto-<numero", skill)
-        self.assertIn("non può avere anche `citazione`", skill)
+        self.assertIn("**cannot also have `quote`**", skill)
         self.assertIn("&lt;", skill)
         # Le note riscontrate sull'archivio non si chiamano mai «verificate».
         for frase in ("verificata sull'archivio", "verificate sull'archivio", "verificato sull'archivio",
-                      "verificata dall'archivio"):
+                      "verificata dall'archivio", "verified against the chat archive", "verified in the chat archive"):
             self.assertNotIn(frase, skill)
 
     def test_storia_delle_versioni(self):

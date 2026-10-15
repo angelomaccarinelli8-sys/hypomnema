@@ -367,11 +367,11 @@ class TestControlla(ConQuaderno):
 class TestSkillModalitaChat(unittest.TestCase):
     def test_sezione_nella_skill(self):
         skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("## Modalità chat", skill)
-        for comando in ("istantanea >", "cambiati", "chat/hypomnema-chat.toml", "H controlla"):
+        self.assertIn("## Chat mode", skill)
+        for comando in ("H snapshot >", "H changed", "chat/hypomnema-chat.toml", "H check"):
             self.assertIn(comando, skill)
         # Prima il registro, poi le note: il registro fa da lucchetto.
-        self.assertIn("**Prima `registro.md`, poi i file dell'archivio della chat, poi le note create.**", skill)
+        self.assertIn("**First `registro.md`,\n     then the chat archive files, then the created notes.**", skill)
 
 
 if __name__ == "__main__":

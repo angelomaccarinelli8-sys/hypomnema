@@ -1,342 +1,406 @@
 ---
 name: hypomnema
-description: Memoria permanente tra una chat e l'altra, in file Markdown sul computer dell'utente. Usala all'inizio di ogni chat per rileggere le note utili, e durante la chat per proporre allo sportello di Hypomnema le cose da ricordare (fatti, idee, decisioni, discorsi aperti). Claude propone, i programmi decidono.
+description: Permanent memory between one chat and the next, in Markdown files on the user's computer. Use it at the start of every chat to reread the useful notes, and during the chat to propose to Hypomnema's desk the things worth remembering (facts, ideas, decisions, open questions, things to do). Claude proposes, the programs decide.
 ---
 
-# Hypomnema: il quaderno di memoria
+# Hypomnema: the memory notebook
 
-Hypomnema è un quaderno di note sul computer dell'utente. **Tu non scrivi mai direttamente
-nei file del quaderno.** Proponi le note allo sportello, un programma che applica regole fisse
-e decide se entrano. Per leggere usi il cercatore.
+Hypomnema is a notebook of notes on the user's computer. **You never write directly into the
+notebook's files.** You propose notes to the desk (`propose`), a program that applies fixed rules
+and decides whether they get in. To read, you use the search (`search`) and the recap (`recap`).
 
-Se l'utente l'ha acceso, un altro programma, il **testimone**, registra le parole esatte di ogni
-suo messaggio prima che tu lo legga. Lo sportello lo usa per controllare che le note con
-`autore: utente` riportino parole che l'utente ha detto davvero. Non scrivere mai nel file del
-testimone, nemmeno tramite comandi o script: il suo valore sta proprio nel fatto che tu non lo tocchi.
+**Language by role.** The structure is in English: commands, field names, field values, the
+desk's rejection reasons, these instructions. The content stays in its own language: the user's
+words in a note are copied exactly as written (usually Italian), and **you always talk to the user
+in Italian**. The sentences to say to the user are written below in Italian, between «».
+The Italian names of commands and fields of earlier versions still work (`cerca` = `search`,
+`autore: utente` = `author: user`), but write new proposals in English.
 
-## Dove ti trovi
+If the user switched it on, another program, the **witness**, records the exact words of each of
+their messages before you read it. The desk uses it to check that notes with `author: user`
+really contain words the user said. Never write into the witness's file, not even through
+commands or scripts: its whole value lies in the fact that you do not touch it.
 
-- **In Claude Code** (puoi lanciare comandi sul computer dell'utente): segui le sezioni da
-  «Come lanciare i programmi» alla 6.
-- **In una chat di Claude** (claude.ai, app desktop o mobile: non puoi lanciare comandi sul
-  computer dell'utente): segui la sezione «Modalità chat» in fondo, e per il resto le sezioni
-  1, 2, 4 e 5. Le sezioni 0 e 6 non valgono: in chat non ci sono né i testimoni né il diario.
+## Where you are
 
-## Come lanciare i programmi (Claude Code)
+- **In Claude Code** (you can run commands on the user's computer): follow the sections from
+  "How to run the programs" to 6.
+- **In a Claude chat** (claude.ai, desktop or mobile app: you cannot run commands on the user's
+  computer): follow the "Chat mode" section at the end, and otherwise sections 1, 2, 4 and 5.
+  Sections 0 and 6 do not apply: in chat there are neither witnesses nor diary.
 
-In Claude Code Hypomnema è un **plugin**: i programmi stanno dentro il plugin e si lanciano così,
-da qualunque cartella:
+## How to run the programs (Claude Code)
+
+In Claude Code Hypomnema is a **plugin**: the programs live inside the plugin and run like this,
+from any folder:
 
 ```
-py "${CLAUDE_PLUGIN_ROOT}/programma.py" stato
+py "${CLAUDE_PLUGIN_ROOT}/programma.py" status
 ```
 
-Qui sotto `P` vuol dire proprio `py "${CLAUDE_PLUGIN_ROOT}/programma.py"` (su macOS e Linux
-`python3` al posto di `py`): per esempio `P cerca <parola>`, `P proponi <file.json>`.
+Below, `P` means exactly `py "${CLAUDE_PLUGIN_ROOT}/programma.py"` (on macOS and Linux `python3`
+instead of `py`): for example `P search <word>`, `P propose <file.json>`.
 
-- La configurazione e il quaderno si trovano da soli: `~/Hypomnema/hypomnema.toml` (su Windows
-  `%USERPROFILE%\Hypomnema\hypomnema.toml`), oppure il file indicato dalla variabile
-  `HYPOMNEMA_CONFIG`. Non passare `--config`.
-- Se nel comando qui sopra vedi ancora la scritta `${CLAUDE_PLUGIN_ROOT}`, il plugin non è
-  caricato: dillo all'utente e non salvare niente.
-- Codici di uscita: `0` tutto bene, `1` nota rifiutata, `2` errore (configurazione, file mancante).
-- Se a inizio sessione c'è un avviso che comincia con «Hypomnema» (la prima volta, un quaderno in
-  una cartella sincronizzata, i testimoni in pausa…), riferiscilo all'utente con parole semplici.
+- The configuration and the notebook are found automatically: `~/Hypomnema/hypomnema.toml` (on
+  Windows `%USERPROFILE%\Hypomnema\hypomnema.toml`), or the file named by the `HYPOMNEMA_CONFIG`
+  variable. Do not pass `--config`.
+- If in the command above you still see the text `${CLAUDE_PLUGIN_ROOT}`, the plugin is not
+  loaded: tell the user and do not save anything.
+- Exit codes: `0` all good, `1` note rejected, `2` error (configuration, missing file).
+- The programs' messages to the user are in Italian (`ACCETTATA`, `RIFIUTATA`, «Trovate 2 note…»).
+- If at the start of the session there is a notice beginning with «Hypomnema» (the first time, a
+  notebook in a synced folder, witnesses paused…), report it to the user in simple Italian.
 
-## 0. Controlla il testimone (Claude Code)
+## 0. Check the witness (Claude Code)
 
-Lancia `P stato` **a inizio sessione** e **ogni volta prima di proporre una nota con
-`autore: utente`**. È un confronto, non una stima: guarda due righe.
+Run `P status` **at the start of the session** and **every time before proposing a note with
+`author: user`**. It is a comparison, not an estimate: look at two lines.
 
-1. `Testimone:` deve dire `ACCESO`, oppure `IN PAUSA` se l'utente ha chiesto una pausa.
-2. Se è `ACCESO`, il messaggio dell'utente che hai appena ricevuto deve essere l'ultimo
-   registrato: il testo sotto `Testo dell'ultimo messaggio:` deve essere lo stesso, parola per
-   parola (gli spazi all'inizio delle righe li aggiunge il comando). Se il messaggio che hai
-   ricevuto inizia con `#privato`, l'ultimo registrato deve essere
-   `(messaggio privato, non registrato)`.
+1. `Testimone:` must say `ACCESO`, or `IN PAUSA` if the user asked for a pause.
+2. If it is `ACCESO`, the user's message you have just received must be the last one recorded:
+   the text under `Testo dell'ultimo messaggio:` must be the same, word for word (the spaces at the
+   start of the lines are added by the command). If the message you received starts with
+   `#privato`, the last one recorded must be `(messaggio privato, non registrato)`.
 
-Se qualcosa non torna, avvisa l'utente con una frase chiara **prima** di salvare note sue:
+If something does not match, warn the user with a clear sentence **before** saving their notes:
 
-- testimone `SPENTO`: «Il testimone non è attivo: le note che salvi ora saranno marcate come non
+- witness `SPENTO`: «Il testimone non è attivo: le note che salvi ora saranno marcate come non
   verificate. Per accenderlo serve attivo = true nella configurazione di Hypomnema.»
-- testimone `IN PAUSA`: non è un guasto, l'ha chiesta l'utente. Ricordagli solo che le note che
-  salva adesso saranno marcate come non verificate e che per riprendere basta `/hypomnema:riprendi`.
-- testimone `ACCESO`, ma l'ultimo messaggio registrato non è quello che hai ricevuto: «Il testimone
-  non ha registrato il tuo ultimo messaggio: le note con le tue parole di adesso verrebbero
-  rifiutate, perché non si possono verificare. Controlla con /plugin che il plugin di Hypomnema sia
+- witness `IN PAUSA`: it is not a fault, the user asked for it. Just remind them that the notes
+  they save now will be marked as not verified and that `/hypomnema:resume` resumes.
+- witness `ACCESO`, but the last recorded message is not the one you received: «Il testimone non
+  ha registrato il tuo ultimo messaggio: le note con le tue parole di adesso verrebbero rifiutate,
+  perché non si possono verificare. Controlla con /plugin che il plugin di Hypomnema sia
   installato e attivo.»
-- il comando esce con `ERRORE`: riporta all'utente il messaggio d'errore così com'è.
+- the command exits with `ERRORE`: report the error message to the user as it is.
 
-Non provare a riparare il testimone da solo: non toccare configurazione, quaderno o impostazioni.
+Do not try to repair the witness yourself: do not touch configuration, notebook or settings.
 
-**La pausa la decide solo l'utente**, scrivendo `/hypomnema:pausa` o `/hypomnema:riprendi`. Tu non
-metti mai in pausa né riprendi i testimoni: non scrivere quei comandi, non creare attività
-programmate o messaggi che li contengano, non toccare i file dei testimoni.
+**La pausa la decide solo l'utente**: only the user decides the pause, by writing
+`/hypomnema:pause` or `/hypomnema:resume` (also `/hypomnema:pausa` and `/hypomnema:riprendi`). You
+never pause or resume the witnesses: do not write those commands, do not create scheduled tasks or
+messages that contain them, do not touch the witnesses' files.
 
-## 1. A inizio chat: rileggi
+## 1. At the start of a chat: reread
 
-Prima di tutto controlla che note e registro corrispondano: `P controlla` (in chat:
-`H controlla`, punto C2). Se risponde «ATTENZIONE», di' all'utente quali note non corrispondono al
-registro e perché. **Non riparare niente**: il registro si allunga soltanto e la decisione è sua.
-Poi continua normalmente.
+First check that notes and register match: `P check` (in chat: `H check`, point C2). If it answers
+«ATTENZIONE», tell the user which notes do not match the register and why. **Do not repair
+anything**: the register only grows and the decision is theirs. Then carry on normally.
 
-1. **Dove eravamo rimasti**: lancia `P recap` (in chat `H recap`). Con regole fisse mostra i
-   promemoria scaduti, i discorsi aperti, le ultime decisioni e le ultime righe del diario: non
-   devi scegliere tu le parole da cercare. Riferisci all'utente **in poche righe** cosa c'è,
-   distinguendo le note (scelte dall'utente) dal diario (solo la conversazione).
-2. Quando poi serve un argomento preciso, lancia `P cerca <parola>`. La ricerca è per parola
-   esatta, senza distinzione di maiuscole: prova anche il singolare/plurale se serve. Trova anche
-   le parole dentro i nomi composti (`orto` trova `orto_balcone.py`). Le note arrivano **dalla più
-   recente alla più vecchia**.
-3. Sotto ogni nota trovata compaiono, rientrate, le note che la **correggono**, la **confermano** o
-   la **segnano come fatta**, anche se non contengono la parola cercata. **Leggile sempre**: se una
-   nota è stata corretta, vale la correzione più recente, non la nota di partenza.
-4. Usa le note trovate rispettando cosa sono:
-   - una **decisione** dell'utente vale come decisione;
-   - un'**idea** è solo una proposta, non una decisione;
-   - una nota **dedotta** è un'ipotesi: non presentarla come certa;
-   - cita il numero della nota quando la usi ("dalla nota 0004 ...").
-5. Non inventare note che il cercatore non ha restituito.
+1. **Where we left off**: run `P recap` (in chat `H recap`). With fixed rules it shows the overdue
+   reminders, the open questions, the things to do, the latest decisions and the last lines of
+   the diary, high priority first in each block: you do not choose the words to search for.
+   Report to the user **in a few lines, in Italian**, what is there, keeping the notes (chosen by
+   the user) apart from the diary (only the conversation).
+2. When a specific topic is needed later, run `P search <word>`. The search is by exact word,
+   case-insensitive: try singular/plural too if needed. It also finds words inside compound names
+   (`orto` finds `orto_balcone.py`). Notes come **from the most recent to the oldest**. **Closed
+   notes** (open questions, todos and reminders closed with `done`) are not shown: the output says
+   how many were hidden, and `P search <word> --all` shows them too.
+3. Under each note found come, indented, the notes that **correct** it, **confirm** it or **close**
+   it, even if they do not contain the searched word. **Always read them**: if a note was
+   corrected, the most recent correction is what counts, not the original note.
+4. Use the notes found respecting what they are:
+   - a user's **decision** counts as a decision;
+   - an **idea** is only a proposal, not a decision;
+   - an **inferred** note is a hypothesis: do not present it as certain;
+   - cite the note number when you use it («dalla nota 0004 …»).
+5. Do not invent notes the search did not return.
 
-## 2. Durante la chat: prepara le note
+## 2. During the chat: prepare the notes
 
-Proponi una nota quando emerge qualcosa che servirà in una chat futura: un fatto,
-una preferenza, un'idea, una decisione, un discorso rimasto aperto. Una nota = una cosa sola.
+Propose a note when something comes up that will be useful in a future chat: a fact, a
+preference, an idea, a decision, an open question, something to do. One note = one thing.
 
-Formato (JSON, UTF-8), con **tutti** questi campi:
-
-```json
-{
-  "data": "2026-01-15",
-  "fonte": "chat del 15 gennaio 2026 sul progetto dell'orto",
-  "autore": "utente",
-  "tipo": "dichiarata",
-  "natura": "fatto",
-  "testo": "L'orto è sul balcone esposto a sud."
-}
-```
-
-- `data`: oggi, `AAAA-MM-GG` (se vuoi con l'ora: `AAAA-MM-GGThh:mm`).
-- `fonte`: da dove viene, su una riga (di solito "chat del <data> su <argomento>").
-- `autore`: `utente` se l'ha detto l'utente; `claude` se è una tua osservazione, deduzione o proposta.
-  **Non attribuire mai all'utente cose che non ha detto.**
-- `tipo`:
-  - `dichiarata`: l'autore l'ha detto esplicitamente;
-  - `osservata`: l'hai visto direttamente (in un file, in un risultato, nella conversazione);
-  - `dedotta`: l'hai ricavato ragionando. Nel dubbio, `dedotta`.
-- `natura`: `fatto`, `idea`, `decisione` o `discorso aperto`.
-  - Le tue proposte sono sempre `idea`.
-  - `decisione` solo se l'utente ha deciso esplicitamente: `autore: utente`, `tipo: dichiarata`.
-- `testo`: **dipende dall'autore** (vedi sotto). Le parole dell'utente e le tue non si
-  mescolano mai nello stesso campo.
-- `contesto` (facoltativo, solo nelle note dell'utente): le tue spiegazioni.
-- `citazione` (facoltativo, solo nelle tue note): le parole dell'utente su cui ti basi.
-- `corregge` (facoltativo): il numero di una nota che questa **corregge** («era sbagliata»).
-  Usalo quando l'utente corregge qualcosa già nel quaderno: la nota vecchia resta, e il
-  cercatore la mostrerà sempre insieme alla correzione.
-- `riprendere_il` (facoltativo): un **promemoria**, la data `AAAA-MM-GG` in cui riprendere la nota
-  (per esempio quando l'utente dice «ricordamelo lunedì»). `P promemoria` elenca quelli scaduti.
-- `done` (facoltativo): il numero di un promemoria che questa nota **segna come fatto** («era
-  giusto ed è fatto»). Da lì il promemoria non compare più tra gli scaduti. Non confonderlo con
-  `corregge`: una correzione lascia il promemoria tra gli scaduti (se la correzione ha un suo
-  `riprendere_il`, vale la sua data).
-
-### Note dell'utente: il testo sono le sue parole
-
-In una nota con `autore: utente`, `testo` sono **le parole esatte dell'utente**, copiate da un suo
-messaggio: un pezzo continuo di un solo messaggio, con le stesse maiuscole, accenti e
-punteggiatura. Puoi scegliere il pezzo più utile, ma **non riassumere, non correggere, non
-tradurre e non cambiare nemmeno una parola**. Tutto ciò che aggiungi tu (di cosa si parlava, a
-cosa si riferisce, una spiegazione) va nel campo `contesto`, che verrà mostrato come
-"contesto scritto da Claude".
+Format (JSON, UTF-8), with **all** these fields:
 
 ```json
 {
-  "data": "2026-01-15",
-  "fonte": "chat del 15 gennaio 2026 sul progetto dell'orto",
-  "autore": "utente",
-  "tipo": "dichiarata",
-  "natura": "fatto",
-  "testo": "il basilico sul balcone sta crescendo bene",
-  "contesto": "Detto parlando delle piante aromatiche dell'orto."
+  "date": "2026-01-15",
+  "source": "chat del 15 gennaio 2026 sul progetto dell'orto",
+  "author": "user",
+  "knowledge": "stated",
+  "kind": "fact",
+  "text": "L'orto è sul balcone esposto a sud."
 }
 ```
 
-- Con il testimone acceso, lo sportello cerca il `testo` nei messaggi registrati. Se risponde
-  che non si trova, ricopialo con più cura. Se l'utente quella cosa non l'ha detta con parole
-  sue, **non è una nota dell'utente**: al massimo è una nota tua (`autore: claude`, di solito
-  `tipo: dedotta`).
-- Con il testimone spento la regola è la stessa (parole esatte nel `testo`), ma nessuno la
-  controlla: la nota sarà marcata "autore non verificato".
-- Non scrivere tu il campo `verifica`: lo aggiunge lo sportello.
+- `date`: today, `YYYY-MM-DD` (optionally with the time: `YYYY-MM-DDThh:mm`).
+- `source`: where it comes from, on one line (usually «chat del <data> su <argomento>»; it is
+  content, so write it in Italian).
+- `author`: `user` if the user said it; `claude` if it is your observation, inference or proposal.
+  **Never attribute to the user things they did not say.**
+- `knowledge`: how it is known.
+  - `stated`: the author said it explicitly;
+  - `observed`: you saw it directly (in a file, in a result, in the conversation);
+  - `inferred`: you worked it out by reasoning. When in doubt, `inferred`.
+- `kind`: what the note is. Five values:
+  - `fact`: something that is so;
+  - `idea`: a proposal (your proposals are always `idea`);
+  - `decision`: only if the user decided explicitly: `author: user`, `knowledge: stated`;
+  - `open`: a question still open (in earlier versions «discorso aperto»);
+  - `todo`: something to do.
+- `text`: **depends on the author** (see below). The user's words and yours never mix in the
+  same field.
+- `context` (optional, only in the user's notes): your explanations.
+- `quote` (optional, only in your notes): the user's words you are relying on.
+- `corrects` (optional): the number of a note this one **corrects** («era sbagliata»). Use it when
+  the user corrects something already in the notebook: the old note stays, and the search will
+  always show it together with the correction.
+- `remind` (optional): a **reminder**, the date `YYYY-MM-DD` on which to pick the note up again (for
+  example when the user says «ricordamelo lunedì»). `P reminders` lists the overdue ones.
+- `done` (optional): closes notes. See "Closing open questions, todos and reminders" below.
+- `priority` (optional, **only in the user's notes**): `high`, `normal` or `low`. See "Priority".
 
-### Testo incollato e fonte
+### The user's notes: the text is their words
 
-Hypomnema è un quaderno di appunti: raccogliere passi letti altrove è proprio il suo scopo.
-Un testo che l'utente incolla in un messaggio conta come portato da lui nel quaderno: la nota è
-`autore: utente`. **Da dove viene lo dice la `fonte`**: per esempio "dal libro <titolo>",
-"dalla spiegazione di Claude del <data>", "mio pensiero". Non c'è bisogno di distinguere tra
-testo scritto e testo incollato.
-
-### Il segno `>` (facoltativo)
-
-Se l'utente inizia alcune righe del messaggio con `>` (il segno classico per riportare parole
-altrui), sta segnalando che quelle righe sono una citazione. Quando copi quelle righe nel `testo`,
-**togli il `>`** all'inizio di ogni riga e metti nella `fonte` da dove viene il passo, se l'utente
-lo dice. Se il testo viene tutto da righe marcate, lo sportello aggiunge da solo la dicitura
-"citazione riportata dall'utente". Senza il segno tutto funziona come sempre.
-
-### Le tue note
-
-In una nota con `autore: claude` il `testo` è tuo. Se si basa su parole dell'utente puoi mettere
-quelle parole esatte in `citazione`: con il testimone acceso viene controllata allo stesso modo.
-Non usare `contesto` nelle tue note: è già tutto tuo.
-
-### Salvare le risposte di Claude
-
-L'utente può chiederti di conservare una tua risposta. Sono due casi diversi, da non confondere.
-
-**«Salva questa risposta di Claude»** (o simili: «salvami questa spiegazione», «tieni nota di quello
-che hai detto»): la nota è **tua**.
-- `autore: claude`; `testo`: il pezzo della tua risposta che l'utente indica, copiato così com'è
-  (se non è chiaro quale pezzo, chiediglielo);
-- `tipo`: `dedotta` se era un tuo ragionamento o una proposta, `osservata` se riportava ciò che hai
-  visto (un file, un risultato);
-- `natura`: `idea` o `fatto`, **mai** `decisione` (lo sportello la rifiuterebbe);
-- `fonte`: «risposta di Claude del <data> su <argomento>»;
-- `da_risposta: "sì"`: dice allo sportello che il testo viene da una tua risposta. Se il
-  testimone delle risposte è acceso, lo sportello cerca il testo, parola per parola, nelle tue
-  risposte registrate e rifiuta la nota se non lo trova. Se è spento (o in chat), la nota viene
-  salvata come «risposta non verificata». Nel file delle risposte i blocchi di codice possono
-  essere sostituiti dalla loro impronta: se il pezzo contiene codice, salvalo senza il codice.
-- Una nota con `da_risposta` **non può avere anche `citazione`**: lo sportello la rifiuta, perché
-  viene da una tua risposta oppure dalle parole dell'utente, non da tutte e due.
-
-**«Questa risposta la faccio mia»** (o simili: «sono d'accordo, salvala come mia», «adotto questa
-parte»), con il pezzo **incollato nel messaggio**: la nota è **dell'utente**, perché l'adozione è sua.
-- `autore: utente`, `tipo: dichiarata`; `testo`: il pezzo incollato, parola per parola come compare
-  nel messaggio dell'utente;
-- `fonte`: da quale tua risposta viene, per esempio «risposta di Claude dell'11 ottobre 2026 su
-  <argomento>»;
-- `natura`: quella che dice l'utente; può essere anche `decisione`, perché l'adozione è sua;
-- con il testimone acceso il testo viene verificato come sempre, sul messaggio in cui l'utente l'ha
-  incollato;
-- se l'utente dice «la faccio mia» senza incollare niente, chiedigli di incollare il pezzo: le
-  parole di una nota dell'utente devono stare in un suo messaggio.
-
-In tutti e due i casi consiglia all'utente di indicare o incollare **solo il pezzo che conta**, non
-tutta la risposta: le note brevi si ritrovano meglio.
-
-### Messaggi privati
-
-Un messaggio che inizia con `#privato` (o con il prefisso scelto dall'utente in `hypomnema.toml`)
-**non finisce nel testimone, ma tu lo leggi comunque**: "privato" vuol dire che le sue parole non
-vengono registrate. **Non proporre note su ciò che l'utente dice in un messaggio privato**, né
-sue né tue, a meno che non te lo chieda esplicitamente in un messaggio normale (e anche allora le
-sue parole non si possono verificare, perché il testimone non le ha registrate).
-
-## 3. Passa le note allo sportello
-
-1. Scrivi la proposta in un file temporaneo **fuori dalla cartella del quaderno**
-   (per esempio `proposta.json` nella cartella del programma, dove git lo ignora), in UTF-8.
-2. Lancia `P proponi proposta.json`.
-   In alternativa puoi passarla dall'ingresso standard: `P proponi -`.
-3. Leggi la risposta:
-   - `ACCETTATA`: la nota ha un numero ed è salvata;
-   - `RIFIUTATA`: leggi i motivi. Se è un errore tuo di formato, correggi e riproponi.
-     **Non aggirare mai una regola** (per esempio cambiando l'autore per far passare una decisione):
-     se la regola blocca la nota, la nota non entra.
-4. Puoi cancellare il file temporaneo della proposta: non fa parte del quaderno.
-
-Non modificare, rinominare o cancellare i file del quaderno (`note/`, `registro.md`).
-Il quaderno si allunga soltanto.
-
-## 4. Di' all'utente cosa è successo
-
-Dopo ogni passaggio dallo sportello, dì all'utente in poche parole:
-- cosa è stato **salvato** (numero della nota e testo breve);
-- cosa è stato **rifiutato** e perché (con il motivo dato dallo sportello).
-
-Non dire mai che una cosa è stata salvata se lo sportello non ha risposto `ACCETTATA`.
-Quando usi una nota marcata "autore non verificato", ricorda che nessuno ha controllato
-che l'utente l'abbia detta davvero.
-
-## 5. Da idea a decisione
-
-Un'idea diventa decisione **solo con la conferma esplicita dell'utente**. Per esempio:
-"sì, facciamo così", "confermo l'idea 0001", "decidiamo questo".
-Un silenzio, un "interessante" o un "vedremo" **non** sono conferme: nel dubbio, chiedi.
-
-Quando l'utente conferma:
-
-1. trova il numero dell'idea (con `cerca`, se non lo sai già);
-2. proponi una **nuova** nota:
+In a note with `author: user`, `text` is **the user's exact words**, copied from one of their
+messages: a continuous piece of a single message, with the same capitals, accents and
+punctuation. You may choose the most useful piece, but **do not summarise, correct, translate or
+change a single word**. Everything you add (what was being discussed, what it refers to, an
+explanation) goes in the field `context`, which will be shown as «contesto scritto da Claude».
 
 ```json
 {
-  "data": "2026-01-15",
-  "fonte": "chat del 15 gennaio 2026 sul progetto dell'orto",
-  "autore": "utente",
-  "tipo": "dichiarata",
-  "natura": "decisione",
-  "conferma_di": "0001",
-  "testo": "sì, da domani annaffio la mattina presto",
-  "contesto": "Conferma dell'idea 0001: annaffiare la mattina presto invece che la sera."
+  "date": "2026-01-15",
+  "source": "chat del 15 gennaio 2026 sul progetto dell'orto",
+  "author": "user",
+  "knowledge": "stated",
+  "kind": "fact",
+  "text": "il basilico sul balcone sta crescendo bene",
+  "context": "Detto parlando delle piante aromatiche dell'orto."
 }
 ```
 
-   Il `testo` sono le parole esatte con cui l'utente ha confermato.
-3. l'idea originale resta com'è: il quaderno conserva sia l'idea sia la decisione.
+- With the witness on, the desk looks for the `text` in the recorded messages. If it answers that
+  it is not found, copy it again more carefully. If the user did not say that thing in their own
+  words, **it is not a user's note**: at most it is a note of yours (`author: claude`, usually
+  `knowledge: inferred`).
+- With the witness off the rule is the same (exact words in `text`), but nobody checks it: the
+  note will be marked "author not verified".
+- Do not write the field `verification` yourself: the desk adds it.
 
-L'utente può anche dire "ricorda che ho deciso ...": in quel caso proponi direttamente una
-decisione (`autore: utente`, `tipo: dichiarata`) senza `conferma_di`.
+### Pasted text and source
 
-## 6. Cosa ci eravamo detti: quaderno e diario (Claude Code)
+Hypomnema is a notebook of jottings: collecting passages read elsewhere is exactly its purpose.
+A text the user pastes into a message counts as brought by them into the notebook: the note is
+`author: user`. **Where it comes from is said by `source`**: for example «dal libro <titolo>»,
+«dalla spiegazione di Claude del <data>», «mio pensiero». There is no need to tell written text
+from pasted text.
 
-Ci sono due posti dove cercare, e non sono la stessa cosa:
+### The `>` sign (optional)
 
-- il **quaderno** sono le **note scelte**: `P cerca <parola>`;
-- il **diario** è **tutta la conversazione registrata** dai testimoni, grezza: i messaggi
-  dell'utente e, se il testimone delle risposte è acceso, le tue risposte.
-  `P diario <parola>`; con `--intorno` vedi anche il messaggio subito prima e
-  subito dopo ognuno di quelli trovati.
+If the user starts some lines of the message with `>` (the classic sign for reporting someone
+else's words), they are marking those lines as a quotation. When you copy those lines into
+`text`, **remove the `>`** at the start of each line and put in `source` where the passage comes
+from, if the user says so. If the text comes entirely from marked lines, the desk adds by itself
+the wording "quote reported by the user". Without the sign everything works as always.
 
-Quando l'utente chiede «cosa ci eravamo detti su…», «cosa ti avevo detto di…», «cosa mi avevi
+### Your notes
+
+In a note with `author: claude` the `text` is yours. If it relies on the user's words you can put
+those exact words in `quote`: with the witness on it is checked the same way. Do not use `context`
+in your notes: it is all yours already.
+
+### Closing open questions, todos and reminders
+
+An `open` or a `todo` stays open until a **new note** closes it with `done`:
+
+1. `done` lists the numbers of the notes it closes: `"done": "0012"` or `"done": "0012, 0015"`.
+2. The `text` of the closing note is the reason (what was decided, what was done).
+3. The `kind` of the closing note says what the question became: `decision`, `todo`, `fact` or
+   `idea`. A closing note cannot be `open`.
+4. **Only the user closes an `open`**: the closing note must have `author: user` (their words in
+   `text`). You may suggest closing it: «La questione 0012 sembra risolta: vuoi che la chiuda con
+   le tue parole?». A `todo` or a reminder you can close yourself, with your own note, when it was
+   really done.
+5. A note is closed only once: the desk rejects a second closure and says which note already
+   closed it.
+6. `done` works only on `open`, `todo` and reminders (notes with `remind`). A `fact`, a `decision`
+   or an `idea` is not closed: it is corrected with `corrects` (an idea can also be confirmed, see
+   section 5).
+7. A closed question that comes back: propose a **new** `open`, whose text mentions the old one
+   (for example «Torna la questione della nota 0012: …»). No special field.
+
+A closing note by the user:
+
+```json
+{
+  "date": "2026-01-15",
+  "source": "chat del 15 gennaio 2026 sull'orto",
+  "author": "user",
+  "knowledge": "stated",
+  "kind": "decision",
+  "done": "0012",
+  "text": "la compostiera va nell'angolo nord"
+}
+```
+
+`recap` and `search` no longer show closed notes; `search <word> --all` shows them, with the
+closing note underneath.
+
+### Priority
+
+`priority` (`high`, `normal`, `low`) is **only the user's**: the desk rejects it in your notes. If
+you think something is urgent, say it to the user or write it in the text of one of your `idea`
+notes («Proposta: priorità alta per la nota 0012»); the user decides. To change the priority of a
+note, propose a new note by the user with `corrects: <number>` and the new `priority`. A note
+without priority counts as `normal`. The recap shows high-priority notes first in each block.
+
+### Notebook rules that change: the rule note
+
+When the user decides that from now on the notebook works differently (for example «da adesso le
+spese le segno solo come todo»), propose a `decision` by the user whose text says it, with their
+words, for example «Da questa nota in poi le spese le segno solo come todo». It is a normal
+decision: no special field. From then on follow it, and when you find it in the recap or in a
+search, respect it as a rule of the notebook.
+
+### Saving Claude's replies
+
+The user may ask you to keep one of your replies. These are two different cases, not to be
+confused.
+
+**«Salva questa risposta di Claude»** (or similar: «salvami questa spiegazione», «tieni nota di
+quello che hai detto»): the note is **yours**.
+- `author: claude`; `text`: the piece of your reply the user points to, copied as it is (if it is
+  not clear which piece, ask);
+- `knowledge`: `inferred` if it was your reasoning or a proposal, `observed` if it reported what
+  you saw (a file, a result);
+- `kind`: `idea` or `fact`, **never** `decision` (the desk would reject it);
+- `source`: «risposta di Claude del <data> su <argomento>»;
+- `from_reply: "yes"`: tells the desk that the text comes from one of your replies. If the replies
+  witness is on, the desk looks for the text, word for word, in your recorded replies and rejects
+  the note if it does not find it. If it is off (or in chat), the note is saved as "reply not
+  verified". In the replies file code blocks may be replaced by their fingerprint: if the piece
+  contains code, save it without the code.
+- A note with `from_reply` **cannot also have `quote`**: the desk rejects it, because it comes
+  either from one of your replies or from the user's words, not from both.
+
+**«Questa risposta la faccio mia»** (or similar: «sono d'accordo, salvala come mia», «adotto
+questa parte»), with the piece **pasted in the message**: the note is **the user's**, because the
+adoption is theirs.
+- `author: user`, `knowledge: stated`; `text`: the pasted piece, word for word as it appears in
+  the user's message;
+- `source`: which reply of yours it comes from, for example «risposta di Claude dell'11 ottobre
+  2026 su <argomento>»;
+- `kind`: whatever the user says; it can also be `decision`, because the adoption is theirs;
+- with the witness on the text is verified as always, on the message where the user pasted it;
+- if the user says «la faccio mia» without pasting anything, ask them to paste the piece: the
+  words of a user's note must be in one of their messages.
+
+In both cases advise the user to point to or paste **only the piece that matters**, not the whole
+reply: short notes are found more easily.
+
+### Private messages
+
+A message starting with `#privato` (or with the prefix the user chose in `hypomnema.toml`) **does
+not end up in the witness, but you read it anyway**: "private" means its words are not recorded.
+**Do not propose notes about what the user says in a private message**, neither theirs nor yours,
+unless they explicitly ask you in a normal message (and even then their words cannot be verified,
+because the witness did not record them).
+
+## 3. Pass the notes to the desk
+
+1. Write the proposal in a temporary file **outside the notebook folder** (for example
+   `proposta.json` in the program folder, where git ignores it), in UTF-8.
+2. Run `P propose proposta.json`. Alternatively you can pass it through standard input:
+   `P propose -`.
+3. Read the answer:
+   - `ACCETTATA`: the note has a number and is saved;
+   - `RIFIUTATA`: read the reasons (in English). If it is a format mistake of yours, fix it and
+     propose again. **Never get around a rule** (for example by changing the author to get a
+     decision through): if the rule blocks the note, the note does not get in.
+4. You can delete the temporary proposal file: it is not part of the notebook.
+
+Do not modify, rename or delete the notebook's files (`note/`, `registro.md`). The notebook only
+grows.
+
+## 4. Tell the user what happened
+
+After each pass through the desk, tell the user in a few Italian words:
+- what was **saved** (note number and short text);
+- what was **rejected** and why (with the desk's reason, in plain Italian).
+
+Never say that something was saved if the desk did not answer `ACCETTATA`. When you use a note
+marked "author not verified" (in older notes «autore non verificato»), remember that nobody
+checked that the user really said it.
+
+## 5. From idea to decision
+
+An idea becomes a decision **only with the user's explicit confirmation**. For example: «sì,
+facciamo così», «confermo l'idea 0001», «decidiamo questo». A silence, an «interessante» or a
+«vedremo» are **not** confirmations: when in doubt, ask.
+
+When the user confirms:
+
+1. find the number of the idea (with `search`, if you do not know it already);
+2. propose a **new** note:
+
+```json
+{
+  "date": "2026-01-15",
+  "source": "chat del 15 gennaio 2026 sul progetto dell'orto",
+  "author": "user",
+  "knowledge": "stated",
+  "kind": "decision",
+  "confirms": "0001",
+  "text": "sì, da domani annaffio la mattina presto",
+  "context": "Conferma dell'idea 0001: annaffiare la mattina presto invece che la sera."
+}
+```
+
+   The `text` is the exact words with which the user confirmed.
+3. the original idea stays as it is: the notebook keeps both the idea and the decision.
+
+The user may also say «ricorda che ho deciso …»: in that case propose a decision directly
+(`author: user`, `knowledge: stated`) without `confirms`.
+
+## 6. What we said: notebook and diary (Claude Code)
+
+There are two places to search, and they are not the same thing:
+
+- the **notebook** is the **chosen notes**: `P search <word>`;
+- the **diary** is **the whole recorded conversation**, raw: the user's messages and, if the
+  replies witness is on, your replies. `P diary <word>`; with `--around` you also see the message
+  just before and just after each one found; `P diary --last 10` shows the last ten.
+
+When the user asks «cosa ci eravamo detti su…», «cosa ti avevo detto di…», «cosa mi avevi
 consigliato…»:
 
-1. cerca **prima nel quaderno**;
-2. **poi, se serve**, nel diario;
-3. di' sempre **da dove** viene la risposta: «Dalle note del quaderno (scelte da te): …» oppure
-   «Dal diario, cioè dalla conversazione registrata, non da una nota: …». Una nota è una scelta
-   dell'utente; il diario è solo ciò che è stato detto. Una cosa trovata solo nel diario **non**
-   è una decisione, anche se suonava come tale: se l'utente vuole conservarla, proponi una nota.
+1. search **the notebook first**;
+2. **then, if needed**, the diary;
+3. always say **where** the answer comes from: «Dalle note del quaderno (scelte da te): …» or
+   «Dal diario, cioè dalla conversazione registrata, non da una nota: …». A note is the user's
+   choice; the diary is only what was said. Something found only in the diary is **not** a
+   decision, even if it sounded like one: if the user wants to keep it, propose a note.
 
-Puoi usare il diario anche per rileggere cosa avevi consigliato tu e accorgerti se ora stai
-dicendo il contrario: in quel caso dillo all'utente apertamente.
+You can also use the diary to reread what you advised and notice if you are now saying the
+opposite: in that case tell the user openly.
 
 
-## Modalità chat
+## Chat mode
 
-Segui questa sezione quando sei in una **chat di Claude** (claude.ai, app desktop o mobile) e non
-in Claude Code. In chat non puoi lanciare comandi sul computer dell'utente, ma hai un **computer di
-lavoro** temporaneo, che sparisce a fine conversazione, dove puoi scaricare i programmi e lanciare
-Python. In chat **i testimoni non ci sono**. Al loro posto c'è l'**archivio della chat**: con lo
-strumento che rilegge le chat (il permesso «cerca e consulta le chat passate» delle impostazioni di
-Claude) puoi rileggere questa conversazione com'è salvata da Anthropic, con le parole esatte
-dell'utente, la data e l'ora di ogni messaggio e l'indirizzo della chat. Con il comando `archivio`
-la copi nel quaderno (C5), e le note dell'utente il cui testo si trova lì sono «riscontrate
-sull'archivio della chat», con l'indirizzo che chiunque può aprire per controllare. Senza archivio
-restano «autore non verificato (chat, senza testimone)».
+Follow this section when you are in a **Claude chat** (claude.ai, desktop or mobile app) and not
+in Claude Code. In chat you cannot run commands on the user's computer, but you have a temporary
+**work computer**, which disappears at the end of the conversation, where you can download the
+programs and run Python. In chat **there are no witnesses**. In their place there is the **chat
+archive**: with the tool that rereads chats (the «cerca e consulta le chat passate» permission in
+Claude's settings) you can reread this conversation as Anthropic stored it, with the user's exact
+words, the date and time of each message and the chat address. With the `archive` command you
+copy it into the notebook (C5), and the user's notes whose text is found there are **matched
+against the chat archive** (in Italian, to the user: «riscontrate sull'archivio della chat»; never
+«verificate»), with the address anyone can open to check. Without the archive they stay "author
+not verified (chat, no witness)".
 
-Tre livelli, dal più forte: **verificato dal testimone** (solo Claude Code), **riscontrato
-sull'archivio della chat** (in chat, con l'archivio), **non verificato**. Il testo dell'archivio
-passa da te prima di arrivare ai programmi: copialo **esattamente com'è**, senza ritoccarlo.
+Three levels, from the strongest: **verified by the witness** (Claude Code only), **matched against
+the chat archive** (in chat, with the archive), **not verified**. The archive text passes through
+you before reaching the programs: copy it **exactly as it is**, without retouching it.
 
-Tutte le altre regole di questa skill restano uguali, e **non salvi mai una nota a mano**: passi
-sempre dallo sportello. Il lavoro sporco lo fai tu; all'utente chiedi solo il permesso per la sua
-cartella.
+All the other rules of this skill stay the same, and **you never save a note by hand**: you always
+go through the desk. You do the dirty work; from the user you only ask permission for their
+folder.
 
-### C1. Prepara il computer di lavoro (una volta per chat)
+### C1. Prepare the work computer (once per chat)
 
 ```
 git clone --depth 1 --branch main https://github.com/angelomaccarinelli8-sys/hypomnema.git ~/hypomnema-programma
@@ -345,132 +409,133 @@ cp ~/hypomnema-programma/chat/hypomnema-chat.toml ~/hypomnema-lavoro/hypomnema.t
 python3 --version
 ```
 
-- Serve Python 3.11 o più recente (Hypomnema è garantito dal 3.12; con il 3.11 i test passano).
-  Se `git` non c'è, scarica e scompatta
+- You need Python 3.11 or newer (Hypomnema is guaranteed from 3.12; with 3.11 the tests pass).
+  If `git` is not there, download and unpack
   `https://github.com/angelomaccarinelli8-sys/hypomnema/archive/refs/heads/main.zip`.
-- Da qui in poi lancia ogni comando dalla cartella `~/hypomnema-programma`, sempre con la
-  configurazione per la chat:
+- From here on run every command from the folder `~/hypomnema-programma`, always with the chat
+  configuration:
 
   ```
-  python3 -m hypomnema --config ~/hypomnema-lavoro/hypomnema.toml <comando>
+  python3 -m hypomnema --config ~/hypomnema-lavoro/hypomnema.toml <command>
   ```
 
-  Qui sotto, `H <comando>` vuol dire proprio questa riga.
-- Controlla con `H stato`: deve dire `Testimone: NON C'È (configurazione per la chat di Claude)`,
-  e la riga `Archivio della chat:` dice ogni quanti scambi copiare (`copia_ogni`, di base 5).
-- Controlla se hai lo strumento che rilegge le chat passate. **Se non c'è**, dillo all'utente una
-  volta sola: «Non posso rileggere questa chat dall'archivio: le note che salvo saranno "non
-  verificate". Per averle riscontrate, attiva nelle impostazioni di Claude il permesso per cercare e
-  consultare le chat passate.» Poi continua senza archivio.
-- Se non riesci a scaricare i programmi, dillo all'utente e fermati: senza sportello non salvi niente.
+  Below, `H <command>` means exactly this line.
+- Check with `H status`: it must say `Testimone: NON C'È (configurazione per la chat di Claude)`,
+  and the line `Archivio della chat:` says every how many exchanges to copy (`copia_ogni`, by
+  default 5).
+- Check whether you have the tool that rereads past chats. **If it is not there**, tell the user
+  once: «Non posso rileggere questa chat dall'archivio: le note che salvo saranno "non
+  verificate". Per averle riscontrate, attiva nelle impostazioni di Claude il permesso per cercare
+  e consultare le chat passate.» Then carry on without the archive.
+- If you cannot download the programs, tell the user and stop: without the desk you save nothing.
 
-### C2. Il quaderno dell'utente
+### C2. The user's notebook
 
-**Se hai gli strumenti per il computer dell'utente** (di solito: app desktop aperta e collegata):
+**If you have the tools for the user's computer** (usually: desktop app open and connected):
 
-1. Chiedi il permesso per la cartella `Hypomnema` nella sua cartella utente
-   (`C:\Users\<nome>\Hypomnema` su Windows, `~/Hypomnema` su macOS e Linux), con una frase:
-   «Mi serve il permesso per la cartella Hypomnema: leggo il tuo quaderno e ci salvo le note
-   nuove, senza toccare nient'altro.» Se la cartella non esiste e gli strumenti non permettono di
-   chiedere il permesso per una cartella che non c'è, chiedi all'utente di crearla vuota.
-2. Elenca il contenuto di `Hypomnema/quaderno`.
-   - **Non c'è, o è vuota**: è la prima volta. Dillo all'utente («È la prima volta: il quaderno è
-     vuoto, nascerà con la prima nota.»). Il quaderno nasce nel computer di lavoro con la prima
-     proposta e lo riporti sul computer dell'utente come al punto C4.
-   - **C'è**: copia nel computer di lavoro, sotto `~/hypomnema-lavoro/quaderno/`, con **gli
-     stessi percorsi**, il file `registro.md` e tutti i file della cartella `note/`, a gruppi di
-     massimo 50 file per volta, e i file dell'archivio della chat `archivio-chat.jsonl` e
-     `diario-chat.jsonl` se ci sono. Poi controlla che il numero dei file copiati sia uguale a
-     quello elencato. **Non copiare `testimone.jsonl` né `risposte.jsonl`**: in chat non servono, e
-     contengono parole private.
-3. Controlla il quaderno copiato: `H controlla` (vedi la sezione 1). Serve ad accorgersi di un
-   salvataggio rimasto a metà in una chat precedente, o di un file toccato a mano.
-4. **Dove eravamo rimasti.** Prima di rispondere al primo messaggio lancia `H recap` (sezione 1):
-   promemoria scaduti, discorsi aperti, ultime decisioni e ultime righe del diario, scelti con
-   regole fisse. Poi di' all'utente, **in tre righe al massimo**, dove eravamo rimasti: cosa c'era
-   in corso, cosa era stato deciso (solo dalle note), cosa restava aperto. Distingui le note
-   (scelte dall'utente) dal diario (solo la conversazione).
+1. Ask permission for the `Hypomnema` folder in their user folder (`C:\Users\<nome>\Hypomnema` on
+   Windows, `~/Hypomnema` on macOS and Linux), with a sentence: «Mi serve il permesso per la
+   cartella Hypomnema: leggo il tuo quaderno e ci salvo le note nuove, senza toccare
+   nient'altro.» If the folder does not exist and the tools do not allow asking permission for a
+   folder that is not there, ask the user to create it empty.
+2. List the contents of `Hypomnema/quaderno`.
+   - **It is not there, or it is empty**: it is the first time. Tell the user («È la prima volta:
+     il quaderno è vuoto, nascerà con la prima nota.»). The notebook is born on the work computer
+     with the first proposal and you bring it back to the user's computer as in point C4.
+   - **It is there**: copy to the work computer, under `~/hypomnema-lavoro/quaderno/`, with **the
+     same paths**, the file `registro.md` and all the files of the `note/` folder, in groups of at
+     most 50 files at a time, and the chat archive files `archivio-chat.jsonl` and
+     `diario-chat.jsonl` if they are there. Then check that the number of copied files equals the
+     number listed. **Do not copy `testimone.jsonl` or `risposte.jsonl`**: in chat they are not
+     needed, and they contain private words.
+3. Check the copied notebook: `H check` (see section 1). It catches a save left halfway in a
+   previous chat, or a file touched by hand.
+4. **Where we left off.** Before answering the first message run `H recap` (section 1): overdue
+   reminders, open questions, things to do, latest decisions and last lines of the diary, chosen
+   with fixed rules. Then tell the user, **in three lines at most**, in Italian, where we left
+   off: what was in progress, what had been decided (only from the notes), what was still open.
+   Keep the notes (chosen by the user) apart from the diary (only the conversation).
 
-**Se non hai gli strumenti per il computer dell'utente** (chat sul web, app mobile): è la
-**modalità prova**. Prima di cominciare dillo chiaramente: «Qui non posso accedere al tuo
-computer: il quaderno vivrà solo in questa chat e sparirà quando la chiudi. È una prova.» Poi
-usa il quaderno di `~/hypomnema-lavoro/quaderno` e non riportare niente.
+**If you do not have the tools for the user's computer** (chat on the web, mobile app): it is
+**trial mode**. Before starting say it clearly: «Qui non posso accedere al tuo computer: il
+quaderno vivrà solo in questa chat e sparirà quando la chiudi. È una prova.» Then use the notebook
+in `~/hypomnema-lavoro/quaderno` and bring nothing back.
 
-### C3. Le domande
+### C3. The questions
 
-Quando l'utente chiede cosa aveva detto o deciso («cosa avevo deciso su…»), usa il cercatore sul
-quaderno copiato: `H cerca <parola>`, con le regole della sezione 1 (una decisione è una decisione,
-un'idea è solo un'idea, una nota dedotta è un'ipotesi, cita il numero della nota).
+When the user asks what they said or decided («cosa avevo deciso su…»), use the search on the
+copied notebook: `H search <word>`, with the rules of section 1 (a decision is a decision, an idea
+is only an idea, an inferred note is a hypothesis, cite the note number).
 
-### C4. Salvare una nota
+### C4. Saving a note
 
-Per ogni nota, in quest'ordine:
+For each note, in this order:
 
-1. Fotografa il quaderno: `H istantanea > ~/hypomnema-lavoro/prima.json`
-2. Se hai l'archivio della chat, **prima** rileggi la conversazione dall'archivio e copia i messaggi
-   nuovi come al punto C5 (passi 2 e 3, senza fotografare di nuovo). Il `testo` di una nota
-   dell'utente lo prendi **dalla copia dell'archivio**, parola per parola.
-   **Non copiare mai le parole dell'utente a memoria** se l'archivio è disponibile.
-3. Scrivi la proposta in `~/hypomnema-lavoro/proposta.json` (fuori dalla cartella del quaderno),
-   con le regole della sezione 2, e passala allo sportello:
-   `H proponi ~/hypomnema-lavoro/proposta.json`
-4. Chiedi quali file sono cambiati: `H cambiati ~/hypomnema-lavoro/prima.json`
-   - Risponde con un elenco: **riporta sul computer dell'utente esattamente quei file**, allo stesso
-     percorso sotto `Hypomnema/quaderno/` (per esempio `note/0007.md` va in
-     `Hypomnema/quaderno/note/0007.md`), usando il controllo sui file cambiati.
-     **Prima `registro.md`, poi i file dell'archivio della chat, poi le note create.** Ogni
-     proposta allunga il registro: se la sua scrittura riesce, vuol dire che nessun'altra chat ha
-     scritto nel quaderno dopo la tua copia, e puoi scrivere il resto. Anche una nota rifiutata
-     allunga il registro: va riportato.
-     Per **ogni** file da riportare:
-     1. copialo in una **cartella nuova** del computer di lavoro, mai usata prima in questa chat, e
-        riportalo da lì. Il nome della cartella è `riporto-<AAAAMMGG>-<hhmm>-<lettera>`, con la data
-        e l'ora del computer di lavoro (`date +%Y%m%d-%H%M`) e la lettera `a`; per esempio
-        `/mnt/user-data/outputs/riporto-20261015-1243-a/registro.md`. Crea la cartella con `mkdir`
-        **senza** `-p`: se risponde che esiste già, usa la lettera successiva (`b`, `c`…). Niente
-        numeri progressivi: nelle chat lunghe si ripetono. Ripartendo da un percorso già usato, lo
-        strumento può rimandare una copia vecchia anche se risponde che ha scritto;
-     2. subito dopo, ricopia dal computer dell'utente il file appena scritto in un'altra cartella
-        nuova, con la stessa regola per il nome (per esempio
-        `~/hypomnema-lavoro/verifica-20261015-1243-a/`), e confrontalo con quello del computer di
-        lavoro:
-        `H confronta ~/hypomnema-lavoro/quaderno/registro.md ~/hypomnema-lavoro/verifica-20261015-1243-a/registro.md`
-        Deve rispondere `UGUALI`;
-     3. se risponde `DIVERSI`, o se non riesci a ricopiarlo: **fermati, non scrivere altri file** e
-        dillo all'utente: sul suo computer quel file non è quello giusto.
-   - Risponde «Nessun file del quaderno è cambiato»: non c'è niente da riportare.
-   - Risponde `ERRORE`: **non riportare niente**. Dillo all'utente con il messaggio ricevuto,
-     ricopia il quaderno dal suo computer (C2) e riparti dal punto 1.
-   Se già lo sportello risponde `ERRORE: il registro è stato toccato a mano`, non ha scritto
-   niente: dillo all'utente con le sue parole e non riprovare finché l'utente non ha sistemato il
-   registro (`H controlla` mostra la riga da guardare).
-5. Se il controllo **rifiuta la scrittura del registro** (il registro sul computer dell'utente è
-   cambiato nel frattempo, per esempio per un'altra chat): **non forzare e non scrivere le note**.
-   Sul computer dell'utente non è cambiato niente. Dillo all'utente, ricopia il quaderno (C2) e
-   ripeti la proposta dal punto 1.
-   Se invece il registro è stato scritto ma il controllo **rifiuta una nota** (succede solo se
-   qualcuno ha toccato il quaderno a mano): fermati e dillo all'utente. Dopo aver ricopiato il
-   quaderno, `H controlla` mostrerà la riga del registro senza la sua nota.
-6. Di' all'utente cosa è stato salvato e cosa è stato rifiutato (sezione 4), e a quale livello:
-   «riscontrata sull'archivio della chat» oppure «non verificata». In modalità prova ricorda che il
-   quaderno sparirà a fine chat.
+1. Take a snapshot of the notebook: `H snapshot > ~/hypomnema-lavoro/prima.json`
+2. If you have the chat archive, **first** reread the conversation from the archive and copy the
+   new messages as in point C5 (steps 2 and 3, without a new snapshot). The `text` of a user's note
+   you take **from the archive copy**, word for word. **Never copy the user's words from memory**
+   (non copiare mai le parole dell'utente a memoria) if the archive is available.
+3. Write the proposal in `~/hypomnema-lavoro/proposta.json` (outside the notebook folder), with the
+   rules of section 2, and pass it to the desk: `H propose ~/hypomnema-lavoro/proposta.json`
+4. Ask which files changed: `H changed ~/hypomnema-lavoro/prima.json`
+   - It answers with a list: **bring back to the user's computer exactly those files**, to the
+     same path under `Hypomnema/quaderno/` (for example `note/0007.md` goes to
+     `Hypomnema/quaderno/note/0007.md`), using the check on changed files. **First `registro.md`,
+     then the chat archive files, then the created notes.** Every proposal lengthens the register:
+     if writing it succeeds, no other chat has written into the notebook after your copy, and you
+     can write the rest. A rejected note also lengthens the register: it must be brought back.
+     For **each** file to bring back:
+     1. copy it into a **new folder** of the work computer, never used before in this chat, and
+        bring it back from there. The folder name is `riporto-<AAAAMMGG>-<hhmm>-<lettera>`, with the
+        date and time of the work computer (`date +%Y%m%d-%H%M`) and the letter `a`; for example
+        `/mnt/user-data/outputs/riporto-20261015-1243-a/registro.md`. Create the folder with
+        `mkdir` **without** `-p`: if it answers that it already exists, use the next letter (`b`,
+        `c`…). No progressive numbers: in long chats they repeat. Starting again from a path
+        already used, the tool may send back an old copy even if it answers that it wrote;
+     2. right after, copy the file just written back from the user's computer into another new
+        folder, with the same naming rule (for example
+        `~/hypomnema-lavoro/verifica-20261015-1243-a/`), and compare it with the one on the work
+        computer:
+        `H compare ~/hypomnema-lavoro/quaderno/registro.md ~/hypomnema-lavoro/verifica-20261015-1243-a/registro.md`
+        It must answer `UGUALI`;
+     3. if it answers `DIVERSI`, or if you cannot copy it back: **stop, do not write other files**
+        and tell the user: on their computer that file is not the right one.
+   - It answers «Nessun file del quaderno è cambiato»: there is nothing to bring back.
+   - It answers `ERRORE`: **bring nothing back**. Tell the user with the message received, copy the
+     notebook again from their computer (C2) and start again from point 1.
+   If the desk itself answers `ERRORE: il registro è stato toccato a mano`, it wrote nothing: tell
+   the user with its words and do not try again until the user has fixed the register (`H check`
+   shows the line to look at).
+5. If the check **refuses to write the register** (the register on the user's computer changed in
+   the meantime, for example because of another chat): **do not force and do not write the
+   notes**. Nothing changed on the user's computer. Tell the user, copy the notebook again (C2) and
+   repeat the proposal from point 1.
+   If instead the register was written but the check **refuses a note** (it happens only if
+   someone touched the notebook by hand): stop and tell the user. After copying the notebook
+   again, `H check` will show the register line without its note.
+6. Tell the user what was saved and what was rejected (section 4), and at which level:
+   «riscontrata sull'archivio della chat» or «non verificata». In trial mode remind them that the
+   notebook will disappear at the end of the chat.
 
-In modalità prova i punti 1, 4 e 5 non servono: bastano i punti 2 e 3.
+In trial mode points 1, 4 and 5 are not needed: points 2 and 3 are enough.
 
-### C5. Copiare la conversazione dall'archivio
+### C5. Copying the conversation from the archive
 
-Così la conversazione finisce nel quaderno da sola. Fallo **ogni `copia_ogni` scambi** (lo dice
-`H stato`, di base 5), **prima di salvare una nota** (C4) e **quando l'utente dice che chiude**:
+This way the conversation ends up in the notebook by itself. Do it **every `copia_ogni`
+exchanges** (`H status` says it, by default 5), **before saving a note** (C4) and **when the user
+says they are closing**:
 
-1. Fotografa il quaderno: `H istantanea > ~/hypomnema-lavoro/prima.json` (non serve se lo fai
-   dentro C4).
-2. Rileggi questa conversazione con lo strumento dell'archivio. Lo strumento restituisce **al
-   massimo 50 turni per volta**, con un **segnalino** per chiedere i successivi: leggi a pezzi,
-   seguendo il segnalino, finché non hai tutti i turni che ti servono (alla prima copia della chat
-   tutti; dopo, quelli successivi all'ultimo copiato, che `H stato` mostra). Per **ogni pezzo**
-   scrivi in `~/hypomnema-lavoro/archivio.json` l'indirizzo della chat, il fuso orario e i messaggi,
-   quelli dell'utente e le tue risposte, **esattamente come li restituisce l'archivio**: il numero
-   del turno, la data e l'ora così come sono (al minuto) e il testo intero:
+1. Take a snapshot of the notebook: `H snapshot > ~/hypomnema-lavoro/prima.json` (not needed if
+   you do it inside C4).
+2. Reread this conversation with the archive tool. The tool returns **at most 50 turns at a time**
+   (al massimo 50 turni per volta), with a **marker** (segnalino) to ask for the next ones: read in
+   pieces, following the marker, until you have all the turns you need (at the first copy of the
+   chat all of them; afterwards, those after the last one copied, which `H status` shows). For
+   **each piece** write in `~/hypomnema-lavoro/archivio.json` the chat address, the time zone and
+   the messages, the user's and your replies, **exactly as the archive returns them**: the turn
+   number, the date and time as they are (to the minute) and the whole text. The keys of this
+   file stay as they are (`turno`, `quando`, `chi`, `testo`; `chi` is `utente` or `claude`):
 
    ```json
    {"chat": "https://claude.ai/chat/<codice della chat>", "fuso": "UTC+02:00",
@@ -478,19 +543,18 @@ Così la conversazione finisce nel quaderno da sola. Fallo **ogni `copia_ogni` s
                  {"turno": 13, "quando": "Fri 2026-10-09 17:46", "chi": "claude", "testo": "…"}]}
    ```
 
-   Non togliere niente dal testo: gli avvisi tecnici che l'app inserisce tra `<system-reminder>` e
-   `</system-reminder>` li toglie il programma, con una regola fissa.
-   **Non convertire niente**: lo strumento scrive `<`, `>` e `&` come `&lt;`, `&gt;` e `&amp;`.
-   Copia il testo così com'è, con `&lt;` e `&gt;`: li converte il programma `archivio` (e così
-   riconosce anche gli avvisi tecnici scritti in quella forma). Nel quaderno finiscono i segni veri:
-   quando poi prendi dalla copia il `testo` di una nota, scrivi `<` e `>`, non `&lt;` e `&gt;`. Metti anche i messaggi già
-   copiati: il programma riconosce i doppioni dall'indirizzo della chat e dal numero del turno, e
-   non li duplica. Metti anche i messaggi che cominciano con `#privato`: il programma ne tiene solo
-   data e ora, e così anche per la tua risposta.
-3. Per ogni pezzo: `H archivio ~/hypomnema-lavoro/archivio.json`. Se avvisa che un messaggio già
-   presente ha un testo diverso, dillo all'utente: non toccare niente. Se rifiuta la copia (per
-   esempio per un avviso tecnico senza chiusura), dillo all'utente con il messaggio ricevuto.
-4. `H cambiati ~/hypomnema-lavoro/prima.json` e riporta i file elencati come in C4 (cartella nuova a
-   ogni riporto, poi `H confronta`).
-5. Dillo all'utente in una riga: «Ho copiato nel quaderno gli ultimi messaggi di questa chat.»
-
+   Remove nothing from the text: the technical notices the app inserts between
+   `<system-reminder>` and `</system-reminder>` are removed by the program, with a fixed rule.
+   **Convert nothing**: the tool writes `<`, `>` and `&` as `&lt;`, `&gt;` and `&amp;`. Copy the
+   text as it is, with `&lt;` and `&gt;`: the `archive` program converts them (and so it also
+   recognises technical notices written that way). The real signs end up in the notebook: when you
+   then take the `text` of a note from the copy, write `<` and `>`, not `&lt;` and `&gt;`. Include
+   the messages already copied too: the program recognises duplicates from the chat address and
+   the turn number, and does not duplicate them. Include the messages starting with `#privato` too:
+   the program keeps only their date and time, and the same for your reply.
+3. For each piece: `H archive ~/hypomnema-lavoro/archivio.json`. If it warns that a message already
+   present has a different text, tell the user: touch nothing. If it refuses the copy (for example
+   because of a technical notice without its closing), tell the user with the message received.
+4. `H changed ~/hypomnema-lavoro/prima.json` and bring back the listed files as in C4 (a new
+   folder for each bring-back, then `H compare`).
+5. Tell the user in one line: «Ho copiato nel quaderno gli ultimi messaggi di questa chat.»

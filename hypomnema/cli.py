@@ -231,7 +231,8 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
     trovate = cercatore.cerca(config, parola, tutte=argomenti.tutte)
     nascoste = 0 if argomenti.tutte else len(cercatore.cerca(config, parola, tutte=True)) - len(trovate)
     if not trovate:
-        print(f"Nessuna nota contiene «{parola}».", file=uscita)
+        aperta = " aperta" if nascoste else ""
+        print(f"Nessuna nota{aperta} contiene «{parola}».", file=uscita)
     elif len(trovate) == 1:
         print(f"Trovata 1 nota con «{parola}».", file=uscita)
     else:

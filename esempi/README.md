@@ -69,6 +69,12 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `44-recap-quaderno-vuoto` | Quaderno vuoto. | Il recap dice «nessuno»/«nessuna» per ogni blocco; nessun promemoria scaduto. |
 | `45-archivio-segni-html` | In chat, una copia dell'archivio con «&lt;», «&gt;» e «&amp;», e un avviso tecnico scritto in quella forma; poi una nota con «<» e «&». | Nell'archivio finiscono i segni veri e l'avviso è tolto; la nota è riscontrata sull'archivio. |
 | `46-quaderno-vecchio` | Un quaderno di prima della 0.4.0 (le note dell'esempio 05) con la configurazione di prima. | `controlla`, `cerca`, `promemoria` e `recap` funzionano senza modifiche; una correzione nuova entra e compare sotto la nota corretta. |
+| `47-nota-in-inglese` | La stessa nota proposta con i nomi inglesi (`propose`) e con quelli italiani (`proponi`); una proposta con `data` e `date` insieme; poi `search` e `cerca`. | Le due note sono scritte uguali, in inglese; la terza è rifiutata («the field «date» appears twice»); `search` e `cerca` danno la stessa uscita. |
+| `48-kind-todo` | Un `todo` di Claude, una `decision` di Claude, un `kind: choice`; poi il recap. | Il todo entra e compare in «Cose da fare»; la decisione di Claude e «choice» sono rifiutati. |
+| `49-chiudere-open` | Un `open` di Claude; chiusure con `done`: di Claude, dell'utente, una seconda chiusura, una nota `open` che chiude, `done` su una decisione; poi `search`, `search --all` e il recap. | Accettata solo la chiusura dell'utente (`decision`); le altre sono rifiutate con il loro motivo («already closed by note «0002»», «only the user can close an open note», …). `search` non mostra la nota chiusa e dice «Nessuna nota aperta contiene…»; `--all` la mostra con sotto la nota che l'ha chiusa. Il recap non ha più il discorso aperto. |
+| `50-chiudere-todo` | Tre `todo` di Claude; una nota che ne chiude due insieme (`done: "0001, 0002"`); un `done` con un numero ripetuto. | «Cose da fare» passa da 3 a 1; il numero ripetuto è rifiutato; `search --all` mostra il todo chiuso con sotto la nota che lo chiude. |
+| `51-priorita` | Tre `todo` dell'utente (normale, bassa, alta); una correzione che porta la bassa ad alta; una priorità in una nota di Claude; `priority: urgent`. | Il recap mostra prima l'alta, poi la normale, poi la bassa; dopo la correzione le due alte vengono prima (con `↳` la correzione). Le due proposte sbagliate sono rifiutate. |
+| `52-quaderno-vecchio-italiano` | Il quaderno dell'esempio 43 della 0.4.0 (note in italiano, «discorso aperto», `riprendere_il`, `corregge`, configurazione senza `todo` nel `[recap]`), con comandi italiani e inglesi; poi una nota dell'utente, con i nomi italiani, che chiude il discorso aperto e il promemoria. | Tutti i comandi funzionano; le note vecchie restano identiche byte per byte; la nota nuova è scritta in inglese e chiude 0004 e 0006, che spariscono dal recap. |
 | `26-confronta` | `confronta` tra due file uguali, due diversi e un file che manca. | `UGUALI` (codice 0); `DIVERSI` con il primo byte diverso (codice 1); errore (codice 2). |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
@@ -85,3 +91,10 @@ Dalla versione 0.4.0 il cercatore mostra le note **dalla più recente alla più 
 ogni nota, le note collegate: cambia l'ordine delle ricerche con più risultati negli esempi 04, 05 e
 36 (e nel 04 la nota 0001 ha in più «confermata da: nota 0002»). Nell'esempio 15 l'elenco dei campi
 ammessi comprende i tre campi nuovi (`corregge`, `done`, `riprendere_il`).
+
+Dalla versione 0.5.0 (lingua per ruolo) le note nuove si scrivono in inglese (`# Note`, `- date:`,
+`## Text`, valori come `user`, `stated`, `fact`), i motivi di rifiuto sono in inglese e le diciture
+`verification` anche. Per questo cambiano i risultati attesi di quasi tutti gli esempi da 01 a 46
+che salvano o rifiutano una nota (l'elenco è nel resoconto della richiesta di unione); le proposte
+e i comandi di quegli esempi restano in italiano, così provano che i nomi italiani funzionano
+ancora. Nell'esempio 40 la ricerca non mostra più il promemoria chiuso.

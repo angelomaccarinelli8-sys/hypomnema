@@ -53,15 +53,15 @@ Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
 
 | Parte | Cosa fa |
 |---|---|
-| **Sportello** (`proponi`) | Riceve una nota proposta, la controlla, la salva come file Markdown se è completa, altrimenti la rifiuta spiegando perché. |
+| **Sportello** (`propose`, o `proponi`) | Riceve una nota proposta, la controlla, la salva come file Markdown se è completa, altrimenti la rifiuta spiegando perché. |
 | **Registro** (`registro.md`) | Annota ogni passaggio dallo sportello, accettato o rifiutato, con data e motivo. Solo aggiunta. |
-| **Cercatore** (`cerca`) | Trova le note che contengono una parola, dalla più recente; sotto ogni nota mostra le note che la correggono, la confermano o la segnano come fatta. Solo lettura. |
-| **Promemoria** (`promemoria`) | Elenca le note con la data «riprendere il» arrivata o già passata, dalla più vecchia. Solo lettura. |
-| **Recap** (`recap`) | «Dove eravamo rimasti»: promemoria scaduti, discorsi aperti, ultime decisioni e ultime righe del diario, scelti con regole fisse. Solo lettura. |
+| **Cercatore** (`search`, o `cerca`) | Trova le note che contengono una parola, dalla più recente, senza quelle chiuse (con `--all` anche quelle); sotto ogni nota mostra le note che la correggono, la confermano o la chiudono. Solo lettura. |
+| **Promemoria** (`reminders`, o `promemoria`) | Elenca le note con la data `remind` arrivata o già passata, dalla più vecchia. Solo lettura. |
+| **Recap** (`recap`) | «Dove eravamo rimasti»: promemoria scaduti, discorsi aperti, cose da fare, ultime decisioni e ultime righe del diario, scelti con regole fisse, prima le priorità alte. Solo lettura. |
 | **Testimone** (`testimone`) | Se lo accendi, registra le parole esatte dei tuoi messaggi, così lo sportello può controllare che una nota "dell'utente" riporti parole che hai detto davvero. |
-| **Stato** (`stato`) | Dice se il testimone è acceso, dov'è il quaderno e quale messaggio ha registrato per ultimo. Solo lettura. |
+| **Stato** (`status`, o `stato`) | Dice se il testimone è acceso, dov'è il quaderno e quale messaggio ha registrato per ultimo. Solo lettura. |
 | **Skill** (`skills/hypomnema/SKILL.md`) | Le istruzioni per Claude: quando leggere, come controllare il testimone, come preparare le note, come confermare una decisione. |
-| **Plugin** (`.claude-plugin/`, `hooks/`, `commands/`, `programma.py`) | Il repository stesso è un plugin di Claude Code: la skill, i programmi, gli agganci dei testimoni e i comandi `/hypomnema:pausa`, `/hypomnema:riprendi` e `/hypomnema:recap`. Vedi «Installa il plugin in Claude Code». |
+| **Plugin** (`.claude-plugin/`, `hooks/`, `commands/`, `programma.py`) | Il repository stesso è un plugin di Claude Code: la skill, i programmi, gli agganci dei testimoni e i comandi `/hypomnema:pause`, `/hypomnema:resume` e `/hypomnema:recap` (valgono anche `/hypomnema:pausa` e `/hypomnema:riprendi`). Vedi «Installa il plugin in Claude Code». |
 | **Modalità chat** (`chat/`, `istantanea`, `cambiati`) | La configurazione per la chat di Claude e i due comandi, in sola lettura, che dicono quali file del quaderno riportare sul tuo computer dopo una proposta. Vedi «Usarlo nella chat di Claude». |
 | **Avviabile** (`windows/Hypomnema.cmd`) | Alternativa al plugin installato, solo Windows: un doppio clic per aprire Claude Code con Hypomnema acceso. Vedi «Alternativa: l'avviabile di Windows». |
 
@@ -99,10 +99,10 @@ lo dice a ogni sessione.
 **Pausa.** Con il plugin installato i testimoni registrano tutto quello che scrivi in Claude Code,
 anche negli altri progetti. Quando non vuoi:
 
-- `/hypomnema:pausa` mette in pausa i testimoni: da lì in poi annotano solo data e ora, senza testo,
-  finché non scrivi `/hypomnema:riprendi`;
-- le note che salvi in pausa sono marcate «autore non verificato (testimoni in pausa)»;
-- `stato` dice «IN PAUSA dal …», e a ogni nuova sessione un avviso te lo ricorda;
+- `/hypomnema:pause` (o `/hypomnema:pausa`) mette in pausa i testimoni: da lì in poi annotano solo
+  data e ora, senza testo, finché non scrivi `/hypomnema:resume` (o `/hypomnema:riprendi`);
+- le note che salvi in pausa sono marcate «author not verified (witnesses paused)»;
+- `status` dice «IN PAUSA dal …», e a ogni nuova sessione un avviso te lo ricorda;
 - per un solo messaggio basta cominciarlo con `#privato`;
 - per spegnerli del tutto: `attivo = false` nella configurazione.
 
@@ -130,7 +130,7 @@ con la barra non possono essere lanciati da Claude (`disable-model-invocation`),
 testimone sono protetti dall'aggancio. Restano due vie, e la skill le vieta a Claude: scrivere nei
 file con uno script, oppure creare un'attività programmata che manda «/hypomnema:pausa» come
 messaggio (Claude Code tratta anche quelle come messaggi). In ogni caso **la pausa si vede**: resta
-nel testimone con data e ora, `stato` la mostra, e l'avviso d'inizio sessione la ricorda.
+nel testimone con data e ora, `status` la mostra, e l'avviso d'inizio sessione la ricorda.
 
 **Non usare insieme** il plugin installato e l'avviabile di Windows: gli agganci partirebbero due volte.
 
@@ -164,7 +164,7 @@ quaderno, sul tuo computer.
    `confronta`: se non è identico si ferma e te lo dice.
 4. Quando chiedi «cosa avevo deciso su…», Claude cerca nel quaderno con il cercatore.
 5. A inizio chat Claude controlla che ogni nota abbia la sua riga ACCETTATA nel registro, e
-   viceversa, e che nel registro non ci siano righe estranee (`controlla`). Se qualcosa non corrisponde, per esempio per un salvataggio rimasto a
+   viceversa, e che nel registro non ci siano righe estranee (`check`). Se qualcosa non corrisponde, per esempio per un salvataggio rimasto a
    metà, te lo dice; non ripara niente da solo.
 6. **L'archivio della chat.** Se nelle impostazioni di Claude è attivo il permesso per cercare e
    consultare le chat passate, Claude rilegge la conversazione dall'archivio di Anthropic e la copia
@@ -185,13 +185,17 @@ quaderno, sul tuo computer.
 
 | Livello | Dove | Cosa c'è scritto nella nota |
 |---|---|---|
-| **Verificato** | Claude Code, con il testimone | `testo trovato nel messaggio del <data e ora>` |
-| **Riscontrato sull'archivio della chat** | Chat, con l'archivio | `testo riscontrato sull'archivio della chat <indirizzo>, messaggio del turno <numero> (<data e ora>, copiato da Claude)` |
-| **Non verificato** | Chat senza archivio, o testo che non si trova | `autore non verificato (chat, senza testimone)` |
+| **Verificato** | Claude Code, con il testimone | `text found in the message of <data e ora>` |
+| **Riscontrato sull'archivio della chat** | Chat, con l'archivio | `text matched in the chat archive <indirizzo>, message of turn <numero> (<data e ora>, copied by Claude)` |
+| **Non verificato** | Chat senza archivio, o testo che non si trova | `author not verified (chat, no witness)` |
+
+Dalla versione 0.5.0 queste diciture si scrivono in inglese (vedi «Lingua per ruolo»); le note
+salvate prima conservano la loro dicitura italiana («testo trovato…», «testo riscontrato…»,
+«autore non verificato…»).
 
 In chat una nota con parole che nell'archivio non ci sono **non viene rifiutata**: resta «non
 verificata», perché l'archivio può non essere disponibile o non ancora copiato. Nel diario
-(`diario`) le righe copiate dall'archivio dicono «archivio della chat …, copiato da Claude»; quelle
+(`diary`) le righe copiate dall'archivio dicono «archivio della chat …, copiato da Claude»; quelle
 senza indicazione vengono dai testimoni di Claude Code.
 
 **Il permesso richiesto.** Solo la cartella `Hypomnema`. In chat Claude non lancia comandi sul tuo
@@ -203,7 +207,7 @@ computer: legge e scrive solo lì, e non copia il file del testimone (`testimone
   nessun programma li registra mentre scrivi. Al loro posto c'è la copia dall'archivio della chat
   (punto 6), che però **passa da Claude**: Claude potrebbe alterarla. Per questo le note
   riscontrate così portano l'indirizzo della chat, e chiunque può aprirla per controllare. Senza
-  archivio, le tue note sono salvate come «autore non verificato (chat, senza testimone)», così si
+  archivio, le tue note sono salvate come «author not verified (chat, no witness)», così si
   distinguono da quelle dell'avviabile con il testimone spento («testimone spento»).
 - **Dal telefono o da un altro computer** Hypomnema funziona solo se la chat è collegata al tuo PC,
   con il PC acceso e l'app desktop di Claude aperta; altrimenti è la modalità prova.
@@ -230,7 +234,7 @@ lo sportello sa fare: creare note annotate come ACCETTATA nel registro, e allung
 con righe nella forma dello sportello. Se trova altro, per esempio una nota cambiata a mano o del
 testo libero nel registro, risponde con un errore e Claude non riporta niente. Una riga scritta a
 mano ma con la forma giusta non si può distinguere da una vera: è un limite dichiarato.
-`controlla` confronta note e registro, in sola lettura.
+`check` confronta note e registro, in sola lettura.
 
 ## Dove funziona davvero
 
@@ -274,104 +278,203 @@ d'ambiente `HYPOMNEMA_CONFIG` oppure con `--config`.
 Dalla cartella di Hypomnema:
 
 ```
-python -m hypomnema proponi esempi/01-nota-accettata/nota.json
-python -m hypomnema cerca orto
-python -m hypomnema promemoria                 # i promemoria con la data arrivata o passata
+python -m hypomnema propose esempi/01-nota-accettata/nota.json
+python -m hypomnema search orto                # aggiungi --all per vedere anche le note chiuse
+python -m hypomnema reminders                  # i promemoria con la data arrivata o passata
 python -m hypomnema recap                      # dove eravamo rimasti
-python -m hypomnema testimone messaggio.json   # di solito lo lancia Claude Code da solo
-python -m hypomnema stato                      # testimone acceso? ultimo messaggio registrato?
-python -m hypomnema istantanea > prima.json    # chat: fotografa il quaderno prima di una proposta
-python -m hypomnema cambiati prima.json        # chat: quali file riportare sul computer
-python -m hypomnema controlla                  # note e registro corrispondono? righe estranee?
-python -m hypomnema confronta a.md b.md        # due file identici byte per byte?
-python -m hypomnema impronta giorni.py         # l'impronta di un file, come per i blocchi di codice omessi
-python -m hypomnema diario fragole --intorno   # cerca nel diario, con i messaggi vicini
+python -m hypomnema witness messaggio.json     # di solito lo lancia Claude Code da solo
+python -m hypomnema status                     # testimone acceso? ultimo messaggio registrato?
+python -m hypomnema snapshot > prima.json      # chat: fotografa il quaderno prima di una proposta
+python -m hypomnema changed prima.json         # chat: quali file riportare sul computer
+python -m hypomnema check                      # note e registro corrispondono? righe estranee?
+python -m hypomnema compare a.md b.md          # due file identici byte per byte?
+python -m hypomnema fingerprint giorni.py      # l'impronta di un file, come per i blocchi di codice omessi
+python -m hypomnema diary fragole --around     # cerca nel diario, con i messaggi vicini
 ```
 
 Su Windows scrivi `py` al posto di `python`:
 
 ```
-py -m hypomnema cerca orto
+py -m hypomnema search orto
 ```
+
+I nomi italiani dei comandi delle versioni precedenti funzionano per sempre: `cerca` è `search`,
+`proponi` è `propose`, `promemoria` è `reminders`, `stato` è `status`, `controlla` è `check`,
+`diario` è `diary` (con `--ultimi` e `--intorno` al posto di `--last` e `--around`), e così via.
 
 Una nota proposta è un piccolo file JSON:
 
 ```json
 {
-  "data": "2026-01-15",
-  "fonte": "chat del 15 gennaio 2026 sul progetto dell'orto",
-  "autore": "utente",
-  "tipo": "dichiarata",
-  "natura": "fatto",
-  "testo": "L'orto è sul balcone esposto a sud."
+  "date": "2026-01-15",
+  "source": "chat del 15 gennaio 2026 sul progetto dell'orto",
+  "author": "user",
+  "knowledge": "stated",
+  "kind": "fact",
+  "text": "L'orto è sul balcone esposto a sud."
 }
 ```
 
 Lo sportello risponde `ACCETTATA` (e dice il numero della nota) oppure `RIFIUTATA` con i motivi.
 Il formato completo è in [FORMATO.md](FORMATO.md).
 
+### Lingua per ruolo
+
+Dalla versione 0.5.0 Hypomnema usa **l'italiano per il contenuto e l'inglese per la struttura**:
+
+- **in italiano** restano le tue parole nelle note, tutto quello che leggi tu (i messaggi dei
+  comandi come «ACCETTATA» o «Trovate 2 note», il recap, questo README) e le frasi che Claude ti dice;
+- **in inglese** vanno i nomi dei comandi e dei campi, i loro valori, i motivi di rifiuto dello
+  sportello (sono regole rivolte a Claude) e le istruzioni della skill per Claude.
+
+Le note che hai già **non si convertono e non si toccano**: il programma legge tutte e due le forme.
+Le note nuove si scrivono con i campi in inglese. Anche nelle proposte valgono tutti e due i nomi
+(`autore: utente` è `author: user`), ma lo stesso campo non può comparire due volte (per esempio
+`data` e `date` insieme).
+
+| Prima (italiano) | Ora (inglese) | Valori |
+|---|---|---|
+| `data` | `date` | |
+| `fonte` | `source` | |
+| `autore` | `author` | `utente` → `user`, `claude` |
+| `tipo` | `knowledge` | `dichiarata` → `stated`, `osservata` → `observed`, `dedotta` → `inferred` |
+| `natura` | `kind` | `fatto` → `fact`, `idea`, `decisione` → `decision`, `discorso aperto` → `open`, `todo` |
+| `testo` | `text` | |
+| `contesto` | `context` | |
+| `citazione` | `quote` | |
+| `conferma_di` | `confirms` | |
+| `corregge` | `corrects` | |
+| `riprendere_il` | `remind` | |
+| `done` | `done` | |
+| `da_risposta` | `from_reply` | `sì` → `yes` |
+| `verifica` | `verification` | scritta dallo sportello |
+| | `priority` (nuovo) | `high`, `normal`, `low` |
+
+Non cambiano, perché sono formati interni che i file di oggi devono continuare a usare: le righe
+del registro (`ACCETTATA`/`RIFIUTATA`), i file dei testimoni e le chiavi di `hypomnema.toml`.
+
+### Che cos'è una nota: fact, idea, decision, open, todo
+
+Il campo `kind` dice che cosa è una nota:
+
+- `fact`: una cosa che è così;
+- `idea`: una proposta (quelle di Claude sono sempre idee);
+- `decision`: una decisione, **solo tua** (`author: user`);
+- `open`: una questione aperta (prima si chiamava «discorso aperto»);
+- `todo`: una cosa da fare.
+
+### Chiudere una questione aperta o una cosa da fare
+
+Un `open` o un `todo` restano aperti finché una **nota nuova** non li chiude con `done`:
+
+```json
+{
+  "date": "2026-01-15",
+  "source": "chat del 15 gennaio 2026 sull'orto",
+  "author": "user",
+  "knowledge": "stated",
+  "kind": "decision",
+  "done": "0012",
+  "text": "la compostiera va nell'angolo nord"
+}
+```
+
+- Il testo della nota che chiude è obbligatorio: è il motivo.
+- Il suo `kind` dice che cosa è diventata la questione: `decision`, `todo`, `fact` o `idea`. Una
+  nota `open` non chiude niente.
+- **Gli `open` li chiudi solo tu** (`author: user`); Claude può proportelo. I `todo` e i promemoria
+  li può chiudere anche Claude, quando sono fatti davvero.
+- `done` può chiudere più note insieme: `"done": "0012, 0015"`.
+- Una nota si chiude una volta sola: lo sportello rifiuta una seconda chiusura e dice da quale nota
+  è già chiusa.
+- `done` vale solo per `open`, `todo` e promemoria (note con `remind`). `fact`, `decision` e `idea`
+  non si chiudono: si correggono con `corrects` (le idee si possono anche confermare con `confirms`).
+- Se una questione chiusa ritorna, si apre un `open` nuovo, che nel testo cita quello vecchio.
+
+Il `recap` e la ricerca di base **non mostrano le note chiuse**. La ricerca dice quante ne ha
+nascoste, e `search <parola> --all` le mostra, con sotto la nota che le ha chiuse.
+
+### La priorità
+
+Il campo facoltativo `priority` vale `high`, `normal` o `low` (senza priorità vale `normal`). È
+**solo tua**: in una nota di Claude lo sportello la rifiuta, e Claude può al massimo proporla nel
+testo di una sua idea. Per cambiare la priorità di una nota si salva una nota nuova con
+`"corrects": "<numero>"` e la priorità nuova. Nel recap, dentro ogni blocco, vengono prima le cose
+a priorità alta (segnate `[alta]`), poi le normali, poi le basse (`[bassa]`).
+
+### Quando cambiano le regole del quaderno: la nota-regola
+
+Se decidi che da un certo momento il quaderno funziona in modo diverso (per esempio «le spese le
+segno solo come cose da fare»), non serve cambiare niente nei programmi: chiedi a Claude di salvare
+una **decisione** con le tue parole, che cominci con «Da questa nota in poi…». Per esempio:
+«Da questa nota in poi le spese le segno solo come todo.» È una decisione come le altre: compare nel
+recap e nelle ricerche, e Claude la rispetta come regola del quaderno.
+
 ### Correzioni, promemoria e «dove eravamo rimasti»
 
 Niente si cancella, quindi una nota sbagliata resta nel quaderno. Per correggerla si salva una
-**nota nuova** con `"corregge": "0007"`. Da lì in poi, quando il cercatore trova la nota 0007, mostra
+**nota nuova** con `"corrects": "0007"`. Da lì in poi, quando il cercatore trova la nota 0007, mostra
 **sempre subito sotto** la correzione (e la correzione della correzione, se c'è), anche se la
-correzione non contiene la parola cercata. Lo stesso per le conferme (`conferma_di`). Così Claude
-non può più ripetere un errore che una correzione aveva già sistemato.
+correzione non contiene la parola cercata. Lo stesso per le conferme (`confirms`) e le chiusure
+(`done`). Così Claude non può più ripetere un errore che una correzione aveva già sistemato.
 
 Il cercatore elenca le note **dalla più recente alla più vecchia** (cioè dal numero più alto), e
 trova anche le parole dentro i nomi composti: `orto` trova `orto_balcone.py`, `semi-orto` e
 `orto/vasi`. Le note restano scritte in fondo al quaderno come sempre: cambia solo l'ordine in cui
 si mostrano.
 
-**Promemoria.** Una nota con `"riprendere_il": "2026-10-20"` è un promemoria. Il comando
-`promemoria` elenca quelli con la data arrivata o già passata, dal più vecchio. Per chiuderlo si
-salva una nota con `"done": "0007"` («era giusto ed è fatto»): il promemoria esce dagli scaduti.
-Una correzione invece («era sbagliato») lo lascia tra gli scaduti, con la correzione sotto; se la
-correzione ha un suo `riprendere_il`, vale quella data.
+**Promemoria.** Una nota con `"remind": "2026-10-20"` è un promemoria. Il comando `reminders`
+elenca quelli con la data arrivata o già passata, dal più vecchio. Per chiuderlo si salva una nota
+con `"done": "0007"` («era giusto ed è fatto»): il promemoria esce dagli scaduti. Una correzione
+invece («era sbagliato») lo lascia tra gli scaduti, con la correzione sotto; se la correzione ha un
+suo `remind`, vale quella data.
 
 **Dove eravamo rimasti.** Il comando `recap` (nel plugin anche `/hypomnema:recap`) mostra in poche
-righe, con regole fisse: i promemoria scaduti, gli ultimi 5 discorsi aperti, le ultime 5 decisioni e
-le ultime 10 righe del diario. Claude lo lancia a inizio chat, così non deve scegliere da solo le
-parole da cercare. I numeri si regolano nella sezione facoltativa `[recap]` di `hypomnema.toml`:
+righe, con regole fisse: i promemoria scaduti, gli ultimi 5 discorsi aperti, le ultime 5 cose da
+fare, le ultime 5 decisioni e le ultime 10 righe del diario, senza le note chiuse e con le priorità
+alte per prime. Claude lo lancia a inizio chat, così non deve scegliere da solo le parole da
+cercare. I numeri si regolano nella sezione facoltativa `[recap]` di `hypomnema.toml`:
 
 ```toml
 [recap]
 discorsi_aperti = 5
+todo = 5
 decisioni = 5
 voci_diario = 10
 ```
 
 ### Le tue parole e quelle di Claude restano separate
 
-In una nota con `autore: utente`, il `testo` sono **le tue parole esatte**. Se Claude vuole
+In una nota con `author: user`, il `text` sono **le tue parole esatte**. Se Claude vuole
 aggiungere una spiegazione (di cosa si parlava, a cosa ti riferivi), la mette in un campo a parte,
-`contesto`, che nel quaderno compare sotto il titolo "Contesto scritto da Claude":
+`context`, che nel quaderno compare sotto il titolo "Context written by Claude" (nelle note di
+prima della 0.5.0: "Contesto scritto da Claude"):
 
 ```json
 {
-  "data": "2026-01-15",
-  "fonte": "chat del 15 gennaio 2026 sul progetto dell'orto",
-  "autore": "utente",
-  "tipo": "dichiarata",
-  "natura": "fatto",
-  "testo": "Il fico va potato solo quando ha perso tutte le foglie.",
-  "contesto": "Detto parlando del fico in vaso sul terrazzo."
+  "date": "2026-01-15",
+  "source": "chat del 15 gennaio 2026 sul progetto dell'orto",
+  "author": "user",
+  "knowledge": "stated",
+  "kind": "fact",
+  "text": "Il fico va potato solo quando ha perso tutte le foglie.",
+  "context": "Detto parlando del fico in vaso sul terrazzo."
 }
 ```
 
-Le note scritte da Claude (`autore: claude`) sono tutte parole sue: lì il `contesto` non serve.
-Se si basano su qualcosa che hai detto, Claude può riportare le tue parole nel campo `citazione`.
+Le note scritte da Claude (`author: claude`) sono tutte parole sue: lì il `context` non serve.
+Se si basano su qualcosa che hai detto, Claude può riportare le tue parole nel campo `quote`.
 
 ### Testo incollato: va bene così
 
 Hypomnema è un quaderno di appunti, come gli hypomnemata antichi: raccogliere passi letti
 altrove è proprio lo scopo. Se incolli in un messaggio un testo che non hai scritto tu (un passo
 di un libro, una spiegazione di Claude, un appunto), conta come portato da te nel quaderno: la
-nota è tua (`autore: utente`). **Da dove viene lo dice il campo `fonte`**, per esempio:
+nota è tua (`author: user`). **Da dove viene lo dice il campo `source`**, per esempio:
 
-- `"fonte": "dal libro «Il quaderno dell'ortolano»"`
-- `"fonte": "dalla spiegazione di Claude del 15 gennaio 2026"`
-- `"fonte": "mio pensiero"`
+- `"source": "dal libro «Il quaderno dell'ortolano»"`
+- `"source": "dalla spiegazione di Claude del 15 gennaio 2026"`
+- `"source": "mio pensiero"`
 
 Non c'è nessuna regola che distingua il testo scritto da quello incollato.
 
@@ -379,16 +482,16 @@ Non c'è nessuna regola che distingua il testo scritto da quello incollato.
 
 Puoi chiedere a Claude di conservare una sua risposta, in due modi:
 
-- **«Salva questa risposta di Claude»**: la nota è **di Claude** (`autore: claude`). Il testo è il
+- **«Salva questa risposta di Claude»**: la nota è **di Claude** (`author: claude`). Il testo è il
   pezzo di risposta che indichi; è un'idea o un fatto, mai una decisione.
 - **«Questa risposta la faccio mia»**, incollando il pezzo nel messaggio: la nota è **tua**
-  (`autore: utente`), con la fonte che dice da quale risposta di Claude viene (per esempio
+  (`author: user`), con la fonte che dice da quale risposta di Claude viene (per esempio
   «risposta di Claude dell'11 ottobre 2026»). Può essere anche una decisione, perché l'adozione è
   tua. Con il testimone acceso il testo incollato viene verificato come sempre.
 
-Nel primo caso la nota ha il campo `da_risposta: "sì"`: con il testimone delle risposte acceso
+Nel primo caso la nota ha il campo `from_reply: "yes"`: con il testimone delle risposte acceso
 (vedi «Il testimone delle risposte e il diario») lo sportello controlla che il testo sia davvero
-in una risposta di Claude registrata; altrimenti la nota è salvata come «risposta non verificata».
+in una risposta di Claude registrata; altrimenti la nota è salvata come «reply not verified».
 
 Indica o incolla **solo il pezzo che conta**, non tutta la risposta: le note brevi si ritrovano
 meglio.
@@ -419,12 +522,12 @@ installarlo, dalla cartella del programma: `claude --plugin-dir .`
 
 ## Il testimone
 
-**Il problema.** Una nota può dire `autore: utente`, ma chi la scrive è Claude. Senza un
+**Il problema.** Una nota può dire `author: user`, ma chi la scrive è Claude. Senza un
 controllo, il programma dovrebbe fidarsi.
 
 **La soluzione.** Il testimone è un piccolo programma che Claude Code lancia ogni volta che invii
 un messaggio, *prima* che Claude lo legga. Il programma aggiunge il testo esatto del messaggio, con
-data e ora, in fondo a un file. Lo sportello cerca il `testo` di ogni nota con `autore: utente` in
+data e ora, in fondo a un file. Lo sportello cerca il `text` di ogni nota con `author: user` in
 quel file, parola per parola: se non lo trova, rifiuta la nota.
 
 **Cosa registra.** Il testo di ogni messaggio che scrivi a Claude in questo progetto, con data e
@@ -438,9 +541,9 @@ da git (`.gitignore`) e i programmi non si collegano a internet: **non lasciano 
 **Come si accende e si spegne.** In `hypomnema.toml`, sezione `[testimone]`:
 `attivo = true` per accenderlo, `attivo = false` per spegnerlo. Nel file del repository (copia di
 sviluppo) **è spento**; nella configurazione in uso (`~/Hypomnema/hypomnema.toml`, creata la prima
-volta dal plugin o dall'avviabile) è acceso. Per fermarlo per un po': `/hypomnema:pausa`.
-Da spento non registra niente, e le note con `autore: utente` vengono salvate con la scritta
-ben visibile "autore non verificato (testimone spento)".
+volta dal plugin o dall'avviabile) è acceso. Per fermarlo per un po': `/hypomnema:pause`.
+Da spento non registra niente, e le note con `author: user` vengono salvate con la scritta
+ben visibile "author not verified (witness off)".
 
 **Messaggi privati.** Se un messaggio inizia con `#privato`, il testimone non ne registra il
 testo: annota solo data e ora con "messaggio privato, non registrato". Il prefisso si cambia in
@@ -470,7 +573,7 @@ Git Bash e il comando `py`. Per controllare:
 1. In PowerShell: `py --version` deve rispondere Python 3.12 o più recente.
 2. `Test-Path "C:\Program Files\Git\bin\bash.exe"`: `True` vuol dire che Git Bash c'è.
 3. Con il plugin installato, apri Claude Code e scrivi un messaggio, per esempio "prova del testimone".
-4. Chiedi a Claude di lanciare `stato`: l'ultimo messaggio registrato deve essere "prova del testimone".
+4. Chiedi a Claude di lanciare `status`: l'ultimo messaggio registrato deve essere "prova del testimone".
 
 **Se Git Bash non c'è** (il punto 2 risponde `False`), hai due strade:
 - installare Git per Windows (consigliato: serve anche per gli aggiornamenti), oppure
@@ -497,8 +600,8 @@ attivi; un errore del testimone compare come avviso nella chat, ma non blocca ma
   Claude (per esempio uno script Python) non è fermato dal divieto: lo impedisce solo la skill, che
   lo vieta a Claude. Per un blocco completo serve il sandbox di Claude Code.
 - Il testimone dimostra che quelle parole erano in un tuo messaggio, non che le abbia scritte tu:
-  un testo incollato conta come portato da te, e da dove viene lo dice la `fonte`.
-- Il `contesto` scritto da Claude non viene controllato: per questo è sempre separato dalle tue
+  un testo incollato conta come portato da te, e da dove viene lo dice la `source`.
+- Il `context` scritto da Claude non viene controllato: per questo è sempre separato dalle tue
   parole e porta la scritta "Contesto scritto da Claude".
 - Note, registro e testimone devono stare dentro la cartella del quaderno: il programma rifiuta
   percorsi completi e `..` nelle impostazioni. Ma se dentro il quaderno crei un collegamento

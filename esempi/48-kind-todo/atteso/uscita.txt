@@ -1,0 +1,35 @@
+$ hypomnema propose 1-todo-di-claude.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-decisione-di-claude.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- a note written by Claude cannot be a decision: only the user makes decisions. If it is Claude's proposal, save it as an idea.
+- a decision must be stated by the user: it cannot be «inferred».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 3-choice.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- the value «choice» is not allowed for «kind»: it must be «fact», «idea», «decision», «open» or «todo».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [0001] 2026-01-15: Comprare il terriccio per i semenzai.
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+[codice di uscita: 0]
+

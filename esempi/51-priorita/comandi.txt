@@ -1,0 +1,8 @@
+propose 1-todo.json
+propose 2-todo-bassa.json
+propose 3-todo-alta.json
+recap
+propose 4-cambia-priorita.json
+propose 5-priorita-di-claude.json
+propose 6-priorita-sbagliata.json
+recap

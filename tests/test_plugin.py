@@ -329,7 +329,7 @@ class TestSkillPlugin(unittest.TestCase):
         skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("**La pausa la decide solo l'utente**", skill)
         self.assertIn("`~/Hypomnema/hypomnema.toml`", skill)
-        self.assertNotIn("avviabile", skill.split("## Modalità chat")[0])
+        self.assertNotIn("avviabile", skill.split("## Chat mode")[0])
 
 
 if __name__ == "__main__":

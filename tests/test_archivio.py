@@ -318,8 +318,8 @@ class TestCambiatiEControlla(ConArchivio):
 class TestSkillArchivio(unittest.TestCase):
     def test_skill(self):
         skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
-        for frammento in ("H archivio", "dove eravamo rimasti", "H recap", "copia_ogni",
-                          "Non copiare mai le parole dell'utente a memoria", "50 turni", "segnalino",
+        for frammento in ("H archive", "Where we left off", "H recap", "copia_ogni",
+                          "**Never copy the user's words from memory**", "50 turni", "segnalino",
                           '"fuso": "UTC+02:00"', '"turno"'):
             with self.subTest(frammento=frammento):
                 self.assertIn(frammento, skill)

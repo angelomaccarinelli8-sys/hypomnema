@@ -26,7 +26,7 @@ attivo = false
 
 # Nella chat il testimone non esiste: i messaggi arrivano solo a Claude.
 # Con modalita = "chat" le note con autore "utente" sono marcate
-# "autore non verificato (chat, senza testimone)", diverse da quelle dell'avviabile.
+# "author not verified (chat, no witness)", diverse da quelle dell'avviabile.
 modalita = "chat"
 
 # File del testimone, dentro la cartella del quaderno (si allunga soltanto).
