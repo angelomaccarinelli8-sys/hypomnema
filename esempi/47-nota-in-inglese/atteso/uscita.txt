@@ -1,0 +1,65 @@
+$ hypomnema propose 1-inglese.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-italiano.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 3-campo-doppio.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- the field «date» appears twice (as «data» and as «date»): it must appear only once.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema search fico
+Trovate 2 note con «fico» (dalla più recente).
+
+--- Nota 0002 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sull'orto
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
+testo:
+  Il fico va potato a febbraio.
+
+--- Nota 0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sull'orto
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
+testo:
+  Il fico va potato a febbraio.
+[codice di uscita: 0]
+
+$ hypomnema cerca fico
+Trovate 2 note con «fico» (dalla più recente).
+
+--- Nota 0002 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sull'orto
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
+testo:
+  Il fico va potato a febbraio.
+
+--- Nota 0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sull'orto
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
+testo:
+  Il fico va potato a febbraio.
+[codice di uscita: 0]
+

@@ -1,0 +1,99 @@
+$ hypomnema propose 1-open.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [0001] 2026-01-15: Dove mettere la compostiera?
+
+Cose da fare: nessuna.
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-chiusura-di-claude.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- only the user can close an open note («0001»): Claude can suggest it, but the closing note must have author «user».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 3-chiusura-dell-utente.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 4-seconda-chiusura.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- note «0001» is already closed by note «0002».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 5-chiusura-open.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- a note that closes something cannot be «open»: its kind says what the question became (decision, todo, fact or idea).
+- note «0001» is already closed by note «0002».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 6-chiudere-un-fatto.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- note «0002» is a «decision»: «done» closes only open, todo and reminder notes (with «remind»). A fact, a decision or an idea is not closed: write a new note with «corrects».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema search compostiera
+Nessuna nota aperta contiene «compostiera».
+(1 nota chiusa non mostrata: aggiungi --all per vederla.)
+[codice di uscita: 0]
+
+$ hypomnema search compostiera --all
+Trovata 1 nota con «compostiera».
+
+--- Nota 0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sull'orto
+autore: claude
+tipo: inferred
+natura: open
+chiusa da: nota 0002
+testo:
+  Dove mettere la compostiera?
+
+    --- Nota 0002 (chiude la nota 0001) ---
+    data: 2026-01-15
+    fonte: chat del 15 gennaio 2026 sull'orto
+    autore: user
+    tipo: stated
+    natura: decision
+    chiude: nota 0001
+    verifica: author not verified (witness off)
+    testo:
+      Nell'angolo nord.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: nessuna.
+
+Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [0002] 2026-01-15: Nell'angolo nord.
+
+Ultime voci del diario: nessuna.
+[codice di uscita: 0]
+

@@ -11,11 +11,11 @@ $ hypomnema promemoria
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 riprendere il: 2026-01-10
-verifica: autore non verificato (testimone spento)
+verifica: author not verified (witness off)
 testo:
   Ricordami di seminare il basilico.
 [codice di uscita: 0]
@@ -44,37 +44,37 @@ $ hypomnema promemoria
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 riprendere il: 2026-01-10
 corretta da: nota 0002
-verifica: autore non verificato (testimone spento)
+verifica: author not verified (witness off)
 testo:
   Ricordami di seminare il basilico.
 
     --- Nota 0003 (corregge la nota 0002) ---
     data: 2026-01-15
     fonte: chat del 14 gennaio 2026 sull'orto
-    autore: utente
-    tipo: dichiarata
-    natura: fatto
+    autore: user
+    tipo: stated
+    natura: fact
     corregge: nota 0002
     riprendere il: 2026-01-12
-    verifica: autore non verificato (testimone spento)
+    verifica: author not verified (witness off)
     testo:
       Anticipo: lo semino al chiuso già da domenica.
 
     --- Nota 0002 (corregge la nota 0001) ---
     data: 2026-01-15
     fonte: chat del 14 gennaio 2026 sull'orto
-    autore: utente
-    tipo: dichiarata
-    natura: fatto
+    autore: user
+    tipo: stated
+    natura: fact
     corregge: nota 0001
     riprendere il: 2026-03-01
     corretta da: nota 0003
-    verifica: autore non verificato (testimone spento)
+    verifica: author not verified (witness off)
     testo:
       Troppo presto: il basilico si semina a marzo.
 [codice di uscita: 0]

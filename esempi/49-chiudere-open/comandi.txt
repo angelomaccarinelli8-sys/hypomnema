@@ -1,0 +1,10 @@
+propose 1-open.json
+recap
+propose 2-chiusura-di-claude.json
+propose 3-chiusura-dell-utente.json
+propose 4-seconda-chiusura.json
+propose 5-chiusura-open.json
+propose 6-chiudere-un-fatto.json
+search compostiera
+search compostiera --all
+recap

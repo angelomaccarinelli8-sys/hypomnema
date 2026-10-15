@@ -291,7 +291,7 @@ class TestComandoRisposte(ConQuaderno):
         agganci = json.loads((RADICE / "hooks" / "hooks.json").read_text(encoding="utf-8"))["hooks"]
         comandi = [h["command"] for g in agganci["Stop"] for h in g["hooks"]]
         self.assertEqual(len(comandi), 1)
-        self.assertIn('programma.py" risposte;', comandi[0])
+        self.assertIn('programma.py" replies;', comandi[0])
 
 
 class TestImpronta(unittest.TestCase):
@@ -397,15 +397,15 @@ class TestNoteDaRisposta(ConQuaderno):
         esito = self.nota_claude("Conviene una barriera di cenere.")
         self.assertTrue(esito.accettata, esito.motivi)
         self.assertEqual(self.riga_verifica(esito),
-                         "- verifica: testo trovato nella risposta di Claude del 2026-01-15T10:02:00+01:00")
-        self.assertIn("- da_risposta: sì", esito.percorso.read_text(encoding="utf-8"))
+                         "- verification: text found in Claude's reply of 2026-01-15T10:02:00+01:00")
+        self.assertIn("- from_reply: yes", esito.percorso.read_text(encoding="utf-8"))
 
     def test_mai_detta(self):
         self.dice("domanda")
         self.risponde("Conviene una barriera di cenere.")
         esito = self.nota_claude("Conviene il rame.")
         self.assertFalse(esito.accettata)
-        self.assertIn("in nessuna risposta di Claude registrata", esito.motivi[0])
+        self.assertIn("in any recorded reply of Claude", esito.motivi[0])
 
     def test_codice_omesso_non_si_trova(self):
         self.dice("domanda")
@@ -420,20 +420,20 @@ class TestNoteDaRisposta(ConQuaderno):
     def test_risposte_spente(self):
         self.scrivi_config(CONFIG_ACCESO)
         esito = self.nota_claude("qualunque cosa")
-        self.assertEqual(self.riga_verifica(esito), "- verifica: risposta non verificata (registro delle risposte spento)")
+        self.assertEqual(self.riga_verifica(esito), "- verification: reply not verified (replies witness off)")
 
     def test_in_chat(self):
         self.scrivi_config(CONFIG_CHAT)
         esito = self.nota_claude("qualunque cosa")
-        self.assertEqual(self.riga_verifica(esito), "- verifica: risposta non verificata (chat, senza testimone)")
+        self.assertEqual(self.riga_verifica(esito), "- verification: reply not verified (chat, no witness)")
 
     def test_regole_del_campo(self):
         self.dice("domanda")
         self.risponde("testo")
         for modifiche, frammento in (
-            (dict(da_risposta="no"), "può valere solo «sì»"),
-            (dict(autore="utente", tipo="dichiarata"), "si usa solo nelle note di Claude"),
-            (dict(citazione="domanda"), "insieme «da_risposta» e «citazione»"),
+            (dict(da_risposta="no"), "can only be «yes»"),
+            (dict(autore="utente", tipo="dichiarata"), "is only for Claude's notes"),
+            (dict(citazione="domanda"), "both «from_reply» and «quote»"),
         ):
             with self.subTest(modifiche=modifiche):
                 nota = dict(autore="claude", tipo="dedotta", natura="idea", da_risposta="sì", testo="testo")
@@ -455,10 +455,10 @@ class TestNoteDaRisposta(ConQuaderno):
 class TestSkillDiario(unittest.TestCase):
     def test_skill(self):
         skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("## 6. Cosa ci eravamo detti: quaderno e diario (Claude Code)", skill)
-        self.assertIn("`P diario <parola>`", skill)
-        self.assertIn('`da_risposta: "sì"`', skill)
-        self.assertIn("**i testimoni non ci sono**", skill)
+        self.assertIn("## 6. What we said: notebook and diary (Claude Code)", skill)
+        self.assertIn("`P diary <word>`", skill)
+        self.assertIn('`from_reply: "yes"`', skill)
+        self.assertIn("**there are no witnesses**", skill)
 
 
 if __name__ == "__main__":

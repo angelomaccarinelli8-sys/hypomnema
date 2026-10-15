@@ -38,9 +38,19 @@ from hypomnema import (
     __version__, archivio, avvio, cambiamenti, cercatore, configurazione, controllo, diario, promemoria, quaderno,
     registro, risposte, sportello, testimone,
 )
-from hypomnema.nota import Nota, NotaIlleggibile
+from hypomnema.nota import Nota, NotaIlleggibile, chiuse
 
 ORIGINE_DIRETTA = "(ingresso diretto)"
+
+# Dalla versione 0.5.0 i comandi hanno il nome inglese; quello italiano vale per sempre.
+INGLESE = {
+    "proponi": "propose", "cerca": "search", "promemoria": "reminders", "testimone": "witness",
+    "stato": "status", "istantanea": "snapshot", "cambiati": "changed", "controlla": "check",
+    "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
+    "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
+}
+# Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
+AGGANCI = ("witness", "replies", "start", "protect")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -55,20 +65,22 @@ def _parser() -> argparse.ArgumentParser:
     )
     comandi = parser.add_subparsers(dest="comando", required=True, metavar="comando")
 
-    proponi = comandi.add_parser("proponi", help="passa una nota allo sportello")
+    proponi = comandi.add_parser("propose", aliases=["proponi"], help="passa una nota allo sportello")
     proponi.add_argument("file", help="file JSON con la nota proposta, oppure - per leggerla dall'ingresso standard")
 
-    cerca = comandi.add_parser("cerca", help="cerca le note che contengono una parola")
+    cerca = comandi.add_parser("search", aliases=["cerca"], help="cerca le note che contengono una parola")
     cerca.add_argument("parola", help="la parola (o le parole) da cercare, così come sono")
+    cerca.add_argument("--all", "--tutte", dest="tutte", action="store_true",
+                       help="mostra anche le note chiuse con «done», con sotto la nota che le ha chiuse")
     comandi.add_parser(
-        "promemoria", help="elenca le note con «riprendere_il» arrivato o già passato, dal più vecchio"
+        "reminders", aliases=["promemoria"], help="elenca le note con «riprendere_il» arrivato o già passato, dal più vecchio"
     )
     comandi.add_parser(
         "recap", help="dove eravamo rimasti: promemoria scaduti, discorsi aperti, ultime decisioni, ultimo diario"
     )
 
     registra = comandi.add_parser(
-        "testimone", help="registra un messaggio dell'utente (lo lancia Claude Code a ogni messaggio)"
+        "witness", aliases=["testimone"], help="registra un messaggio dell'utente (lo lancia Claude Code a ogni messaggio)"
     )
     registra.add_argument(
         "file", nargs="?", default="-",
@@ -76,55 +88,56 @@ def _parser() -> argparse.ArgumentParser:
     )
 
     comandi.add_parser(
-        "stato", help="dice se il testimone è acceso, dov'è il quaderno e l'ultimo messaggio registrato"
+        "status", aliases=["stato"], help="dice se il testimone è acceso, dov'è il quaderno e l'ultimo messaggio registrato"
     )
     comandi.add_parser(
-        "istantanea", help="scrive dimensione e impronta di ogni file del quaderno (prima di una proposta)"
+        "snapshot", aliases=["istantanea"], help="scrive dimensione e impronta di ogni file del quaderno (prima di una proposta)"
     )
     cambiati = comandi.add_parser(
-        "cambiati", help="elenca i file del quaderno creati o allungati rispetto a un'istantanea"
+        "changed", aliases=["cambiati"], help="elenca i file del quaderno creati o allungati rispetto a un'istantanea"
     )
     cambiati.add_argument("file", help="il file dell'istantanea fatta prima della proposta")
     comandi.add_parser(
-        "controlla",
+        "check", aliases=["controlla"],
         help="controlla che note e registro corrispondano e che il registro abbia solo righe dello sportello",
     )
-    confronta = comandi.add_parser("confronta", help="dice se due file sono identici, byte per byte")
+    confronta = comandi.add_parser("compare", aliases=["confronta"], help="dice se due file sono identici, byte per byte")
     confronta.add_argument("file1")
     confronta.add_argument("file2")
 
     registra_risposta = comandi.add_parser(
-        "risposte", help="registra una risposta di Claude (lo lancia Claude Code alla fine di ogni risposta)"
+        "replies", aliases=["risposte"], help="registra una risposta di Claude (lo lancia Claude Code alla fine di ogni risposta)"
     )
     registra_risposta.add_argument(
         "file", nargs="?", default="-",
         help="file JSON con la risposta, come lo manda Claude Code (di base: ingresso standard)",
     )
     calcola_impronta = comandi.add_parser(
-        "impronta", help="scrive l'impronta di un file (o di un testo, con -), come per i blocchi di codice omessi"
+        "fingerprint", aliases=["impronta"], help="scrive l'impronta di un file (o di un testo, con -), come per i blocchi di codice omessi"
     )
     calcola_impronta.add_argument("file", help="il file, oppure - per leggere il testo dall'ingresso standard")
     cerca_diario = comandi.add_parser(
-        "diario", help="cerca una parola nei messaggi dell'utente e nelle risposte di Claude"
+        "diary", aliases=["diario"], help="cerca una parola nei messaggi dell'utente e nelle risposte di Claude"
     )
     cerca_diario.add_argument("parola", nargs="?", help="la parola (o le parole) da cercare, così come sono")
-    cerca_diario.add_argument("--ultimi", type=int, metavar="N",
+    cerca_diario.add_argument("--last", "--ultimi", dest="ultimi", type=int, metavar="N",
                               help="senza parola: mostra gli ultimi N messaggi del diario")
     cerca_diario.add_argument(
-        "--intorno", action="store_true", help="mostra anche il messaggio subito prima e subito dopo"
+        "--around", "--intorno", dest="intorno", action="store_true",
+        help="mostra anche il messaggio subito prima e subito dopo"
     )
     copia_archivio = comandi.add_parser(
-        "archivio", help="chat: aggiunge ai file del quaderno la copia dei messaggi presa dall'archivio della chat"
+        "archive", aliases=["archivio"], help="chat: aggiunge ai file del quaderno la copia dei messaggi presa dall'archivio della chat"
     )
     copia_archivio.add_argument("file", help="file JSON con l'indirizzo della chat e i messaggi")
     comandi.add_parser(
-        "avvio", help="inizio sessione (lo lancia Claude Code): crea la configurazione la prima volta e avvisa"
+        "start", aliases=["avvio"], help="inizio sessione (lo lancia Claude Code): crea la configurazione la prima volta e avvisa"
     )
     comandi.add_parser(
-        "protezione", help="ferma gli strumenti di Claude sui file del quaderno (lo lancia Claude Code)"
+        "protect", aliases=["protezione"], help="ferma gli strumenti di Claude sui file del quaderno (lo lancia Claude Code)"
     )
     comandi.add_parser(
-        "impostazioni-claude",
+        "claude-settings", aliases=["impostazioni-claude"],
         help="scrive le regole che vietano a Claude di modificare quaderno e configurazione (per l'avviabile)",
     )
     return parser
@@ -139,12 +152,14 @@ def _descrivi(nota: Nota, legami: list[str] = (), titolo: str = "") -> list[str]
         f"tipo: {nota.tipo}",
         f"natura: {nota.natura}",
     ]
+    if nota.priorita is not None:
+        righe.append(f"priorità: {nota.priorita}")
     if nota.conferma_di is not None:
         righe.append(f"conferma di: nota {nota.conferma_di}")
     if nota.corregge is not None:
         righe.append(f"corregge: nota {nota.corregge}")
     if nota.done is not None:
-        righe.append(f"segna come fatta: nota {nota.done}")
+        righe.append("chiude: " + ", ".join(f"nota {n}" for n in nota.done))
     if nota.riprendere_il is not None:
         righe.append(f"riprendere il: {nota.riprendere_il}")
     righe += list(legami)
@@ -213,14 +228,19 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
     if not parola:
         print("ERRORE: serve una parola da cercare.", file=uscita)
         return 2
-    trovate = cercatore.cerca(config, parola)
+    trovate = cercatore.cerca(config, parola, tutte=argomenti.tutte)
+    nascoste = 0 if argomenti.tutte else len(cercatore.cerca(config, parola, tutte=True)) - len(trovate)
     if not trovate:
-        print(f"Nessuna nota contiene «{parola}».", file=uscita)
-        return 0
-    if len(trovate) == 1:
+        aperta = " aperta" if nascoste else ""
+        print(f"Nessuna nota{aperta} contiene «{parola}».", file=uscita)
+    elif len(trovate) == 1:
         print(f"Trovata 1 nota con «{parola}».", file=uscita)
     else:
         print(f"Trovate {len(trovate)} note con «{parola}» (dalla più recente).", file=uscita)
+    if nascoste:
+        quante = ("1 nota chiusa non mostrata: aggiungi --all per vederla" if nascoste == 1
+                  else f"{nascoste} note chiuse non mostrate: aggiungi --all per vederle")
+        print(f"({quante}.)", file=uscita)
     diretti = cercatore.legami_diretti(quaderno.leggi_note(config))
     gia_mostrate: set[str] = set()
     for nota in trovate:
@@ -265,43 +285,64 @@ def _prima_riga(testo: str | None, dicitura: str | None = None) -> str:
     return righe[0] + (" …" if len(righe) > 1 else "")
 
 
-def _riga_recap(nota: Nota, inizio: str, diretti) -> list[str]:
-    righe = [f"- [{nota.id}] {inizio}: {_prima_riga(nota.testo)}"]
+ETICHETTA_PRIORITA = {"high": "[alta] ", "normal": "", "low": "[bassa] "}
+
+
+def _riga_recap(nota: Nota, inizio: str, diretti, priorita: str) -> list[str]:
+    righe = [f"- [{nota.id}] {ETICHETTA_PRIORITA[priorita]}{inizio}: {_prima_riga(nota.testo)}"]
     for collegata in cercatore.collegate(nota.id, diretti):
         righe.append(f"    ↳ [{collegata.nota.id}] {collegata.legame}: {_prima_riga(collegata.nota.testo)}")
     return righe
 
 
 def _recap(config, adesso: datetime, uscita: TextIO) -> int:
-    """Solo lettura, con regole fisse: dove eravamo rimasti, in poche righe."""
+    """Solo lettura, con regole fisse: dove eravamo rimasti, in poche righe.
+
+    In ogni blocco vengono prima le note a priorità alta, poi normale, poi bassa; a parità di
+    priorità, i promemoria dal più vecchio e il resto dal più recente. Le note chiuse non ci sono.
+    """
     note = quaderno.leggi_note(config)
     diretti = cercatore.legami_diretti(note)
+    chiusa = chiuse(note)
     oggi = adesso.date()
+
+    def priorita(nota: Nota) -> str:
+        return cercatore.priorita_in_vigore(nota, note)
+
+    def per_priorita(elenco: list[Nota]) -> list[Nota]:
+        # sorted è stabile: a parità di priorità resta l'ordine di partenza.
+        return sorted(elenco, key=lambda n: cercatore.ORDINE_PRIORITA[priorita(n)])
+
     righe = [f"Dove eravamo rimasti (recap del {oggi.isoformat()}).", ""]
 
     scaduti = promemoria.scaduti(note, oggi)
+    scaduti = sorted(scaduti, key=lambda voce: cercatore.ORDINE_PRIORITA[priorita(voce.nota)])
     if scaduti:
-        righe.append(f"Promemoria scaduti: {len(scaduti)} (dal più vecchio)")
+        righe.append(f"Promemoria scaduti: {len(scaduti)} (prima la priorità alta, poi dal più vecchio)")
         for voce in scaduti:
-            righe += _riga_recap(voce.nota, f"da riprendere il {voce.giorno}{_origine_data(voce)}", diretti)
+            righe += _riga_recap(voce.nota, f"da riprendere il {voce.giorno}{_origine_data(voce)}", diretti,
+                                 priorita(voce.nota))
     else:
         righe.append("Promemoria scaduti: nessuno.")
 
     for titolo, natura, quanti, nessuno, uno_in_piu, tanti_in_piu in (
-        ("Discorsi aperti", "discorso aperto", config.recap_discorsi_aperti, "nessuno",
+        ("Discorsi aperti", "open", config.recap_discorsi_aperti, "nessuno",
          "1 discorso aperto più vecchio non mostrato", "{} discorsi aperti più vecchi non mostrati"),
-        ("Ultime decisioni", "decisione", config.recap_decisioni, "nessuna",
+        ("Cose da fare", "todo", config.recap_todo, "nessuna",
+         "1 cosa da fare più vecchia non mostrata", "{} cose da fare più vecchie non mostrate"),
+        ("Ultime decisioni", "decision", config.recap_decisioni, "nessuna",
          "1 decisione più vecchia non mostrata", "{} decisioni più vecchie non mostrate"),
     ):
-        scelte = cercatore.dal_piu_recente([n for n in note if n.natura == natura])
+        scelte = per_priorita(cercatore.dal_piu_recente(
+            [n for n in note if n.natura == natura and n.id not in chiusa]))
         righe.append("")
         if not scelte:
             righe.append(f"{titolo}: {nessuno}.")
             continue
         mostrate = scelte[:quanti]
-        righe.append(f"{titolo}: {len(mostrate)} di {len(scelte)} (dal più recente)")
+        righe.append(f"{titolo}: {len(mostrate)} di {len(scelte)} (prima la priorità alta, poi dal più recente)")
         for nota in mostrate:
-            righe += _riga_recap(nota, nota.data, diretti)
+            righe += _riga_recap(nota, nota.data, diretti, priorita(nota))
         resto = len(scelte) - len(mostrate)
         if resto:
             righe.append(f"({uno_in_piu if resto == 1 else tanti_in_piu.format(resto)})")
@@ -315,7 +356,7 @@ def _recap(config, adesso: datetime, uscita: TextIO) -> int:
         righe.append(f"Ultime voci del diario: {len(mostrate)} di {len(voci)} (la conversazione registrata, non le note)")
         for voce in mostrate:
             righe.append(f"- {voce.quando} · {voce.chi}: {_prima_riga(voce.testo, voce.dicitura)}")
-        righe.append(f"(per leggerle intere: diario --ultimi {len(mostrate)})")
+        righe.append(f"(per leggerle intere: diary --last {len(mostrate)})")
 
     for riga in righe:
         print(riga, file=uscita)
@@ -335,21 +376,21 @@ def _stato(argomenti, config, uscita: TextIO) -> int:
     pausa = testimone.in_pausa(testimone.leggi_messaggi(config)) if config.testimone_attivo else None
     if pausa is not None:
         righe.append(
-            f"Testimone: IN PAUSA dal {pausa.quando} (comando /hypomnema:pausa): i messaggi e le risposte "
-            "non vengono registrati e le note con autore «utente» saranno marcate «autore non verificato "
-            "(testimoni in pausa)». Per riprendere: /hypomnema:riprendi."
+            f"Testimone: IN PAUSA dal {pausa.quando} (comando /hypomnema:pause): i messaggi e le risposte "
+            "non vengono registrati e le note con autore «user» saranno marcate «author not verified "
+            "(witnesses paused)». Per riprendere: /hypomnema:resume (o /hypomnema:riprendi)."
         )
     elif config.testimone_attivo:
         righe.append("Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).")
     elif config.in_chat:
         righe.append(
             "Testimone: NON C'È (configurazione per la chat di Claude): i messaggi arrivano solo a Claude "
-            "e le note con autore «utente» saranno marcate «autore non verificato (chat, senza testimone)»."
+            "e le note con autore «user» saranno marcate «author not verified (chat, no witness)»."
         )
     else:
         righe.append(
             "Testimone: SPENTO (nella configurazione attivo = false): i messaggi non vengono registrati "
-            "e le note con autore «utente» saranno marcate «autore non verificato»."
+            "e le note con autore «user» saranno marcate «author not verified (witness off)»."
         )
     righe.append(f"File del testimone: {config.file_testimone}")
     messaggi = testimone.leggi_messaggi(config)
@@ -691,21 +732,22 @@ def main(
         elenco = sys.argv[1:] if argv is None else argv
         # Lo stesso per gli altri agganci: mai il codice 2 per sbaglio (per la protezione vorrebbe dire
         # fermare uno strumento).
-        if uscita_argparse.code == 2 and any(c in elenco for c in ("testimone", "risposte", "avvio", "protezione")):
+        if uscita_argparse.code == 2 and any(INGLESE.get(c, c) in AGGANCI for c in elenco):
             return 1
         raise
     adesso = adesso or datetime.now().astimezone()
-    if argomenti.comando == "testimone":
+    comando = INGLESE.get(argomenti.comando, argomenti.comando)
+    if comando == "witness":
         return _testimone(argomenti, adesso, errori)
-    if argomenti.comando == "risposte":
+    if comando == "replies":
         return _risposte(argomenti, adesso, errori)
-    if argomenti.comando == "avvio":
+    if comando == "start":
         return _avvio(argomenti, uscita)
-    if argomenti.comando == "protezione":
+    if comando == "protect":
         return _protezione(argomenti, errori)
-    if argomenti.comando == "confronta":
+    if comando == "compare":
         return _confronta(argomenti, uscita)
-    if argomenti.comando == "impronta":
+    if comando == "fingerprint":
         return _impronta(argomenti, uscita)
     try:
         config = configurazione.carica(argomenti.config)
@@ -713,25 +755,25 @@ def main(
         print(f"ERRORE: {errore}", file=uscita)
         return 2
     try:
-        if argomenti.comando == "proponi":
+        if comando == "propose":
             return _proponi(argomenti, config, adesso, uscita)
-        if argomenti.comando == "stato":
+        if comando == "status":
             return _stato(argomenti, config, uscita)
-        if argomenti.comando == "istantanea":
+        if comando == "snapshot":
             return _istantanea(config, uscita)
-        if argomenti.comando == "cambiati":
+        if comando == "changed":
             return _cambiati(argomenti, config, uscita)
-        if argomenti.comando == "controlla":
+        if comando == "check":
             return _controlla(config, uscita)
-        if argomenti.comando == "diario":
+        if comando == "diary":
             return _diario(argomenti, config, uscita)
-        if argomenti.comando == "archivio":
+        if comando == "archive":
             return _archivio(argomenti, config, uscita)
-        if argomenti.comando == "promemoria":
+        if comando == "reminders":
             return _promemoria(config, adesso, uscita)
-        if argomenti.comando == "recap":
+        if comando == "recap":
             return _recap(config, adesso, uscita)
-        if argomenti.comando == "impostazioni-claude":
+        if comando == "claude-settings":
             return _impostazioni_claude(argomenti, config, uscita)
         return _cerca(argomenti, config, uscita)
     except NotaIlleggibile as errore:

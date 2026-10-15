@@ -42,7 +42,7 @@ def gruppi(note: list[Nota]) -> list[tuple[Promemoria, bool]]:
     membri: dict[str, list[Nota]] = {}
     for nota in note:
         membri.setdefault(_radice(nota, per_numero).id, []).append(nota)
-    fatte = {n.done for n in note if n.done is not None}
+    fatte = {numero for n in note for numero in (n.done or ())}
     elenco = []
     for numero, gruppo in membri.items():
         con_data = [n for n in gruppo if n.riprendere_il is not None]

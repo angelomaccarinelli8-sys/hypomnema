@@ -151,7 +151,7 @@ class TestPluginEModello(unittest.TestCase):
         self.assertEqual(manifesto["name"], "hypomnema")
         skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
         self.assertTrue(skill.startswith("---\nname: hypomnema\n"))
-        self.assertIn('py "${CLAUDE_PLUGIN_ROOT}/programma.py" stato', skill)
+        self.assertIn('py "${CLAUDE_PLUGIN_ROOT}/programma.py" status', skill)
         self.assertIn("Il testimone non è attivo: le note che salvi ora saranno marcate come non\n"
                       "  verificate. Per accenderlo serve attivo = true nella configurazione di Hypomnema.", skill)
 

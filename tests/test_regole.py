@@ -13,6 +13,7 @@ from unittest import mock
 
 from hypomnema import cercatore, configurazione, quaderno, sportello
 from hypomnema.cli import main
+from hypomnema.regole import NOMI_ITALIANI
 from tests.esecutore import CONFIG_DI_PROVA, RADICE
 
 ADESSO = datetime(2026, 1, 15, 10, 0, 0, tzinfo=timezone(timedelta(hours=1)))
@@ -62,19 +63,19 @@ class TestSportello(ConQuaderno):
                 esito = self.proponi(self.con(**{campo: ...}))
                 self.assertFalse(esito.accettata)
                 self.assertEqual(len(esito.motivi), 1)
-                self.assertIn(f"manca il campo «{campo}»", esito.motivi[0])
+                self.assertIn(f"the field «{NOMI_ITALIANI[campo]}» is missing", esito.motivi[0])
 
     def test_campo_vuoto_rifiutato(self):
         esito = self.proponi(self.con(fonte="   "))
         self.assertFalse(esito.accettata)
-        self.assertIn("«fonte» è vuoto", esito.motivi[0])
+        self.assertIn("«source» is empty", esito.motivi[0])
 
     def test_valori_non_ammessi(self):
         for campo, valore in (("autore", "Mario"), ("tipo", "certa"), ("natura", "opinione")):
             with self.subTest(campo=campo):
                 esito = self.proponi(self.con(**{campo: valore}))
                 self.assertFalse(esito.accettata)
-                self.assertIn(f"«{valore}» non è ammesso per «{campo}»", esito.motivi[0])
+                self.assertIn(f"«{valore}» is not allowed for «{NOMI_ITALIANI[campo]}»", esito.motivi[0])
 
     def test_maiuscole_non_ammesse_nei_valori(self):
         self.assertFalse(self.proponi(self.con(autore="Utente")).accettata)
@@ -82,16 +83,16 @@ class TestSportello(ConQuaderno):
     def test_campo_sconosciuto_rifiutato(self):
         esito = self.proponi(self.con(fnte="refuso"))
         self.assertFalse(esito.accettata)
-        self.assertIn("«fnte» non è previsto", esito.motivi[0])
+        self.assertIn("«fnte» is not allowed", esito.motivi[0])
 
     def test_campo_doppio_rifiutato(self):
         testo = b'{"data": "2026-01-15", "data": "2026-01-16"}'
         esito = self.proponi(testo)
-        self.assertEqual(esito.motivi, ["il campo «data» compare due volte: deve comparire una volta sola."])
+        self.assertEqual(esito.motivi, ["the field «data» appears twice: it must appear only once."])
 
     def test_campo_non_testo_rifiutato(self):
         esito = self.proponi(self.con(testo=42))
-        self.assertIn("«testo» deve essere un testo", esito.motivi[0])
+        self.assertIn("«text» must be text in quotes", esito.motivi[0])
 
     def test_date(self):
         for data, valida in (
@@ -108,18 +109,18 @@ class TestSportello(ConQuaderno):
 
     def test_fonte_su_piu_righe_rifiutata(self):
         esito = self.proponi(self.con(fonte="riga uno\nriga due"))
-        self.assertIn("«fonte» deve stare su una riga sola", esito.motivi[0])
+        self.assertIn("«source» must stay on one line", esito.motivi[0])
 
     def test_testo_su_piu_righe_accettato(self):
         self.assertTrue(self.proponi(self.con(testo="riga uno\nriga due")).accettata)
 
     def test_json_rotto_rifiutato(self):
         esito = self.proponi(b'{"data": "2026-01-15",')
-        self.assertIn("formato JSON corretto", esito.motivi[0])
+        self.assertIn("not valid JSON", esito.motivi[0])
 
     def test_json_non_oggetto_rifiutato(self):
         esito = self.proponi(b'[1, 2]')
-        self.assertIn("una sola nota", esito.motivi[0])
+        self.assertIn("a single note", esito.motivi[0])
 
     def test_file_non_utf8_rifiutato(self):
         esito = self.proponi('{"testo": "caffè"}'.encode("latin-1"))
@@ -146,7 +147,7 @@ class TestSportello(ConQuaderno):
             esito = self.proponi(NOTA_BUONA)
         self.assertTrue(esito.accettata)
         self.assertEqual(esito.id_nota, "0002")
-        self.assertIn("# Nota 0002", (self.config.cartella_note / "0002.md").read_text(encoding="utf-8"))
+        self.assertIn("# Note 0002", (self.config.cartella_note / "0002.md").read_text(encoding="utf-8"))
         self.assertEqual(altra.read_text(encoding="utf-8"), prima)
         self.assertIn("| ACCETTATA | nota 0002 |", self.config.file_registro.read_text(encoding="utf-8"))
 
@@ -166,14 +167,14 @@ class TestDecisioni(ConQuaderno):
     def test_decisione_di_claude_rifiutata(self):
         esito = self.proponi(self.con(autore="claude", natura="decisione"))
         self.assertFalse(esito.accettata)
-        self.assertIn("Claude non può essere una decisione", esito.motivi[0])
+        self.assertIn("Claude cannot be a decision", esito.motivi[0])
 
     def test_decisione_non_dichiarata_rifiutata(self):
         for tipo in ("osservata", "dedotta"):
             with self.subTest(tipo=tipo):
                 esito = self.proponi(self.con(natura="decisione", tipo=tipo))
                 self.assertFalse(esito.accettata)
-                self.assertIn("deve essere dichiarata", esito.motivi[0])
+                self.assertIn("must be stated by the user", esito.motivi[0])
 
     def test_decisione_diretta_dell_utente_accettata(self):
         self.assertTrue(self.proponi(self.con(natura="decisione")).accettata)
@@ -184,21 +185,21 @@ class TestDecisioni(ConQuaderno):
         self.assertTrue(esito.accettata)
         # L'idea originale resta com'era.
         idea = (self.config.cartella_note / "0001.md").read_text(encoding="utf-8")
-        self.assertIn("- natura: idea", idea)
+        self.assertIn("- kind: idea", idea)
 
     def test_conferma_di_nota_inesistente_rifiutata(self):
         esito = self.proponi(self.con(natura="decisione", conferma_di="0099"))
-        self.assertIn("«0099» indicata in «conferma_di» non esiste", esito.motivi[0])
+        self.assertIn("«0099» named in «confirms» does not exist", esito.motivi[0])
 
     def test_conferma_di_nota_che_non_e_idea_rifiutata(self):
         self.proponi(NOTA_BUONA)
         esito = self.proponi(self.con(natura="decisione", conferma_di="0001"))
-        self.assertIn("non è un'idea", esito.motivi[0])
+        self.assertIn("not an idea", esito.motivi[0])
 
     def test_conferma_di_solo_per_decisioni(self):
         self.proponi(self.con(natura="idea"))
         esito = self.proponi(self.con(natura="fatto", conferma_di="0001"))
-        self.assertIn("si usa solo per le decisioni", esito.motivi[0])
+        self.assertIn("is only for decisions", esito.motivi[0])
 
 
 class TestRegistro(ConQuaderno):
@@ -211,7 +212,7 @@ class TestRegistro(ConQuaderno):
         nuove = dopo[len(prima):].splitlines()
         self.assertEqual(len(nuove), 1)
         self.assertIn("2026-01-15T10:01:00+01:00 | RIFIUTATA", nuove[0])
-        self.assertIn("manca il campo «fonte»", nuove[0])
+        self.assertIn("the field «source» is missing", nuove[0])
 
 
     def test_a_capo_non_creano_righe_false(self):
@@ -257,7 +258,7 @@ class TestCercatore(ConQuaderno):
         uscita = io.StringIO()
         codice = main(["--config", str(self.file_config), "cerca", "prova"], uscita=uscita)
         self.assertEqual(codice, 2)
-        self.assertIn("manca la sezione «## Testo»", uscita.getvalue())
+        self.assertIn("manca la sezione «## Text»", uscita.getvalue())
 
     def test_quaderno_vuoto(self):
         self.assertEqual(cercatore.cerca(self.config, "niente"), [])

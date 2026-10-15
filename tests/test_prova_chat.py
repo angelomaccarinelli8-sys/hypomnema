@@ -98,7 +98,7 @@ class TestControllaRigheEstranee(ConQuaderno):
 
     def test_il_caso_della_prova(self):
         self.proponi()
-        (self.config.cartella_note / "0002.md").write_text("# Nota 0002\n", encoding="utf-8")
+        (self.config.cartella_note / "0002.md").write_text("# Note 0002\n", encoding="utf-8")
         with open(self.config.file_registro, "ab") as f:
             f.write("riga scritta a mano- 2026-10-11T18:47:33+02:00 | ACCETTATA | nota 0002 | da: proposta.json\n"
                     .encode("utf-8"))
@@ -110,7 +110,7 @@ class TestControllaRigheEstranee(ConQuaderno):
     def test_senza_a_capo_finale(self):
         self.scrivi_registro(INTESTAZIONE + RIGA_VERA.rstrip("\n"))
         self.config.cartella_note.mkdir()
-        (self.config.cartella_note / "0001.md").write_text("# Nota 0001\n", encoding="utf-8")
+        (self.config.cartella_note / "0001.md").write_text("# Note 0001\n", encoding="utf-8")
         codice, uscita = self.comando("controlla")
         self.assertEqual(codice, 1)
         self.assertIn("- il registro non finisce con un a capo", uscita)
@@ -119,7 +119,7 @@ class TestControllaRigheEstranee(ConQuaderno):
     def test_senza_intestazione(self):
         self.scrivi_registro("titolo cambiato\n" + RIGA_VERA)
         self.config.cartella_note.mkdir()
-        (self.config.cartella_note / "0001.md").write_text("# Nota 0001\n", encoding="utf-8")
+        (self.config.cartella_note / "0001.md").write_text("# Note 0001\n", encoding="utf-8")
         codice, uscita = self.comando("controlla")
         self.assertEqual(codice, 1)
         self.assertIn("- il registro non comincia con la sua intestazione.", uscita)
@@ -199,14 +199,14 @@ class TestSkill(unittest.TestCase):
         self.skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
 
     def test_riporto_da_cartella_nuova_e_verifica(self):
-        self.assertIn("copialo in una **cartella nuova** del computer di lavoro, mai usata prima in questa chat", self.skill)
-        self.assertIn("H confronta ", self.skill)
-        self.assertIn("**fermati, non scrivere altri file**", self.skill)
+        self.assertIn("copy it into a **new folder** of the work computer, never used before in this chat", self.skill)
+        self.assertIn("H compare ", self.skill)
+        self.assertIn("**stop, do not write other files**", self.skill)
 
     def test_salvare_le_risposte_di_claude(self):
         self.assertIn("**«Salva questa risposta di Claude»**", self.skill)
         self.assertIn("**«Questa risposta la faccio mia»**", self.skill)
-        self.assertIn("**solo il pezzo che conta**", self.skill)
+        self.assertIn("**only the piece that matters**", self.skill)
 
 
 if __name__ == "__main__":

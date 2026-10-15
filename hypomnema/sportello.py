@@ -11,7 +11,7 @@ from pathlib import Path
 
 from hypomnema import archivio as testimone_archivio, quaderno, registro, regole, risposte as testimone_risposte, testimone
 from hypomnema.configurazione import Configurazione
-from hypomnema.nota import Nota
+from hypomnema.nota import Nota, numeri
 
 
 @dataclass(frozen=True)
@@ -40,20 +40,19 @@ def _leggi_proposta(contenuto: bytes) -> tuple[dict | None, list[str]]:
         # "utf-8-sig" accetta anche i file con il segno iniziale che aggiungono alcuni programmi Windows.
         testo = contenuto.decode("utf-8-sig")
     except UnicodeDecodeError:
-        return None, ["il file non è salvato con la codifica UTF-8: salvalo in UTF-8 e riprova."]
+        return None, ["the file is not saved in UTF-8: save it in UTF-8 and try again."]
     try:
         dati = json.loads(testo, object_pairs_hook=_senza_doppioni)
     except _CampoDoppio as errore:
-        return None, [f"il campo «{errore.args[0]}» compare due volte: deve comparire una volta sola."]
+        return None, [f"the field «{errore.args[0]}» appears twice: it must appear only once."]
     except json.JSONDecodeError as errore:
         return None, [
-            "la proposta non è scritta in formato JSON corretto: controlla virgole, "
-            f"virgolette e parentesi (errore a riga {errore.lineno}, colonna {errore.colno})."
+            "the proposal is not valid JSON: check commas, quotes and brackets "
+            f"(error at line {errore.lineno}, column {errore.colno})."
         ]
     if not isinstance(dati, dict):
         return None, [
-            "la proposta deve essere una sola nota, scritta tra parentesi graffe { } "
-            "con i campi della nota."
+            "the proposal must be a single note, written between braces { } with the note's fields."
         ]
     return dati, []
 
@@ -80,39 +79,42 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         messaggi = risposte = None
     proposta, motivi = _leggi_proposta(contenuto)
     if proposta is not None:
-        motivi = regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte)
+        # I nomi e i valori italiani di prima valgono per sempre: qui diventano inglesi.
+        proposta, motivi = regole.in_inglese(proposta)
+        motivi += regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte)
 
     if motivi:
         registro.annota(config, adesso, origine, None, motivi)
         return Esito(accettata=False, id_nota=None, percorso=None, motivi=motivi)
 
     id_nota = quaderno.prossimo_id(note_esistenti, config.cifre_numero_nota)
-    conferma = proposta.get("conferma_di")
-    citazione = proposta.get("citazione")
+    citazione = _facoltativo(proposta, "quote")
     if citazione is not None:
         # Nel file della nota la citazione sta su una riga: spazi e a capo ridotti a uno.
         citazione = testimone.normalizza(citazione)
-    autore = proposta["autore"].strip()
-    testo = proposta["testo"].strip()
-    contesto = proposta.get("contesto")
+    autore = proposta["author"].strip()
+    testo = proposta["text"].strip()
+    da_risposta = _facoltativo(proposta, "from_reply")
+    chiude = _facoltativo(proposta, "done")
     nota = Nota(
         id=id_nota,
-        data=proposta["data"].strip(),
-        fonte=proposta["fonte"].strip(),
+        data=proposta["date"].strip(),
+        fonte=proposta["source"].strip(),
         autore=autore,
-        tipo=proposta["tipo"].strip(),
-        natura=proposta["natura"].strip(),
+        tipo=proposta["knowledge"].strip(),
+        natura=proposta["kind"].strip(),
         testo=testo,
-        conferma_di=conferma.strip() if conferma is not None else None,
-        corregge=_facoltativo(proposta, "corregge"),
-        done=_facoltativo(proposta, "done"),
-        riprendere_il=_facoltativo(proposta, "riprendere_il"),
+        priorita=_facoltativo(proposta, "priority"),
+        conferma_di=_facoltativo(proposta, "confirms"),
+        corregge=_facoltativo(proposta, "corrects"),
+        done=numeri(chiude) if chiude is not None else None,
+        riprendere_il=_facoltativo(proposta, "remind"),
         citazione=citazione,
-        contesto=contesto.strip() if contesto is not None else None,
-        da_risposta=proposta["da_risposta"].strip() if proposta.get("da_risposta") is not None else None,
+        contesto=_facoltativo(proposta, "context"),
+        da_risposta=da_risposta,
         verifica=regole.verifica(
             autore, testo, citazione, messaggi, config.segno_citazione, config.in_chat,
-            da_risposta=proposta.get("da_risposta") is not None, risposte=risposte, in_pausa=in_pausa,
+            da_risposta=da_risposta is not None, risposte=risposte, in_pausa=in_pausa,
             archivio=testimone_archivio.leggi_messaggi(config) if config.file_archivio else None,
             diario_chat=testimone_archivio.leggi_risposte(config) if config.file_archivio else None,
         ),

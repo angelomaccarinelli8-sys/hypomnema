@@ -14,10 +14,10 @@ Trovata 1 nota con «orto».
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: autore non verificato (testimone spento)
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
 testo:
   Ho aggiornato orto_balcone.py e la cartella semi-orto/vasi.
 [codice di uscita: 0]
@@ -28,10 +28,10 @@ Trovata 1 nota con «balcone».
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: autore non verificato (testimone spento)
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
 testo:
   Ho aggiornato orto_balcone.py e la cartella semi-orto/vasi.
 [codice di uscita: 0]
@@ -42,10 +42,10 @@ Trovata 1 nota con «vasi».
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: autore non verificato (testimone spento)
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
 testo:
   Ho aggiornato orto_balcone.py e la cartella semi-orto/vasi.
 [codice di uscita: 0]
@@ -56,10 +56,10 @@ Trovata 1 nota con «orto_balcone».
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: autore non verificato (testimone spento)
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
 testo:
   Ho aggiornato orto_balcone.py e la cartella semi-orto/vasi.
 [codice di uscita: 0]

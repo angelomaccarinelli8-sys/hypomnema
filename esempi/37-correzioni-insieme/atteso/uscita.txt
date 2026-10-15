@@ -21,7 +21,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema proponi 5-corregge-inesistente.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- la nota «0099» indicata in «corregge» non esiste nel quaderno.
+- note «0099» named in «corrects» does not exist in the notebook.
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
@@ -31,44 +31,44 @@ Trovate 2 note con «pomodoro» (dalla più recente).
 --- Nota 0004 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: autore non verificato (testimone spento)
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
 testo:
   Il pomodoro nano sta bene anche in un vaso piccolo.
 
 --- Nota 0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 corretta da: nota 0002
-verifica: autore non verificato (testimone spento)
+verifica: author not verified (witness off)
 testo:
   Il pomodoro va annaffiato ogni giorno.
 
     --- Nota 0003 (corregge la nota 0002) ---
     data: 2026-01-14
     fonte: chat del 14 gennaio 2026 sull'orto
-    autore: utente
-    tipo: dichiarata
-    natura: fatto
+    autore: user
+    tipo: stated
+    natura: fact
     corregge: nota 0002
-    verifica: autore non verificato (testimone spento)
+    verifica: author not verified (witness off)
     testo:
       Correggo ancora: d'inverno due volte a settimana.
 
     --- Nota 0002 (corregge la nota 0001) ---
     data: 2026-01-14
     fonte: chat del 14 gennaio 2026 sull'orto
-    autore: utente
-    tipo: dichiarata
-    natura: fatto
+    autore: user
+    tipo: stated
+    natura: fact
     corregge: nota 0001
     corretta da: nota 0003
-    verifica: autore non verificato (testimone spento)
+    verifica: author not verified (witness off)
     testo:
       No, a giorni alterni basta.
 [codice di uscita: 0]
@@ -79,23 +79,23 @@ Trovata 1 nota con «alterni».
 --- Nota 0002 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
-autore: utente
-tipo: dichiarata
-natura: fatto
+autore: user
+tipo: stated
+natura: fact
 corregge: nota 0001
 corretta da: nota 0003
-verifica: autore non verificato (testimone spento)
+verifica: author not verified (witness off)
 testo:
   No, a giorni alterni basta.
 
     --- Nota 0003 (corregge la nota 0002) ---
     data: 2026-01-14
     fonte: chat del 14 gennaio 2026 sull'orto
-    autore: utente
-    tipo: dichiarata
-    natura: fatto
+    autore: user
+    tipo: stated
+    natura: fact
     corregge: nota 0002
-    verifica: autore non verificato (testimone spento)
+    verifica: author not verified (witness off)
     testo:
       Correggo ancora: d'inverno due volte a settimana.
 [codice di uscita: 0]

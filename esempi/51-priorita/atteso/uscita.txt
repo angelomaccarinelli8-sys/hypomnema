@@ -1,0 +1,69 @@
+$ hypomnema propose 1-todo.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-todo-bassa.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 3-todo-alta.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: 3 di 3 (prima la priorità alta, poi dal più recente)
+- [0003] [alta] 2026-01-15: Coprire le piante per il gelo.
+- [0001] 2026-01-15: Rinvasare il limone.
+- [0002] [bassa] 2026-01-15: Riordinare gli attrezzi.
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+[codice di uscita: 0]
+
+$ hypomnema propose 4-cambia-priorita.json
+ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 5-priorita-di-claude.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- only the user can set «priority»: Claude can suggest a priority in the text of one of its idea notes.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 6-priorita-sbagliata.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- the value «urgent» is not allowed for «priority»: it must be «high», «normal» or «low».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: 3 di 3 (prima la priorità alta, poi dal più recente)
+- [0003] [alta] 2026-01-15: Coprire le piante per il gelo.
+- [0002] [alta] 2026-01-15: Riordinare gli attrezzi.
+    ↳ [0004] corregge la nota 0002: Diventa urgente.
+- [0001] 2026-01-15: Rinvasare il limone.
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+[codice di uscita: 0]
+

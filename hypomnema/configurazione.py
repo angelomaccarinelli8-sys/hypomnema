@@ -29,8 +29,8 @@ RIGHE_DI_ESEMPIO = {
 
 # Il recap («dove eravamo rimasti»): quante voci mostrare per blocco. La sezione [recap] è
 # facoltativa, perché i quaderni di prima della 0.4.0 non la hanno: se manca, valgono questi
-# numeri, approvati da Angelo (15/10/2026).
-RECAP_DI_BASE = {"discorsi_aperti": 5, "decisioni": 5, "voci_diario": 10}
+# numeri, approvati da Angelo (15/10/2026; «todo» dalla 0.5.0).
+RECAP_DI_BASE = {"discorsi_aperti": 5, "todo": 5, "decisioni": 5, "voci_diario": 10}
 
 
 class ErroreConfigurazione(Exception):
@@ -62,6 +62,7 @@ class Configurazione:
     # Quante voci mostra il recap per ogni blocco.
     recap_discorsi_aperti: int = RECAP_DI_BASE["discorsi_aperti"]
     recap_decisioni: int = RECAP_DI_BASE["decisioni"]
+    recap_todo: int = RECAP_DI_BASE["todo"]
     recap_voci_diario: int = RECAP_DI_BASE["voci_diario"]
 
 
@@ -263,5 +264,6 @@ def carica(percorso: str | None = None) -> Configurazione:
         copia_ogni=archivio["copia_ogni"] if archivio is not None else None,
         recap_discorsi_aperti=quanti_recap["discorsi_aperti"],
         recap_decisioni=quanti_recap["decisioni"],
+        recap_todo=quanti_recap["todo"],
         recap_voci_diario=quanti_recap["voci_diario"],
     )

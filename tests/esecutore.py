@@ -34,7 +34,7 @@ import shutil
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
-from hypomnema.cli import main
+from hypomnema.cli import INGLESE, main
 
 RADICE = Path(__file__).resolve().parent.parent
 CARTELLA_ESEMPI = RADICE / "esempi"
@@ -90,11 +90,13 @@ def esegui(esempio: Path, lavoro: Path) -> str:
             # Come nella shell: l'uscita del comando va nel file, dentro la cartella di prova.
             destinazione = lavoro / parti[parti.index(">") + 1]
             parti = parti[:parti.index(">")]
-        if parti[0] in ("proponi", "testimone", "risposte", "impronta", "archivio"):
+        # I comandi si possono scrivere con il nome inglese o con quello italiano.
+        nome = INGLESE.get(parti[0], parti[0])
+        if nome in ("propose", "witness", "replies", "fingerprint", "archive"):
             argomenti = [parti[0], str(esempio / parti[1])]
-        elif parti[0] == "cambiati":
+        elif nome == "changed":
             argomenti = [parti[0], str(lavoro / parti[1])]
-        elif parti[0] == "confronta":
+        elif nome == "compare":
             argomenti = [parti[0], *(str(esempio.resolve() / p) for p in parti[1:])]
         else:
             argomenti = parti

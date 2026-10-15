@@ -1,0 +1,179 @@
+$ hypomnema controlla
+Quaderno in ordine: 7 note, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca compostiera
+Trovate 2 note con «compostiera» (dalla più recente).
+
+--- Nota 0007 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: claude
+tipo: observed
+natura: fact
+corregge: nota 0004
+testo:
+  La compostiera è stata messa nell'angolo nord.
+
+--- Nota 0004 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: claude
+tipo: inferred
+natura: open
+corretta da: nota 0007
+testo:
+  Resta da capire dove mettere la compostiera.
+
+    (nota 0007, che corregge la nota 0004: già mostrata sopra)
+[codice di uscita: 0]
+
+$ hypomnema search fragole
+Trovate 3 note con «fragole» (dalla più recente).
+
+--- Nota 0006 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: claude
+tipo: inferred
+natura: idea
+riprendere il: 2026-01-10
+testo:
+  Controllare se le fragole hanno attecchito.
+
+--- Nota 0005 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: claude
+tipo: inferred
+natura: open
+testo:
+  Da decidere se aggiungere un secondo vaso di fragole.
+
+--- Nota 0003 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: user
+tipo: stated
+natura: decision
+verifica: testo trovato nel messaggio del 2026-01-15T10:02:00+01:00
+testo:
+  le fragole vanno in vaso grande.
+  Sul balcone a sud.
+[codice di uscita: 0]
+
+$ hypomnema promemoria
+1 promemoria scaduto al 2026-01-15 (dal più vecchio).
+
+=== Da riprendere il 2026-01-10 ===
+
+--- Nota 0006 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: claude
+tipo: inferred
+natura: idea
+riprendere il: 2026-01-10
+testo:
+  Controllare se le fragole hanno attecchito.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)
+- [0006] da riprendere il 2026-01-10: Controllare se le fragole hanno attecchito.
+
+Discorsi aperti: 2 di 2 (prima la priorità alta, poi dal più recente)
+- [0005] 2026-01-15: Da decidere se aggiungere un secondo vaso di fragole.
+- [0004] 2026-01-15: Resta da capire dove mettere la compostiera.
+    ↳ [0007] corregge la nota 0004: La compostiera è stata messa nell'angolo nord.
+
+Cose da fare: nessuna.
+
+Ultime decisioni: 2 di 3 (prima la priorità alta, poi dal più recente)
+- [0003] 2026-01-15: le fragole vanno in vaso grande. …
+- [0002] 2026-01-15: niente pesticidi sul balcone
+(1 decisione più vecchia non mostrata)
+
+Ultime voci del diario: 3 di 4 (la conversazione registrata, non le note)
+- 2026-01-15T10:01:00+01:00 · utente: Ho deciso: niente pesticidi sul balcone.
+- 2026-01-15T10:02:00+01:00 · utente: Ho deciso: le fragole vanno in vaso grande. …
+- 2026-01-15T10:03:00+01:00 · utente: (messaggio privato, non registrato)
+(per leggerle intere: diary --last 3)
+[codice di uscita: 0]
+
+$ hypomnema testimone messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema proponi chiusura.json
+ACCETTATA: la nota 0008 è stata salvata nel quaderno (note/0008.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [0005] 2026-01-15: Da decidere se aggiungere un secondo vaso di fragole.
+
+Cose da fare: nessuna.
+
+Ultime decisioni: 2 di 4 (prima la priorità alta, poi dal più recente)
+- [0008] 2026-01-15: la compostiera va nell'angolo nord, e le fragole le ho già controllate
+- [0003] 2026-01-15: le fragole vanno in vaso grande. …
+(2 decisioni più vecchie non mostrate)
+
+Ultime voci del diario: 3 di 5 (la conversazione registrata, non le note)
+- 2026-01-15T10:02:00+01:00 · utente: Ho deciso: le fragole vanno in vaso grande. …
+- 2026-01-15T10:03:00+01:00 · utente: (messaggio privato, non registrato)
+- 2026-01-15T10:05:00+01:00 · utente: Ho deciso: la compostiera va nell'angolo nord, e le fragole le ho già controllate.
+(per leggerle intere: diary --last 3)
+[codice di uscita: 0]
+
+$ hypomnema cerca compostiera --tutte
+Trovate 3 note con «compostiera» (dalla più recente).
+
+--- Nota 0008 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sull'orto
+autore: user
+tipo: stated
+natura: decision
+chiude: nota 0004, nota 0006
+verifica: text found in the message of 2026-01-15T10:05:00+01:00
+testo:
+  la compostiera va nell'angolo nord, e le fragole le ho già controllate
+
+--- Nota 0007 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: claude
+tipo: observed
+natura: fact
+corregge: nota 0004
+testo:
+  La compostiera è stata messa nell'angolo nord.
+
+--- Nota 0004 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: claude
+tipo: inferred
+natura: open
+corretta da: nota 0007
+chiusa da: nota 0008
+testo:
+  Resta da capire dove mettere la compostiera.
+
+    (nota 0008, che chiude la nota 0004: già mostrata sopra)
+
+    (nota 0007, che corregge la nota 0004: già mostrata sopra)
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 8 note, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

@@ -6,8 +6,8 @@ Il passaggio è annotato nel registro.
 $ hypomnema proponi 2-come-decisione.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- una nota scritta da Claude non può essere una decisione: le decisioni le prende solo l'utente. Se è una proposta di Claude, salvala come idea.
-- una decisione deve essere dichiarata dall'utente: non può essere «dedotta».
+- a note written by Claude cannot be a decision: only the user makes decisions. If it is Claude's proposal, save it as an idea.
+- a decision must be stated by the user: it cannot be «inferred».
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 

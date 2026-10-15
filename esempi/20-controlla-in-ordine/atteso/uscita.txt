@@ -10,7 +10,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema proponi 2-rifiutata.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- manca il campo «fonte»: ogni nota deve dire da dove viene.
+- the field «source» is missing: every note must say where it comes from.
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 

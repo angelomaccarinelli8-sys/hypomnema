@@ -14,11 +14,11 @@ Trovate 2 note con «orto» (dalla più recente).
 --- Nota 0002 ---
 data: 2026-01-15T10:05
 fonte: chat del 15 gennaio 2026 sul progetto dell'orto
-autore: utente
-tipo: dichiarata
-natura: decisione
+autore: user
+tipo: stated
+natura: decision
 conferma di: nota 0001
-verifica: autore non verificato (testimone spento)
+verifica: author not verified (witness off)
 testo:
   D'ora in poi annaffio l'orto la mattina presto invece che la sera.
 
@@ -26,7 +26,7 @@ testo:
 data: 2026-01-15T10:00
 fonte: chat del 15 gennaio 2026 sul progetto dell'orto
 autore: claude
-tipo: dedotta
+tipo: inferred
 natura: idea
 confermata da: nota 0002
 testo:
