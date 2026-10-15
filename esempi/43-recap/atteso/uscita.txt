@@ -1,0 +1,70 @@
+$ hypomnema testimone m1.json
+[codice di uscita: 0]
+
+$ hypomnema testimone m2.json
+[codice di uscita: 0]
+
+$ hypomnema testimone m3.json
+[codice di uscita: 0]
+
+$ hypomnema testimone m4.json
+[codice di uscita: 0]
+
+$ hypomnema proponi 1.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 3.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 4.json
+ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 5.json
+ACCETTATA: la nota 0005 è stata salvata nel quaderno (note/0005.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 6.json
+ACCETTATA: la nota 0006 è stata salvata nel quaderno (note/0006.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 7.json
+ACCETTATA: la nota 0007 è stata salvata nel quaderno (note/0007.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: 1 (dal più vecchio)
+- [0006] da riprendere il 2026-01-10: Controllare se le fragole hanno attecchito.
+
+Discorsi aperti: 2 di 2 (dal più recente)
+- [0005] 2026-01-15: Da decidere se aggiungere un secondo vaso di fragole.
+- [0004] 2026-01-15: Resta da capire dove mettere la compostiera.
+    ↳ [0007] corregge la nota 0004: La compostiera è stata messa nell'angolo nord.
+
+Ultime decisioni: 2 di 3 (dal più recente)
+- [0003] 2026-01-15: le fragole vanno in vaso grande. …
+- [0002] 2026-01-15: niente pesticidi sul balcone
+(1 decisione più vecchia non mostrata)
+
+Ultime voci del diario: 3 di 4 (la conversazione registrata, non le note)
+- 2026-01-15T10:01:00+01:00 · utente: Ho deciso: niente pesticidi sul balcone.
+- 2026-01-15T10:02:00+01:00 · utente: Ho deciso: le fragole vanno in vaso grande. …
+- 2026-01-15T10:03:00+01:00 · utente: (messaggio privato, non registrato)
+(per leggerle intere: diario --ultimi 3)
+[codice di uscita: 0]
+

@@ -61,3 +61,11 @@ ometti_codice = true
 
 # Ogni quanti scambi Claude copia dall'archivio i messaggi nuovi (lo fa anche quando chiudi la chat).
 copia_ogni = 5
+
+[recap]
+# Facoltativa. Il comando «recap» («dove eravamo rimasti») mostra i promemoria scaduti e, dal più
+# recente, questi numeri di discorsi aperti, decisioni e righe del diario. Se la sezione manca
+# valgono 5, 5 e 10.
+discorsi_aperti = 5
+decisioni = 5
+voci_diario = 10

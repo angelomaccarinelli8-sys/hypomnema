@@ -1,0 +1,7 @@
+proponi 1-file.json
+proponi 2-caffelatte.json
+cerca orto
+cerca balcone
+cerca vasi
+cerca orto_balcone
+cerca caffè

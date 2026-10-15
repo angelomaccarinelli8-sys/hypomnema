@@ -1,0 +1,34 @@
+$ hypomnema archivio copia.json
+Copiati dall'archivio della chat: 1 messaggio dell'utente, 1 risposta di Claude.
+Avvisi tecnici <system-reminder> tolti dai messaggi dell'utente: 1.
+[codice di uscita: 0]
+
+$ hypomnema proponi nota.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca umidità
+Trovata 1 nota con «umidità».
+
+--- Nota 0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00045, messaggio del turno 0 (2026-01-15T09:00:00+01:00, copiato da Claude)
+testo:
+  Annaffia solo se l'umidità è < 30% & il vaso è asciutto.
+[codice di uscita: 0]
+
+$ hypomnema diario --ultimi 2
+Gli ultimi 2 messaggi del diario (la conversazione registrata, non le note):
+
+--- 2026-01-15T09:00:00+01:00 · utente · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00045, turno 0, copiato da Claude ---
+  Annaffia solo se l'umidità è < 30% & il vaso è asciutto.
+
+--- 2026-01-15T09:00:00+01:00 · claude · archivio della chat https://claude.ai/chat/00000000-0000-0000-0000-esempio00045, turno 1, copiato da Claude ---
+  Va bene: sotto il 30% (< 30) annaffio.
+[codice di uscita: 0]
+

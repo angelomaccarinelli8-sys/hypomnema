@@ -1,0 +1,22 @@
+[quaderno]
+cartella = "quaderno"
+cartella_note = "note"
+file_registro = "registro.md"
+cifre_numero_nota = 4
+
+[testimone]
+attivo = true
+file = "testimone.jsonl"
+prefisso_privato = "#privato"
+segno_citazione = ">"
+
+[risposte]
+attivo = true
+file = "risposte.jsonl"
+ometti_codice = true
+
+[recap]
+# Per l'esempio: poche voci, così si vede la riga «non mostrate».
+discorsi_aperti = 5
+decisioni = 2
+voci_diario = 3

@@ -1,0 +1,5 @@
+{
+  "session_id": "sessione-di-esempio",
+  "hook_event_name": "UserPromptSubmit",
+  "prompt": "Ho deciso: le fragole vanno in vaso grande.\nSul balcone a sud."
+}

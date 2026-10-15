@@ -13,7 +13,13 @@ I messaggi dell'utente vanno nel file dell'archivio (``archivio-chat.jsonl``), l
 nel diario della chat (``diario-chat.jsonl``), solo in aggiunta e senza doppioni: un messaggio è già
 presente se ha lo stesso indirizzo della chat e lo stesso numero di turno (l'ora, al minuto, non
 basta). Dai messaggi dell'utente si tolgono gli avvisi tecnici che l'app inserisce tra
-``<system-reminder>`` e ``</system-reminder>``. Ogni riga dice da dove viene:
+``<system-reminder>`` e ``</system-reminder>``.
+
+Lo strumento che rilegge la chat scrive «<», «>» e «&» come «&lt;», «&gt;» e «&amp;». Claude copia il
+testo così com'è, senza convertire niente; li converte questo programma, con una regola fissa, prima
+di tutto il resto: così gli avvisi tecnici si riconoscono in tutte e due le forme e nel quaderno
+finiscono i segni veri. Limite dichiarato: un «&lt;» scritto davvero dall'utente diventa «<».
+Ogni riga dice da dove viene:
 
     {"quando": "2026-10-09T17:46:00+02:00", "chat": "https://claude.ai/chat/…", "turno": 12, "testo": "…", "origine": "copiato dall'archivio della chat da Claude"}
     {"quando": "…", "chat": "…", "turno": 14, "privato": "messaggio privato, non copiato", "origine": "…"}
@@ -76,6 +82,19 @@ def _turno_valido(turno) -> bool:
 
 def _chat_valida(chat) -> bool:
     return isinstance(chat, str) and chat.startswith("https://") and len(chat.split()) == 1
+
+
+# Le tre sostituzioni dello strumento che rilegge la chat, nell'ordine giusto per tornare indietro:
+# «&amp;» per ultimo, così «&amp;lt;» diventa «&lt;» e non «<».
+_SEGNI_HTML = (("&lt;", "<"), ("&gt;", ">"), ("&amp;", "&"))
+
+
+def segni_veri(testo: str) -> str:
+    """Riporta «&lt;», «&gt;» e «&amp;» ai segni «<», «>» e «&»."""
+    parti = testo.split("&amp;")
+    for scritto, segno in _SEGNI_HTML[:2]:
+        parti = [parte.replace(scritto, segno) for parte in parti]
+    return "&".join(parti)
 
 
 def togli_avvisi(testo: str) -> tuple[str, int]:
@@ -184,7 +203,8 @@ def _leggi_copia(contenuto: bytes):
             raise ErroreArchivio(f"nel messaggio {numero} «chi» deve essere «utente» oppure «claude».")
         if not isinstance(voce["testo"], str):
             raise ErroreArchivio(f"nel messaggio {numero} «testo» deve essere un testo.")
-        testo, tolti = togli_avvisi(voce["testo"]) if voce["chi"] == "utente" else (voce["testo"], 0)
+        testo = segni_veri(voce["testo"])
+        testo, tolti = togli_avvisi(testo) if voce["chi"] == "utente" else (testo, 0)
         messaggi.append((voce["turno"], momento.isoformat(), voce["chi"], testo, tolti))
     messaggi.sort(key=lambda m: (m[0], CHI.index(m[2])))
     return chat, messaggi

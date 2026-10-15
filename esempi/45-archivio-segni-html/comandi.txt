@@ -1,0 +1,4 @@
+archivio copia.json
+proponi nota.json
+cerca umidità
+diario --ultimi 2

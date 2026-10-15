@@ -27,6 +27,12 @@ RIGHE_DI_ESEMPIO = {
 }
 
 
+# Il recap («dove eravamo rimasti»): quante voci mostrare per blocco. La sezione [recap] è
+# facoltativa, perché i quaderni di prima della 0.4.0 non la hanno: se manca, valgono questi
+# numeri, approvati da Angelo (15/10/2026).
+RECAP_DI_BASE = {"discorsi_aperti": 5, "decisioni": 5, "voci_diario": 10}
+
+
 class ErroreConfigurazione(Exception):
     """La configurazione manca o non è valida."""
 
@@ -53,6 +59,10 @@ class Configurazione:
     file_diario_chat: Path | None = None
     archivio_ometti_codice: bool = True
     copia_ogni: int | None = None
+    # Quante voci mostra il recap per ogni blocco.
+    recap_discorsi_aperti: int = RECAP_DI_BASE["discorsi_aperti"]
+    recap_decisioni: int = RECAP_DI_BASE["decisioni"]
+    recap_voci_diario: int = RECAP_DI_BASE["voci_diario"]
 
 
 def trova(percorso: str | None = None) -> Path:
@@ -213,6 +223,24 @@ def carica(percorso: str | None = None) -> Configurazione:
                 "numero intero maggiore di zero (ogni quanti scambi copiare dall'archivio)."
             )
 
+    # Facoltativa: quante voci mostra il recap. Ogni impostazione mancante vale come in RECAP_DI_BASE.
+    recap = dati.get("recap", {})
+    if not isinstance(recap, dict):
+        raise ErroreConfigurazione(f"nel file «{file}» [recap] deve essere una sezione.")
+    for chiave in recap:
+        if chiave not in RECAP_DI_BASE:
+            raise ErroreConfigurazione(
+                f"nel file «{file}» la sezione [recap] non prevede «{chiave}»: le impostazioni sono "
+                + ", ".join(RECAP_DI_BASE) + "."
+            )
+        valore = recap[chiave]
+        if not isinstance(valore, int) or isinstance(valore, bool) or valore < 1:
+            raise ErroreConfigurazione(
+                f"nel file «{file}» l'impostazione «{chiave}» della sezione [recap] deve essere un numero "
+                "intero maggiore di zero (quante voci mostrare)."
+            )
+    quanti_recap = {**RECAP_DI_BASE, **recap}
+
     base = file.resolve().parent
     quaderno = base / testo("cartella")
     return Configurazione(
@@ -233,4 +261,7 @@ def carica(percorso: str | None = None) -> Configurazione:
         file_diario_chat=quaderno / archivio["file_diario"] if archivio is not None else None,
         archivio_ometti_codice=archivio["ometti_codice"] if archivio is not None else True,
         copia_ogni=archivio["copia_ogni"] if archivio is not None else None,
+        recap_discorsi_aperti=quanti_recap["discorsi_aperti"],
+        recap_decisioni=quanti_recap["decisioni"],
+        recap_voci_diario=quanti_recap["voci_diario"],
     )

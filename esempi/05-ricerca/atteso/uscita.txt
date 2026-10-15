@@ -14,17 +14,7 @@ Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
 $ hypomnema cerca caffè
-Trovate 2 note con «caffè».
-
---- Nota 0001 ---
-data: 2026-01-12
-fonte: chat del 12 gennaio 2026 sulle abitudini
-autore: utente
-tipo: dichiarata
-natura: fatto
-verifica: autore non verificato (testimone spento)
-testo:
-  La mattina bevo un caffè prima di qualsiasi altra cosa.
+Trovate 2 note con «caffè» (dalla più recente).
 
 --- Nota 0002 ---
 data: 2026-01-13
@@ -35,5 +25,15 @@ natura: fatto
 testo:
   Caffè nominato tre volte parlando del pomeriggio.
   Ogni volta verso le 16.
+
+--- Nota 0001 ---
+data: 2026-01-12
+fonte: chat del 12 gennaio 2026 sulle abitudini
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: autore non verificato (testimone spento)
+testo:
+  La mattina bevo un caffè prima di qualsiasi altra cosa.
 [codice di uscita: 0]
 

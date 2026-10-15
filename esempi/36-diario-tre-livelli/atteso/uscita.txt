@@ -13,17 +13,17 @@ Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
 $ hypomnema cerca fragole
-Trovate 3 note con «fragole».
+Trovate 3 note con «fragole» (dalla più recente).
 
---- Nota 0001 ---
-data: 2026-01-14
-fonte: sessione di Claude Code del 14 gennaio 2026
+--- Nota 0003 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sul balcone
 autore: utente
 tipo: dichiarata
 natura: fatto
-verifica: testo trovato nel messaggio del 2026-01-14T18:00:00+01:00
+verifica: autore non verificato (chat, senza testimone)
 testo:
-  Le fragole le copro con la paglia d'inverno.
+  Le fragole vanno raccolte la mattina.
 
 --- Nota 0002 ---
 data: 2026-01-15
@@ -35,15 +35,15 @@ verifica: testo riscontrato sull'archivio della chat https://claude.ai/chat/0000
 testo:
   Le fragole in vaso vogliono un terriccio acido.
 
---- Nota 0003 ---
-data: 2026-01-15
-fonte: chat del 15 gennaio 2026 sul balcone
+--- Nota 0001 ---
+data: 2026-01-14
+fonte: sessione di Claude Code del 14 gennaio 2026
 autore: utente
 tipo: dichiarata
 natura: fatto
-verifica: autore non verificato (chat, senza testimone)
+verifica: testo trovato nel messaggio del 2026-01-14T18:00:00+01:00
 testo:
-  Le fragole vanno raccolte la mattina.
+  Le fragole le copro con la paglia d'inverno.
 [codice di uscita: 0]
 
 $ hypomnema diario fragole

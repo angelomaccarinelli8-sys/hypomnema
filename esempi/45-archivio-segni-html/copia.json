@@ -1,0 +1,18 @@
+{
+  "chat": "https://claude.ai/chat/00000000-0000-0000-0000-esempio00045",
+  "fuso": "UTC+01:00",
+  "messaggi": [
+    {
+      "turno": 0,
+      "quando": "Thu 2026-01-15 09:00",
+      "chi": "utente",
+      "testo": "Annaffia solo se l'umidità è &lt; 30% &amp; il vaso è asciutto.\n\n&lt;system-reminder&gt;\nAvviso tecnico inventato per l'esempio.\n&lt;/system-reminder&gt;"
+    },
+    {
+      "turno": 1,
+      "quando": "Thu 2026-01-15 09:00",
+      "chi": "claude",
+      "testo": "Va bene: sotto il 30% (&lt; 30) annaffio."
+    }
+  ]
+}

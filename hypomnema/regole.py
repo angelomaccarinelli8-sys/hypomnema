@@ -12,7 +12,7 @@ from hypomnema.nota import TITOLO_CONTESTO, Nota
 from hypomnema.testimone import Messaggio, Ritrovamento, trova_citazione
 
 CAMPI_OBBLIGATORI = ("data", "fonte", "autore", "tipo", "natura", "testo")
-CAMPI_FACOLTATIVI = ("conferma_di", "citazione", "contesto", "da_risposta")
+CAMPI_FACOLTATIVI = ("conferma_di", "corregge", "done", "riprendere_il", "citazione", "contesto", "da_risposta")
 # Campi che possono andare a capo: tutti gli altri devono stare su una riga.
 CAMPI_SU_PIU_RIGHE = ("testo", "citazione", "contesto")
 CAMPI_AMMESSI = CAMPI_OBBLIGATORI + CAMPI_FACOLTATIVI
@@ -32,6 +32,7 @@ PERCHE_SERVE = {
 }
 
 FORMATO_DATA = re.compile(r"^\d{4}-\d{2}-\d{2}(T\d{2}:\d{2}(:\d{2})?)?$")
+FORMATO_GIORNO = re.compile(r"^\d{4}-\d{2}-\d{2}$")
 
 
 def _elenco(valori: tuple[str, ...]) -> str:
@@ -133,6 +134,31 @@ def controlla(
             motivi.append(
                 f"la nota «{riferimento}» ha natura «{idea.natura}», non è un'idea: "
                 "si può confermare come decisione solo un'idea."
+            )
+
+    if "corregge" in valori and not any(n.id == valori["corregge"] for n in note_esistenti):
+        motivi.append(f"la nota «{valori['corregge']}» indicata in «corregge» non esiste nel quaderno.")
+    if "riprendere_il" in valori:
+        giorno = valori["riprendere_il"]
+        valida = bool(FORMATO_GIORNO.match(giorno))
+        if valida:
+            try:
+                date.fromisoformat(giorno)
+            except ValueError:
+                valida = False
+        if not valida:
+            motivi.append(
+                f"la data «{giorno}» di «riprendere_il» non è valida: scrivi solo il giorno, come "
+                "AAAA-MM-GG (per esempio 2026-01-20)."
+            )
+    if "done" in valori:
+        fatta = next((n for n in note_esistenti if n.id == valori["done"]), None)
+        if fatta is None:
+            motivi.append(f"la nota «{valori['done']}» indicata in «done» non esiste nel quaderno.")
+        elif fatta.riprendere_il is None:
+            motivi.append(
+                f"la nota «{valori['done']}» indicata in «done» non è un promemoria (non ha "
+                "«riprendere_il»): «done» segna come fatto solo un promemoria."
             )
 
     # Parole dell'utente e parole di Claude non si mescolano: in una nota dell'utente

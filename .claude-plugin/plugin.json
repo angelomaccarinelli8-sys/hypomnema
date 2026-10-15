@@ -1,7 +1,7 @@
 {
   "name": "hypomnema",
   "displayName": "Hypomnema",
-  "description": "Memoria permanente in file Markdown: Claude propone le note, i programmi decidono se entrano. Skill, testimone dei messaggi e delle risposte, comandi /hypomnema:pausa e /hypomnema:riprendi.",
+  "description": "Memoria permanente in file Markdown: Claude propone le note, i programmi decidono se entrano. Skill, testimone dei messaggi e delle risposte, comandi /hypomnema:pausa, /hypomnema:riprendi e /hypomnema:recap.",
   "author": {
     "name": "Angelo Maccarinelli"
   },

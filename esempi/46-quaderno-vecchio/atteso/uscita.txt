@@ -1,0 +1,91 @@
+$ hypomnema controlla
+Quaderno in ordine: 3 note, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca caffè
+Trovate 2 note con «caffè» (dalla più recente).
+
+--- Nota 0002 ---
+data: 2026-01-13
+fonte: chat del 13 gennaio 2026 sulle abitudini
+autore: claude
+tipo: osservata
+natura: fatto
+testo:
+  Caffè nominato tre volte parlando del pomeriggio.
+  Ogni volta verso le 16.
+
+--- Nota 0001 ---
+data: 2026-01-12
+fonte: chat del 12 gennaio 2026 sulle abitudini
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: autore non verificato (testimone spento)
+testo:
+  La mattina bevo un caffè prima di qualsiasi altra cosa.
+[codice di uscita: 0]
+
+$ hypomnema promemoria
+Nessun promemoria scaduto al 2026-01-15.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+[codice di uscita: 0]
+
+$ hypomnema proponi correzione.json
+ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca caffè
+Trovate 3 note con «caffè» (dalla più recente).
+
+--- Nota 0004 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+corregge: nota 0001
+verifica: autore non verificato (testimone spento)
+testo:
+  Ora bevo il caffè solo dopo colazione.
+
+--- Nota 0002 ---
+data: 2026-01-13
+fonte: chat del 13 gennaio 2026 sulle abitudini
+autore: claude
+tipo: osservata
+natura: fatto
+testo:
+  Caffè nominato tre volte parlando del pomeriggio.
+  Ogni volta verso le 16.
+
+--- Nota 0001 ---
+data: 2026-01-12
+fonte: chat del 12 gennaio 2026 sulle abitudini
+autore: utente
+tipo: dichiarata
+natura: fatto
+corretta da: nota 0004
+verifica: autore non verificato (testimone spento)
+testo:
+  La mattina bevo un caffè prima di qualsiasi altra cosa.
+
+    (nota 0004, che corregge la nota 0001: già mostrata sopra)
+[codice di uscita: 0]
+
+$ hypomnema controlla
+Quaderno in ordine: 4 note, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

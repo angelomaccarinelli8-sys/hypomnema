@@ -58,6 +58,11 @@ def _leggi_proposta(contenuto: bytes) -> tuple[dict | None, list[str]]:
     return dati, []
 
 
+def _facoltativo(proposta: dict, campo: str) -> str | None:
+    valore = proposta.get(campo)
+    return valore.strip() if valore is not None else None
+
+
 def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datetime) -> Esito:
     """Esamina una proposta e restituisce l'esito. Annota sempre il passaggio nel registro.
 
@@ -99,6 +104,9 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         natura=proposta["natura"].strip(),
         testo=testo,
         conferma_di=conferma.strip() if conferma is not None else None,
+        corregge=_facoltativo(proposta, "corregge"),
+        done=_facoltativo(proposta, "done"),
+        riprendere_il=_facoltativo(proposta, "riprendere_il"),
         citazione=citazione,
         contesto=contesto.strip() if contesto is not None else None,
         da_risposta=proposta["da_risposta"].strip() if proposta.get("da_risposta") is not None else None,

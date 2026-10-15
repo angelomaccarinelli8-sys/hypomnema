@@ -1,0 +1,70 @@
+$ hypomnema proponi 1-file.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema proponi 2-caffelatte.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca orto
+Trovata 1 nota con «orto».
+
+--- Nota 0001 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: autore non verificato (testimone spento)
+testo:
+  Ho aggiornato orto_balcone.py e la cartella semi-orto/vasi.
+[codice di uscita: 0]
+
+$ hypomnema cerca balcone
+Trovata 1 nota con «balcone».
+
+--- Nota 0001 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: autore non verificato (testimone spento)
+testo:
+  Ho aggiornato orto_balcone.py e la cartella semi-orto/vasi.
+[codice di uscita: 0]
+
+$ hypomnema cerca vasi
+Trovata 1 nota con «vasi».
+
+--- Nota 0001 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: autore non verificato (testimone spento)
+testo:
+  Ho aggiornato orto_balcone.py e la cartella semi-orto/vasi.
+[codice di uscita: 0]
+
+$ hypomnema cerca orto_balcone
+Trovata 1 nota con «orto_balcone».
+
+--- Nota 0001 ---
+data: 2026-01-14
+fonte: chat del 14 gennaio 2026 sull'orto
+autore: utente
+tipo: dichiarata
+natura: fatto
+verifica: autore non verificato (testimone spento)
+testo:
+  Ho aggiornato orto_balcone.py e la cartella semi-orto/vasi.
+[codice di uscita: 0]
+
+$ hypomnema cerca caffè
+Nessuna nota contiene «caffè».
+[codice di uscita: 0]
+
