@@ -1,0 +1,71 @@
+$ hypomnema status
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 0
+Ultimo messaggio registrato: nessuno.
+[codice di uscita: 0]
+
+$ hypomnema chat: status
+Configurazione: <cartella di prova>/hypomnema-chat.toml
+Quaderno: <cartella di prova>/quaderno
+Testimone: NON C'È (configurazione per la chat di Claude): i messaggi arrivano solo a Claude e le note con autore «user» saranno marcate «author not verified (chat, no witness)».
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 0
+Ultimo messaggio registrato: nessuno.
+Archivio della chat: 0 messaggi dell'utente e 0 risposte di Claude copiati da Claude (da copiare ogni 5 scambi e alla chiusura).
+File dell'archivio: <cartella di prova>/quaderno/archivio-chat.jsonl
+File del diario della chat: <cartella di prova>/quaderno/diario-chat.jsonl
+Ultimo copiato: nessuno.
+[codice di uscita: 0]
+
+$ hypomnema chat: check
+Quaderno in ordine: 1 nota, con la sua riga ACCETTATA nel registro.
+[codice di uscita: 0]
+
+$ hypomnema chat: propose 1-nota-dalla-chat.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema witness messaggio.json
+[codice di uscita: 0]
+
+$ hypomnema propose 2-nota-da-claude-code.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema chat: propose 3-chiusura-dalla-chat.json
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema chat: recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: nessuna.
+
+Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [D0003] 2026-01-15: il limone lo rinvaso sabato
+
+Ultime voci del diario: 1 di 1 (la conversazione registrata, non le note)
+- 2026-01-15T10:04:00+01:00 · utente: Ho deciso: il limone lo rinvaso sabato.
+(per leggerle intere: diary --last 1)
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema chat: check
+Quaderno in ordine: 3 note e 1 versione, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 3 note e 1 versione, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

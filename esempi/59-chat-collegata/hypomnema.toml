@@ -1,0 +1,13 @@
+# La configurazione di Claude Code (il plugin), con il testimone acceso. La chat collegata al
+# computer non la usa e non la tocca: usa hypomnema-chat.toml, accanto, sullo stesso quaderno.
+[quaderno]
+cartella = "quaderno"
+cartella_note = "note"
+file_registro = "registro.md"
+cifre_numero_nota = 4
+
+[testimone]
+attivo = true
+file = "testimone.jsonl"
+prefisso_privato = "#privato"
+segno_citazione = ">"

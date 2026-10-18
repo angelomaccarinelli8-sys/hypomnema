@@ -1,0 +1,10 @@
+status
+chat: status
+chat: check
+chat: propose 1-nota-dalla-chat.json
+witness messaggio.json
+propose 2-nota-da-claude-code.json
+chat: propose 3-chiusura-dalla-chat.json
+chat: recap
+chat: check
+check

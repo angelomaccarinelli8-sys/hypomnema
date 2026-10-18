@@ -22,6 +22,10 @@ nell'uscita di ``stato``) vengono scritti come ``<cartella di prova>/...``, e qu
 cartella dell'esempio come ``<esempio>/...``, con le barre "/" anche su Windows.
 ``confronta A B`` confronta due file della cartella dell'esempio.
 
+Se l'esempio ha anche un ``hypomnema-chat.toml`` (dalla 0.6.1, la chat collegata al computer), il
+file va accanto a ``hypomnema.toml`` e le righe che cominciano con ``chat:`` usano quello: due
+configurazioni, lo stesso quaderno.
+
 Per avere risultati ripetibili l'ora di ogni comando è fissa:
 il primo comando avviene il 15 gennaio 2026 alle 10:00 (ora italiana),
 ogni comando successivo un minuto dopo.
@@ -78,13 +82,19 @@ def esegui(esempio: Path, lavoro: Path) -> str:
     proprio = esempio / "hypomnema.toml"
     testo_config = proprio.read_text(encoding="utf-8") if proprio.is_file() else CONFIG_DI_PROVA
     config.write_text(testo_config, encoding="utf-8")
+    config_chat = lavoro / "hypomnema-chat.toml"
+    if (esempio / "hypomnema-chat.toml").is_file():
+        shutil.copyfile(esempio / "hypomnema-chat.toml", config_chat)
     iniziale = esempio / "quaderno-iniziale"
     if iniziale.is_dir():
         shutil.copytree(iniziale, lavoro / "quaderno")
     comandi = (esempio / "comandi.txt").read_text(encoding="utf-8").splitlines()
     uscita = io.StringIO()
     for numero, riga in enumerate(c for c in comandi if c.strip()):
+        con_config = config
         parti = shlex.split(riga)
+        if parti[0] == "chat:":
+            con_config, parti = config_chat, parti[1:]
         destinazione = None
         if ">" in parti:
             # Come nella shell: l'uscita del comando va nel file, dentro la cartella di prova.
@@ -103,7 +113,7 @@ def esegui(esempio: Path, lavoro: Path) -> str:
         uscita.write(f"$ hypomnema {riga}\n")
         uscita_comando = io.StringIO() if destinazione else uscita
         codice = main(
-            ["--config", str(config), *argomenti],
+            ["--config", str(con_config), *argomenti],
             adesso=ORA_DI_PARTENZA + timedelta(minutes=numero),
             uscita=uscita_comando,
             errori=uscita,
@@ -115,11 +125,15 @@ def esegui(esempio: Path, lavoro: Path) -> str:
 
 
 def file_di(cartella: Path) -> dict[str, str]:
-    """Tutti i file di una cartella, come {percorso relativo: contenuto}."""
+    """Tutti i file di una cartella, come {percorso relativo: contenuto}.
+
+    Il file del blocco (``.sportello.lock``, dalla 0.6.1) non conta: è sempre vuoto e nasce con la
+    prima scrittura; lo controllano le prove di ``test_chat_diretta``.
+    """
     if not cartella.is_dir():
         return {}
     return {
         p.relative_to(cartella).as_posix(): p.read_text(encoding="utf-8")
         for p in sorted(cartella.rglob("*"))
-        if p.is_file()
+        if p.is_file() and p.name != ".sportello.lock"
     }

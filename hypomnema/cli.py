@@ -36,7 +36,7 @@ from pathlib import Path
 from typing import TextIO
 
 from hypomnema import (
-    __version__, archivio, avvio, cambiamenti, cercatore, configurazione, controllo, diario, promemoria, registro,
+    __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, promemoria, registro,
     revisione, risposte, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
@@ -54,6 +54,8 @@ INGLESE = {
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
+# I comandi che leggono il quaderno: aspettano che un passaggio dello sportello finisca (vedi blocco).
+LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -799,33 +801,41 @@ def main(
         print(f"ERRORE: {errore}", file=uscita)
         return 2
     try:
-        if comando == "propose":
-            return _proponi(argomenti, config, adesso, uscita)
-        if comando == "status":
-            return _stato(argomenti, config, uscita)
-        if comando == "snapshot":
-            return _istantanea(config, uscita)
-        if comando == "changed":
-            return _cambiati(argomenti, config, uscita)
-        if comando == "check":
-            return _controlla(config, uscita)
-        if comando == "diary":
-            return _diario(argomenti, config, uscita)
-        if comando == "archive":
-            return _archivio(argomenti, config, uscita)
-        if comando == "reminders":
-            return _promemoria(config, adesso, uscita)
-        if comando == "recap":
-            return _recap(config, adesso, uscita)
-        if comando == "review":
-            return _revisione(config, adesso, uscita)
-        if comando == "claude-settings":
-            return _impostazioni_claude(argomenti, config, uscita)
-        return _cerca(argomenti, config, uscita)
+        if comando in LETTURA:
+            # Chi legge aspetta che un passaggio dello sportello finisca: non vede mai una nota a metà.
+            with blocco.blocco(config.cartella_quaderno, crea=False):
+                return _esegui(comando, argomenti, config, adesso, uscita)
+        return _esegui(comando, argomenti, config, adesso, uscita)
     except NotaIlleggibile as errore:
         print(f"ERRORE: il quaderno contiene un file non valido: {errore}. "
               "Controlla se è stato modificato a mano.", file=uscita)
         return 2
-    except (testimone.ErroreTestimone, registro.RegistroToccato) as errore:
+    except (testimone.ErroreTestimone, registro.RegistroToccato, blocco.QuadernoOccupato) as errore:
         print(f"ERRORE: {errore}", file=uscita)
         return 2
+
+
+def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int:
+    if comando == "propose":
+        return _proponi(argomenti, config, adesso, uscita)
+    if comando == "status":
+        return _stato(argomenti, config, uscita)
+    if comando == "snapshot":
+        return _istantanea(config, uscita)
+    if comando == "changed":
+        return _cambiati(argomenti, config, uscita)
+    if comando == "check":
+        return _controlla(config, uscita)
+    if comando == "diary":
+        return _diario(argomenti, config, uscita)
+    if comando == "archive":
+        return _archivio(argomenti, config, uscita)
+    if comando == "reminders":
+        return _promemoria(config, adesso, uscita)
+    if comando == "recap":
+        return _recap(config, adesso, uscita)
+    if comando == "review":
+        return _revisione(config, adesso, uscita)
+    if comando == "claude-settings":
+        return _impostazioni_claude(argomenti, config, uscita)
+    return _cerca(argomenti, config, uscita)

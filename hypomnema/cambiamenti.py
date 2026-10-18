@@ -20,7 +20,7 @@ import hashlib
 import json
 from dataclasses import dataclass
 
-from hypomnema import archivio
+from hypomnema import archivio, blocco
 from hypomnema.configurazione import Configurazione
 from hypomnema.nota import ordine
 from hypomnema.quaderno import NOME_FILE_NOTA
@@ -46,13 +46,14 @@ def _impronta(dati: bytes) -> str:
 
 
 def _file_del_quaderno(config: Configurazione) -> dict[str, bytes]:
+    """I file del quaderno, senza il file del blocco: è vuoto, non porta niente e non va riportato."""
     quaderno = config.cartella_quaderno
     if not quaderno.is_dir():
         return {}
     return {
         p.relative_to(quaderno).as_posix(): p.read_bytes()
         for p in sorted(quaderno.rglob("*"))
-        if p.is_file()
+        if p.is_file() and p != blocco.file_del_blocco(quaderno)
     }
 
 

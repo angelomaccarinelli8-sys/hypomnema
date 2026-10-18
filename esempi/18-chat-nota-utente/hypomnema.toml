@@ -1,6 +1,8 @@
 # Configurazione per la CHAT di Claude (claude.ai, app desktop e mobile).
-# Claude la usa nel computer di lavoro della chat, che sparisce a fine conversazione:
-# la copia accanto alla copia del quaderno (vedi la skill, "Modalità chat").
+# Due usi, con lo stesso file (vedi la skill, "Chat mode"):
+# - chat collegata al computer (dalla 0.6.1): copiata come hypomnema-chat.toml nella cartella
+#   Hypomnema, accanto a hypomnema.toml di Claude Code, che non si tocca. Stesso quaderno;
+# - altrimenti nel computer di lavoro della chat, accanto alla copia del quaderno.
 # I percorsi relativi partono dalla cartella che contiene il file copiato.
 
 [quaderno]
