@@ -235,7 +235,9 @@ class TestQuadernoDiProva(ConQuaderno):
             cambiamenti.cambiati(self.config, cambiamenti.leggi_istantanea(istantanea))
 
 
-class TestNoteVecchie(ConQuaderno):
+class ConNoteVecchie(ConQuaderno):
+    """Un quaderno con note scritte a mano nel formato di prima delle versioni."""
+
     def scrivi(self, numero, testo):
         self.config.cartella_note.mkdir(parents=True, exist_ok=True)
         (self.config.cartella_note / f"{numero}.md").write_text(testo, encoding="utf-8")
@@ -247,6 +249,8 @@ class TestNoteVecchie(ConQuaderno):
     def storie(self):
         return versioni.Quaderno(quaderno.leggi_note(self.config))
 
+
+class TestNoteVecchie(ConNoteVecchie):
     def test_chiusura_vecchia_che_e_un_todo_resta_visibile(self):
         self.vecchia("0001", "open", "Chi chiamare?")
         self.vecchia("0002", "todo", "Chiamare l'idraulico.", "- done: 0001\n")
@@ -313,8 +317,9 @@ class TestNoteVecchie(ConQuaderno):
             uscite.append([self.comando(*c) for c in (("recap",), ("search", "Dove", "--all"), ("search", "Sì"),
                                                       ("reminders",), ("review",))])
         self.assertEqual(uscite[0], uscite[1])
-        self.assertIn("I0002.1 (nota 0003)", uscite[0][1][1])
-        self.assertIn("conferma di: nota I0002.1 (nota 0003)", uscite[0][2][1])
+        # La 0003 di Claude non può cambiare il testo né la natura della questione aperta dell'utente.
+        self.assertIn("--- Nota O0002.1 (nota 0003) ---", uscite[0][1][1])
+        self.assertIn("conferma di: nota O0002.1 (nota 0003)", uscite[0][2][1])
 
     def test_giro_scritto_a_mano(self):
         self.vecchia("0001", "fact", "Uno.", "- corrects: 0002\n")
@@ -375,6 +380,94 @@ class TestRevisione(ConQuaderno):
         self.file_config.write_text(CONFIG_DI_PROVA, encoding="utf-8")
         config = configurazione.carica(str(self.file_config))
         self.assertEqual((config.giorni_revisione, config.segno_chiusa), (30, "✓"))
+
+
+class TestRecapPerQuelloCheENotaAdesso(ConQuaderno):
+    """Correzioni chieste da Angelo dopo la prova sul quaderno vero (PR #15)."""
+
+    def test_open_chiusa_come_decisione_tra_le_decisioni(self):
+        self.accettata(kind="open", text="Dove mettiamo la compostiera?")
+        self.accettata(done="0001", kind="decision", text="nell'angolo nord")
+        _, recap = self.comando("recap")
+        self.assertIn("Discorsi aperti: nessuno.", recap)
+        self.assertIn("Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)\n"
+                      "- [✓D0001.1] 2026-01-15: Dove mettiamo la compostiera?\n"
+                      "    ↳ ✓D0001.1 2026-01-15 · user: chiusa il 2026-01-15, perché «nell'angolo nord», "
+                      "natura open → decision\n", recap)
+        _, ricerca = self.comando("search", "compostiera")
+        self.assertIn("--- Nota ✓D0001.1 ---", ricerca)
+
+    def test_chiuse_che_non_sono_decisioni_restano_nascoste(self):
+        self.accettata(kind="todo", text="Comprare il terriccio.")
+        self.accettata(kind="todo", text="Pulire i vasi.")
+        self.accettata(done="0001", text="Comprato.")
+        self.accettata(done="0002", kind="fact", text="Puliti.")
+        _, recap = self.comando("recap")
+        self.assertIn("Cose da fare: nessuna.", recap)
+        self.assertIn("Ultime decisioni: nessuna.", recap)
+        _, ricerca = self.comando("search", "vasi")
+        self.assertIn("Nessuna nota aperta contiene «vasi».", ricerca)
+
+    def test_storia_nel_recap_dalla_piu_recente(self):
+        self.accettata(kind="todo", text="Seminare il basilico.")
+        self.accettata(updates="0001", priority="high", text="Urgente.")
+        self.accettata(done="0001", text="Seminato.")
+        self.accettata(reopens="0001", text="Il gelo l'ha bruciato.")
+        _, recap = self.comando("recap")
+        self.assertIn("- [T0001.3] [alta] 2026-01-15: Seminare il basilico.\n"
+                      "    ↳ T0001.3 2026-01-15 · user: riaperta il 2026-01-15, perché «Il gelo l'ha bruciato.»\n"
+                      "    ↳ ✓T0001.2 2026-01-15 · user: chiusa il 2026-01-15, perché «Seminato.»\n"
+                      "    ↳ T0001.1 2026-01-15 · user: priorità normal → high\n", recap)
+
+
+class TestCateneVecchieNonPermesseOggi(ConNoteVecchie):
+    def test_claude_non_cambia_il_testo_dell_utente(self):
+        self.vecchia("0001", "fact", "Il rubinetto perde dal tubo.")
+        self.vecchia("0002", "fact", "Perde dalla guarnizione.", "- corrects: 0001\n", author="claude")
+        storia = self.storie().storie["0001"]
+        ultima = storia.ultima
+        self.assertEqual((ultima.etichetta(), ultima.contenuto.testo, ultima.contenuto.autore),
+                         ("F0001.1 (nota 0002)", "Il rubinetto perde dal tubo.", "user"))
+        self.assertEqual((ultima.cambi, ultima.bloccati), ((), ("text corrected",)))
+        _, ricerca = self.comando("search", "rubinetto")
+        self.assertIn("non applicato (catena vecchia non permessa oggi): testo corretto («Perde dalla guarnizione.»)",
+                      ricerca)
+        codice, revisione = self.comando("review")
+        self.assertEqual(codice, 1)
+        self.assertIn("- F0001.1 (nota 0002): catena vecchia non permessa oggi: nella nota 0002 (claude, 2026-01-12) "
+                      "non vale «testo corretto». Resta nella storia; se il cambiamento va fatto, lo decide l'utente "
+                      "(corrects: 0001).", revisione)
+
+    def test_un_open_resta_open(self):
+        self.vecchia("0001", "open", "Serve un vaso più grande?", author="claude")
+        self.vecchia("0002", "fact", "Il vaso grande è arrivato.", "- corrects: 0001\n", author="claude")
+        self.vecchia("0003", "open", "Chi chiama l'idraulico?")
+        self.vecchia("0004", "fact", "Ha chiamato il vicino.", "- done: 0003\n", author="claude")
+        storie = self.storie()
+        prima, seconda = storie.storie["0001"].ultima, storie.storie["0003"].ultima
+        self.assertEqual((prima.contenuto.natura, prima.cambi, prima.bloccati),
+                         ("open", ("text corrected",), ("kind open → fact",)))
+        self.assertEqual((seconda.etichetta(), seconda.chiusa, seconda.bloccati),
+                         ("O0003.1 (nota 0004)", False, ("closed", "kind open → fact")))
+        _, recap = self.comando("recap")
+        self.assertIn("Discorsi aperti: 2 di 2", recap)
+        self.assertIn("    ↳ O0003.1 (nota 0004) 2026-01-14 · claude: non applicato (catena vecchia non permessa "
+                      "oggi): chiusa, perché «Ha chiamato il vicino.», natura open → fact\n", recap)
+        _, revisione = self.comando("review")
+        self.assertEqual(revisione.count("catena vecchia non permessa oggi"), 2)
+        # La chiusura che non vale non conta: l'utente può chiudere la questione con le sue parole.
+        self.assertEqual(self.accettata(done="0003", text="La chiamo io."), "0003.2")
+
+    def test_le_catene_permesse_valgono_come_prima(self):
+        self.vecchia("0001", "fact", "Il rubinetto perde dal tubo.")
+        self.vecchia("0002", "fact", "Perde dalla guarnizione.", "- corrects: 0001\n")
+        self.vecchia("0003", "todo", "Comprare la guarnizione.", author="claude")
+        self.vecchia("0004", "fact", "Comprata.", "- done: 0003\n", author="claude")
+        storie = self.storie()
+        self.assertEqual(storie.storie["0001"].ultima.contenuto.testo, "Perde dalla guarnizione.")
+        self.assertEqual(storie.storie["0003"].ultima.etichetta(), "✓F0003.1 (nota 0004)")
+        self.assertFalse(any(v.bloccati for s in storie.elenco() for v in s.versioni))
+        self.assertIn("niente da segnalare", self.comando("review")[1])
 
 
 class TestDocumenti(unittest.TestCase):

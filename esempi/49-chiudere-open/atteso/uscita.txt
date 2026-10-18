@@ -54,8 +54,22 @@ Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
 $ hypomnema search compostiera
-Nessuna nota aperta contiene «compostiera».
-(1 nota chiusa non mostrata: aggiungi --all per vederla.)
+Trovata 1 nota con «compostiera».
+
+--- Nota ✓D0001.1 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sull'orto
+autore: claude
+tipo: inferred
+natura: decision
+stato: chiusa (2026-01-15)
+testo:
+  Dove mettere la compostiera?
+storia (dalla più vecchia):
+  O0001    2026-01-15 · claude: creata
+  ✓D0001.1 2026-01-15 · user: chiusa il 2026-01-15, perché «Nell'angolo nord.», natura open → decision
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema search compostiera --all
@@ -72,7 +86,7 @@ testo:
   Dove mettere la compostiera?
 storia (dalla più vecchia):
   O0001    2026-01-15 · claude: creata
-  ✓D0001.1 2026-01-15 · user: chiusa, natura open → decision. Motivo: «Nell'angolo nord.»
+  ✓D0001.1 2026-01-15 · user: chiusa il 2026-01-15, perché «Nell'angolo nord.», natura open → decision
 
 Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
@@ -86,7 +100,9 @@ Discorsi aperti: nessuno.
 
 Cose da fare: nessuna.
 
-Ultime decisioni: nessuna.
+Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [✓D0001.1] 2026-01-15: Dove mettere la compostiera?
+    ↳ ✓D0001.1 2026-01-15 · user: chiusa il 2026-01-15, perché «Nell'angolo nord.», natura open → decision
 
 Ultime voci del diario: nessuna.
 

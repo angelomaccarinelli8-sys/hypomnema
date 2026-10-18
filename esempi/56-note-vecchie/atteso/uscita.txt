@@ -41,7 +41,7 @@ testo:
 storia (dalla più vecchia):
   T0001                2025-11-27 · user: creata
   T0001.1 (nota 0002)  2025-11-28 · user: testo corretto (prima: «Comprare il terriccio per i vasi.»)
-  ✓F0001.2 (nota 0003) 2025-11-29 · claude: chiusa, natura todo → fact. Motivo: «Terriccio comprato al vivaio.»
+  ✓F0001.2 (nota 0003) 2025-11-29 · claude: chiusa il 2025-11-29, perché «Terriccio comprato al vivaio.», natura todo → fact
 
 Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
@@ -61,7 +61,7 @@ testo:
   Chi chiamare per il rubinetto?
 storia (dalla più vecchia):
   O0010                2025-12-03 · user: creata
-  ✓O0010.1 (nota 0011) 2025-12-04 · user: chiusa. Motivo: «Chiamare l'idraulico di via dei Tigli.»
+  ✓O0010.1 (nota 0011) 2025-12-04 · user: chiusa il 2025-12-04, perché «Chiamare l'idraulico di via dei Tigli.»
 
 --- Nota F0007 ---
 data: 2025-11-30

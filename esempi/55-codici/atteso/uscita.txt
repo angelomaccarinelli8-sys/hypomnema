@@ -14,7 +14,7 @@ testo:
 storia (dalla più vecchia):
   T0001                2025-11-27 · user: creata
   T0001.1 (nota 0002)  2025-11-28 · user: testo corretto (prima: «Comprare il terriccio per i vasi.»)
-  xF0001.2 (nota 0003) 2025-11-29 · claude: chiusa, natura todo → fact. Motivo: «Terriccio comprato al vivaio.»
+  xF0001.2 (nota 0003) 2025-11-29 · claude: chiusa il 2025-11-29, perché «Terriccio comprato al vivaio.», natura todo → fact
 
 Legenda: F fatto · I idea · D decisione · O aperta · T da fare · x chiusa
 [codice di uscita: 0]
@@ -57,9 +57,9 @@ Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
 Cose da fare: 2 di 2 (prima la priorità alta, poi dal più recente)
 - [T0006] 2025-12-27: Seminare il basilico.
 - [T0001.3] 2026-01-15: Comprare il terriccio universale, non quello per agrumi.
-    ↳ T0001.1 (nota 0002) 2025-11-28 · user: testo corretto
-    ↳ xF0001.2 (nota 0003) 2025-11-29 · claude: chiusa, natura todo → fact
     ↳ T0001.3 2026-01-15 · user: riaperta il 2026-01-15, perché «Il terriccio è finito.», natura fact → todo
+    ↳ xF0001.2 (nota 0003) 2025-11-29 · claude: chiusa il 2025-11-29, perché «Terriccio comprato al vivaio.», natura todo → fact
+    ↳ T0001.1 (nota 0002) 2025-11-28 · user: testo corretto
 
 Ultime decisioni: nessuna.
 

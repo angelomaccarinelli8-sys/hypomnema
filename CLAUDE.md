@@ -143,6 +143,11 @@ Prossimo passo proposto:
   della PR #3: una nota salvata prima del compito 3 che contenesse nel testo la riga esatta
   `## Contesto scritto da Claude` verrebbe riletta come se da lì in poi ci fosse il contesto. Caso
   improbabile; il formato della nota non ha ancora un numero di formato.
+- **Le note si leggono per quello che sono adesso** (decisione di Angelo, PR #15): il recap e la
+  ricerca nascondono solo le chiuse che non sono decisioni; una questione chiusa come decisione compare
+  in «Ultime decisioni» con ✓. Le regole di oggi valgono anche per le catene vecchie: ciò che oggi non
+  sarebbe permesso resta nella storia ma non vale (`Versione.bloccati`), e la revisione lo segnala.
+  Nessuna regola nuova deve far sparire qualcosa dell'utente per mano di Claude.
 - **Regole che il programma non può controllare** (0.6.0): «una nota = una cosa sola», open/todo,
   «ricordati» = fact, parole copiate e non a memoria, la fonte, la data. Sono scritte in FORMATO
   («Le regole del quaderno») e nella skill; la revisione controlla solo le parti con un segno fisso.

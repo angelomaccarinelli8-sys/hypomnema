@@ -52,6 +52,9 @@ class Versione:
     autore: str
     cambi: tuple[str, ...] = ()
     motivo: str | None = None
+    # Solo nelle versioni virtuali: ciò che la nota vecchia cambiava ma che oggi non avrebbe il
+    # permesso di cambiare (voci come in «cambi»). Resta nella storia, ma non vale.
+    bloccati: tuple[str, ...] = ()
 
     @property
     def id(self) -> str:
@@ -86,6 +89,16 @@ class Storia:
     def chiusa(self) -> bool:
         return self.ultima.chiusa
 
+    @property
+    def nascosta(self) -> bool:
+        """Il recap e la ricerca di base non la mostrano: è chiusa e non è una decisione.
+
+        Si legge per quello che è adesso: una questione chiusa come decisione (✓D) è una decisione,
+        e il ✓ dice che è risolta, non che va nascosta. Si nascondono le cose da fare o da decidere
+        ormai risolte (todo, open e promemoria chiusi, anche diventati fatti o idee).
+        """
+        return self.chiusa and self.ultima.contenuto.natura != "decision"
+
     def natura_prima_della_chiusura(self) -> str:
         """La natura dell'ultima versione aperta prima della chiusura in corso."""
         for versione in reversed(self.versioni):
@@ -110,6 +123,26 @@ def differenze(prima: Nota, dopo: Nota) -> list[str]:
         cambi.append(f"remind {prima.riprendere_il} → {dopo.riprendere_il}" if prima.riprendere_il
                      else f"remind {dopo.riprendere_il}")
     return cambi
+
+
+def natura_che_cambia(prima: str, dopo: str, autore: str, autore_nota: str, campo: str) -> str | None:
+    """Chi può cambiare la natura di una nota: il motivo del rifiuto, oppure None.
+
+    La usano lo sportello (le proposte di oggi) e la lettura delle note vecchie (che cosa una catena
+    vecchia può ancora cambiare).
+    """
+    if dopo == "decision" and prima == "idea":
+        return ("an idea becomes a decision only with a new note that has «confirms» "
+                "(from idea to decision): the idea stays as it is.")
+    if dopo == "decision" and autore != "user":
+        return "only the user can make a note a decision: Claude can suggest it to the user."
+    if prima == "decision" and autore != "user":
+        return "only the user can change the kind of a decision."
+    if prima == "open" and autore != "user" and campo != "done":
+        return "only the user can change an open note into something else: Claude can suggest it."
+    if campo in ("corrects", "updates") and autore_nota == "user" and autore != "user":
+        return "only the user can change the kind of one of the user's notes."
+    return None
 
 
 @dataclass(frozen=True)
@@ -199,20 +232,9 @@ class Quaderno:
             vid = f"{nota.id}.{numero}"
             p = precedente.contenuto
             if come == "corregge":
-                contenuto = replace(
-                    vecchia, id=vid, corregge=None, done=None,
-                    priorita=vecchia.priorita or p.priorita,
-                    riprendere_il=vecchia.riprendere_il or p.riprendere_il,
-                    conferma_di=vecchia.conferma_di or p.conferma_di,
-                    stato=CHIUSA if precedente.chiusa else None,
-                )
-                versione = Versione(nota.id, numero, contenuto, precedente.chiusa, vecchia, vecchia.data,
-                                    vecchia.fonte, vecchia.autore, tuple(differenze(p, contenuto)))
+                versione = self._correzione_vecchia(nota.id, numero, precedente, vecchia)
             else:
-                natura = vecchia.natura if vecchia.natura in NATURE_DOPO_LA_CHIUSURA else p.natura
-                contenuto = replace(p, id=vid, natura=natura, stato=CHIUSA)
-                versione = Versione(nota.id, numero, contenuto, True, vecchia, vecchia.data, vecchia.fonte,
-                                    vecchia.autore, (CHIUSA, *differenze(p, contenuto)), vecchia.testo)
+                versione = self._chiusura_vecchia(nota.id, numero, precedente, vecchia)
             cambiate.setdefault(bersaglio, []).append(vecchia)
             storia.versioni.append(versione)
             self.alias.setdefault(vecchia.id, []).append(versione)
@@ -229,6 +251,52 @@ class Quaderno:
                 tuple(cambio.cambio.split("; ")) if cambio else (), cambio.motivo if cambio else None,
             ))
         return storia
+
+    # Le regole di oggi valgono anche per le note vecchie: una catena vecchia resta nella storia, ma
+    # non cambia ciò che oggi non avrebbe il permesso di cambiare (il testo dell'utente resta il suo,
+    # un open resta open). Le note vecchie non si riscrivono: cambia solo come si leggono.
+
+    @staticmethod
+    def _correzione_vecchia(base: str, numero: int, precedente: Versione, vecchia: Nota) -> Versione:
+        p = precedente.contenuto
+        voluto = replace(
+            vecchia, id=f"{base}.{numero}", corregge=None, done=None,
+            priorita=vecchia.priorita or p.priorita,
+            riprendere_il=vecchia.riprendere_il or p.riprendere_il,
+            conferma_di=vecchia.conferma_di or p.conferma_di,
+            stato=CHIUSA if precedente.chiusa else None,
+        )
+        contenuto = voluto
+        if p.autore == "user" and vecchia.autore != "user":
+            # Il testo dell'utente lo corregge solo l'utente: resta il suo, con la sua intestazione.
+            contenuto = replace(p, id=voluto.id, natura=voluto.natura, priorita=voluto.priorita,
+                                riprendere_il=voluto.riprendere_il, conferma_di=voluto.conferma_di)
+        if natura_che_cambia(p.natura, contenuto.natura, vecchia.autore, p.autore, "corrects") is not None:
+            contenuto = replace(contenuto, natura=p.natura)
+        applicati = differenze(p, contenuto)
+        bloccati = tuple(c for c in differenze(p, voluto) if c not in applicati)
+        return Versione(base, numero, contenuto, precedente.chiusa, vecchia, vecchia.data, vecchia.fonte,
+                        vecchia.autore, tuple(applicati), None, bloccati)
+
+    @staticmethod
+    def _chiusura_vecchia(base: str, numero: int, precedente: Versione, vecchia: Nota) -> Versione:
+        p = precedente.contenuto
+        vid = f"{base}.{numero}"
+        natura = vecchia.natura if vecchia.natura in NATURE_DOPO_LA_CHIUSURA else p.natura
+        voluto = replace(p, id=vid, natura=natura, stato=CHIUSA)
+        if p.natura == "open" and vecchia.autore != "user":
+            # Un open lo chiude solo l'utente: resta aperto, com'era.
+            contenuto = replace(p, id=vid)
+            bloccati = (CHIUSA, *differenze(p, voluto))
+            return Versione(base, numero, contenuto, precedente.chiusa, vecchia, vecchia.data, vecchia.fonte,
+                            vecchia.autore, (), vecchia.testo, bloccati)
+        contenuto = voluto
+        if natura_che_cambia(p.natura, natura, vecchia.autore, p.autore, "done") is not None:
+            contenuto = replace(voluto, natura=p.natura)
+        applicati = differenze(p, contenuto)
+        bloccati = tuple(c for c in differenze(p, voluto) if c not in applicati)
+        return Versione(base, numero, contenuto, True, vecchia, vecchia.data, vecchia.fonte, vecchia.autore,
+                        (CHIUSA, *applicati), vecchia.testo, bloccati)
 
     # --- lettura ---
 

@@ -5,17 +5,17 @@ Quaderno in ordine: 7 note, tutte con la loro riga ACCETTATA nel registro.
 $ hypomnema cerca compostiera
 Trovata 1 nota con «compostiera».
 
---- Nota F0004.1 (nota 0007) ---
+--- Nota O0004.1 (nota 0007) ---
 data: 2026-01-15
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: claude
 tipo: observed
-natura: fact
+natura: open
 testo:
   La compostiera è stata messa nell'angolo nord.
 storia (dalla più vecchia):
   O0004               2026-01-15 · claude: creata
-  F0004.1 (nota 0007) 2026-01-15 · claude: testo corretto (prima: «Resta da capire dove mettere la compostiera.»), natura open → fact
+  O0004.1 (nota 0007) 2026-01-15 · claude: testo corretto (prima: «Resta da capire dove mettere la compostiera.»); non applicato (catena vecchia non permessa oggi): natura open → fact
 
 Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
@@ -78,8 +78,10 @@ Dove eravamo rimasti (recap del 2026-01-15).
 Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)
 - [I0006] da riprendere il 2026-01-10: Controllare se le fragole hanno attecchito.
 
-Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+Discorsi aperti: 2 di 2 (prima la priorità alta, poi dal più recente)
 - [O0005] 2026-01-15: Da decidere se aggiungere un secondo vaso di fragole.
+- [O0004.1 (nota 0007)] 2026-01-15: La compostiera è stata messa nell'angolo nord.
+    ↳ O0004.1 (nota 0007) 2026-01-15 · claude: testo corretto; non applicato (catena vecchia non permessa oggi): natura open → fact
 
 Cose da fare: nessuna.
 
@@ -110,8 +112,10 @@ Dove eravamo rimasti (recap del 2026-01-15).
 
 Promemoria scaduti: nessuno.
 
-Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+Discorsi aperti: 2 di 2 (prima la priorità alta, poi dal più recente)
 - [O0005] 2026-01-15: Da decidere se aggiungere un secondo vaso di fragole.
+- [O0004.1 (nota 0007)] 2026-01-15: La compostiera è stata messa nell'angolo nord.
+    ↳ O0004.1 (nota 0007) 2026-01-15 · claude: testo corretto; non applicato (catena vecchia non permessa oggi): natura open → fact
 
 Cose da fare: nessuna.
 
@@ -132,17 +136,17 @@ Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 $ hypomnema cerca compostiera --tutte
 Trovata 1 nota con «compostiera».
 
---- Nota F0004.1 (nota 0007) ---
+--- Nota O0004.1 (nota 0007) ---
 data: 2026-01-15
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: claude
 tipo: observed
-natura: fact
+natura: open
 testo:
   La compostiera è stata messa nell'angolo nord.
 storia (dalla più vecchia):
   O0004               2026-01-15 · claude: creata
-  F0004.1 (nota 0007) 2026-01-15 · claude: testo corretto (prima: «Resta da capire dove mettere la compostiera.»), natura open → fact
+  O0004.1 (nota 0007) 2026-01-15 · claude: testo corretto (prima: «Resta da capire dove mettere la compostiera.»); non applicato (catena vecchia non permessa oggi): natura open → fact
 
 Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]

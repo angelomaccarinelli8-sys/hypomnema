@@ -58,7 +58,7 @@ Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
 | **Cercatore** (`search`, o `cerca`) | Trova le note che contengono una parola, dalla più recente, senza quelle chiuse (con `--all` anche quelle); di ogni nota mostra l'ultima versione e la sua storia, e sotto le note che la confermano. Solo lettura. |
 | **Promemoria** (`reminders`, o `promemoria`) | Elenca le note con la data `remind` arrivata o già passata, dalla più vecchia. Solo lettura. |
 | **Recap** (`recap`) | «Dove eravamo rimasti»: promemoria scaduti, discorsi aperti, cose da fare, ultime decisioni e ultime righe del diario, scelti con regole fisse, prima le priorità alte. Solo lettura. |
-| **Revisione** (`review`, o `revisione`) | Che cosa conviene guardare: questioni ferme da tanto, promemoria scaduti, cose da fare nominate in una nota successiva, «ricordamelo» senza data, rami delle note vecchie. Dice cosa si può fare, non lo fa. Solo lettura. |
+| **Revisione** (`review`, o `revisione`) | Che cosa conviene guardare: questioni ferme da tanto, promemoria scaduti, cose da fare nominate in una nota successiva, «ricordamelo» senza data, rami e catene vecchie non permesse oggi. Dice cosa si può fare, non lo fa. Solo lettura. |
 | **Testimone** (`testimone`) | Se lo accendi, registra le parole esatte dei tuoi messaggi, così lo sportello può controllare che una nota "dell'utente" riporti parole che hai detto davvero. |
 | **Stato** (`status`, o `stato`) | Dice se il testimone è acceso, dov'è il quaderno e quale messaggio ha registrato per ultimo. Solo lettura. |
 | **Skill** (`skills/hypomnema/SKILL.md`) | Le istruzioni per Claude: quando leggere, come controllare il testimone, come preparare le note, come confermare una decisione. |
@@ -406,8 +406,11 @@ l'ultima versione.
   riaprire le cose da fare e i promemoria, e correggere le sue note.
 - `fact`, `decision` e `idea` senza promemoria non si chiudono: si correggono o si cambiano.
 
-Il `recap` e la ricerca di base **non mostrano le note chiuse**. La ricerca dice quante ne ha
-nascoste, e `search <parola> --all` le mostra, con la loro storia.
+Il `recap` e la ricerca leggono ogni nota per quello che è **adesso**. Non mostrano le cose da fare
+o da decidere ormai chiuse: la ricerca dice quante ne ha nascoste, e `search <parola> --all` le
+mostra, con la loro storia. Una questione chiusa come decisione invece è una decisione: compare in
+«Ultime decisioni», con il suo codice (per esempio `✓D0049.3`). Il ✓ dice che è risolta, non che va
+nascosta.
 
 ### Il codice della nota
 
@@ -449,14 +452,19 @@ sono una storia sola: il recap non la mostra, `search --all` la mostra una volta
 chiudeva è a sua volta una cosa da fare o conferma un'idea, resta visibile anche da sola, così non si
 perde niente. Le note con i campi italiani si mostrano esattamente come le nuove.
 
+Le regole di oggi valgono anche per le note vecchie. Se una nota vecchia di Claude correggeva il testo
+di una tua nota, o faceva smettere una questione aperta di essere aperta, resta nella storia ma non
+vale: il testo resta il tuo, la questione resta aperta. La storia lo scrive («non applicato (catena
+vecchia non permessa oggi)») e la revisione lo segnala: se quel cambiamento va fatto, lo decidi tu.
+
 ### La revisione
 
 Il comando `review` (o `revisione`) guarda il quaderno con regole fisse e dice che cosa conviene
 controllare, senza cambiare niente: le questioni aperte e le cose da fare ferme da più di 30 giorni
 (si regola con `[revisione]` e `giorni`), i promemoria scaduti, le cose da fare nominate nel testo di
-una nota successiva («la 0006 è fatta»), quelle con «ricordamelo» o «tra tre giorni» ma senza data, e i
-rami delle note vecchie (due correzioni della stessa nota). Ogni riga dice che cosa si può fare; decidi
-tu. Claude la lancia a inizio chat, dopo il recap, e se trova qualcosa te lo dice in una riga.
+una nota successiva («la 0006 è fatta»), quelle con «ricordamelo» o «tra tre giorni» ma senza data, i
+rami delle note vecchie (due correzioni della stessa nota) e le catene vecchie che oggi non sarebbero
+permesse. Ogni riga dice che cosa si può fare; decidi tu. Claude la lancia a inizio chat, dopo il recap, e se trova qualcosa te lo dice in una riga.
 
 ### La priorità
 

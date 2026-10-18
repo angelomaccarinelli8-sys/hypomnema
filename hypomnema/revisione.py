@@ -14,6 +14,9 @@ parole) segnala soltanto, e decide l'utente.
    è fatta.
 5. **Senza data**: un ``open`` o ``todo`` aperto senza ``remind`` che nel testo ha «ricordamelo»,
    «ricordami», «remind me», «tra/fra … giorni/settimane/mesi» o «in … days/weeks».
+6. **Catena vecchia non permessa oggi**: una nota vecchia cambiava ciò che oggi non avrebbe il permesso
+   di cambiare (Claude che corregge il testo dell'utente, o che fa smettere un open di essere open).
+   Resta nella storia ma non vale: lo dice la revisione, e decide l'utente.
 """
 
 import re
@@ -21,6 +24,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from hypomnema import promemoria
+from hypomnema.cercatore import in_italiano
 from hypomnema.nota import ordine
 from hypomnema.versioni import Quaderno, Storia, Versione
 
@@ -118,5 +122,16 @@ def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segn
             segnalazioni.append(Segnalazione(storia, (
                 f"nel testo c'è «{trovato.group(0)}» ma la nota non ha la data del promemoria. Si può "
                 f"aggiungere con updates: {storia.base} e remind."
+            )))
+    for storia in quaderno.elenco():
+        for versione in storia.versioni:
+            if not versione.bloccati:
+                continue
+            campo = ("done" if "closed" in versione.bloccati
+                     else "corrects" if "text corrected" in versione.bloccati else "updates")
+            segnalazioni.append(Segnalazione(storia, (
+                f"catena vecchia non permessa oggi: nella nota {versione.origine.id} ({versione.autore}, "
+                f"{versione.data[:10]}) non vale «{', '.join(in_italiano(v) for v in versione.bloccati)}». Resta "
+                f"nella storia; se il cambiamento va fatto, lo decide l'utente ({campo}: {storia.base})."
             )))
     return segnalazioni

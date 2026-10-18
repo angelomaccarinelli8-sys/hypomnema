@@ -76,7 +76,7 @@ testo:
   Pulire i vasi vuoti.
 storia (dalla più vecchia):
   T0002    2026-01-15 · claude: creata
-  ✓F0002.1 2026-01-15 · claude: chiusa, natura todo → fact. Motivo: «Terriccio comprato e vasi puliti.»
+  ✓F0002.1 2026-01-15 · claude: chiusa il 2026-01-15, perché «Terriccio comprato e vasi puliti.», natura todo → fact
 
 --- Nota ✓F0001.1 ---
 data: 2026-01-15
@@ -89,7 +89,7 @@ testo:
   Comprare il terriccio.
 storia (dalla più vecchia):
   T0001    2026-01-15 · claude: creata
-  ✓F0001.1 2026-01-15 · claude: chiusa, natura todo → fact. Motivo: «Terriccio comprato e vasi puliti.»
+  ✓F0001.1 2026-01-15 · claude: chiusa il 2026-01-15, perché «Terriccio comprato e vasi puliti.», natura todo → fact
 
 Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]

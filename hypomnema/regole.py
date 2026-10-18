@@ -262,22 +262,6 @@ def controlla(
     return motivi
 
 
-def _natura_che_cambia(prima: str, dopo: str, autore: str, autore_nota: str, campo: str) -> str | None:
-    """Chi può cambiare la natura di una nota: il motivo del rifiuto, oppure None."""
-    if dopo == "decision" and prima == "idea":
-        return ("an idea becomes a decision only with a new note that has «confirms» "
-                "(from idea to decision): the idea stays as it is.")
-    if dopo == "decision" and autore != "user":
-        return "only the user can make a note a decision: Claude can suggest it to the user."
-    if prima == "decision" and autore != "user":
-        return "only the user can change the kind of a decision."
-    if prima == "open" and autore != "user" and campo != "done":
-        return "only the user can change an open note into something else: Claude can suggest it."
-    if campo in ("corrects", "updates") and autore_nota == "user" and autore != "user":
-        return "only the user can change the kind of one of the user's notes."
-    return None
-
-
 def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia") -> Nota:
     """Come sarà la nota dopo il cambiamento (senza il blocco del cambiamento e senza verifica)."""
     attuale = storia.ultima.contenuto
@@ -374,7 +358,7 @@ def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa
         dopo = dopo_il_cambiamento(campo, valori, storia)
         prima_natura = storia.natura_prima_della_chiusura() if campo == "reopens" else attuale.natura
         if dopo.natura != prima_natura:
-            motivo = _natura_che_cambia(prima_natura, dopo.natura, autore, attuale.autore, campo)
+            motivo = versioni.natura_che_cambia(prima_natura, dopo.natura, autore, attuale.autore, campo)
             if motivo is not None:
                 motivi.append(motivo)
                 continue

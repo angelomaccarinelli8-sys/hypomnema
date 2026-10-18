@@ -53,8 +53,8 @@ Cose da fare: 2 di 2 (prima la priorità alta, poi dal più recente)
 - [T0006.1] [alta] 2026-01-15: Seminare il basilico.
     ↳ T0006.1 2026-01-15 · user: priorità normal → high
 - [T0004.2] 2026-01-15: Montare la compostiera nell'angolo nord.
-    ↳ T0004.1 2026-01-15 · user: natura open → todo
     ↳ T0004.2 2026-01-15 · user: testo corretto
+    ↳ T0004.1 2026-01-15 · user: natura open → todo
 
 Ultime decisioni: nessuna.
 

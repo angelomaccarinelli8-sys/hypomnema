@@ -24,11 +24,17 @@ Hypomnema e come aggiornarsi.
   `chiusa = "x"`).
 - **Le note di prima si leggono come versioni**, senza riscriverle: una vecchia correzione compare
   come `0049.1 (nota 0050)`, una vecchia chiusura come versione chiusa. Le note con i campi italiani
-  si mostrano come le nuove.
+  si mostrano come le nuove. Le regole di oggi valgono anche per loro: una vecchia nota di Claude che
+  correggeva il tuo testo, o che faceva smettere una questione aperta di essere aperta, resta nella
+  storia ma non vale (il testo resta il tuo, l'open resta open), e la revisione la segnala.
+- **Il recap legge ogni nota per quello che è adesso.** Si nascondono le cose da fare o da decidere
+  ormai chiuse; una questione chiusa come decisione compare in «Ultime decisioni» con il suo ✓
+  (`✓D0049.3`). Sotto ogni nota la storia va dalla più recente alla più vecchia, e la chiusura dice il
+  suo motivo come la riapertura.
 - **Il comando `review` (`revisione`)**, solo lettura: segnala le questioni ferme da più di 30 giorni,
-  i promemoria scaduti, le cose da fare nominate in una nota successiva, «ricordamelo» senza data e
-  i rami delle note vecchie. Dice che cosa si può fare, non lo fa. Claude lo lancia a inizio chat,
-  dopo il recap. Nel plugin c'è anche `/hypomnema:review`.
+  i promemoria scaduti, le cose da fare nominate in una nota successiva, «ricordamelo» senza data, i
+  rami delle note vecchie e le catene vecchie non permesse oggi. Dice che cosa si può fare, non lo
+  fa. Claude lo lancia a inizio chat, dopo il recap. Nel plugin c'è anche `/hypomnema:review`.
 - **Tutte le regole scritte.** FORMATO.md ha una sezione «Le regole del quaderno»: 24 regole, ognuna
   con chi può usarla, che effetto ha e un esempio giusto e uno sbagliato.
 

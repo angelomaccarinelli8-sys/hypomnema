@@ -213,7 +213,7 @@ class TestChiusure(ConQuaderno):
         self.assertNotIn("--- Nota", uscita)
         _, tutte = self.comando("search", "terriccio", "--all")
         self.assertIn("--- Nota ✓T0001.1 ---", tutte)
-        self.assertIn("✓T0001.1 2026-01-15 · user: chiusa. Motivo: «Il terriccio è arrivato.»", tutte)
+        self.assertIn("✓T0001.1 2026-01-15 · user: chiusa il 2026-01-15, perché «Il terriccio è arrivato.»", tutte)
         _, recap = self.comando("recap")
         self.assertIn("Cose da fare: nessuna.", recap)
         self.assertEqual(cercatore.cerca(self.config, "terriccio"), [])

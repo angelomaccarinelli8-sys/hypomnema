@@ -312,14 +312,23 @@ terminale che non mostra `✓` può scegliere un altro segno nella sezione facol
 Le note salvate prima della 0.6.0 non si riscrivono: si leggono con le stesse regole delle versioni.
 
 - Una nota vecchia con `corrects: X` è la versione successiva della nota X, e si mostra con il suo
-  numero vero accanto: `T0001.1 (nota 0002)`. La sua natura vale da lì in poi (una vecchia correzione
-  che cambiava natura conta come cambio di natura); priorità e `remind` valgono se ce li ha,
-  altrimenti restano quelli di prima.
+  numero vero accanto: `T0001.1 (nota 0002)`. Il suo testo e la sua natura valgono da lì in poi (una
+  vecchia correzione che cambiava natura conta come cambio di natura); priorità e `remind` valgono se
+  ce li ha, altrimenti restano quelli di prima.
 - Una nota vecchia con `done` è la versione **chiusa** di ogni nota che chiude (una volta sola per
   nota, anche se ne chiude anche la correzione), con il suo testo come motivo. La natura chiusa è la
   sua se è `decision`, `fact` o `idea`; altrimenti resta quella di prima.
 - Se la nota vecchia che chiude è essa stessa un `todo` o un promemoria, se conferma un'idea
   (`confirms`) o se un'altra nota la corregge, resta **anche** una nota a sé: così non si perde.
+- **Le regole di oggi valgono anche per le catene vecchie.** Una nota vecchia che oggi non sarebbe
+  permessa resta nella storia, ma non cambia ciò che oggi non avrebbe il permesso di cambiare:
+  - se Claude correggeva il testo di una nota dell'utente, il testo che vale resta quello dell'utente;
+  - se Claude faceva smettere un `open` di essere `open` (lo chiudeva, o lo correggeva con un'altra
+    natura), l'`open` resta `open`;
+  - vale lo stesso per gli altri cambi di natura non permessi (regola 12).
+
+  La storia dice che cosa non vale: «non applicato (catena vecchia non permessa oggi): …», e la
+  revisione la segnala. Nessuna regola nuova fa sparire qualcosa dell'utente per mano di Claude.
 - Le versioni vecchie di una nota sono numerate per numero di nota, prima delle versioni nuove.
 - Due note vecchie che correggono (o chiudono) la stessa versione formano un **ramo**: vale la più
   recente, e la revisione lo segnala. Con le note nuove non può succedere.
@@ -335,14 +344,14 @@ Il cercatore (`search`) trova una nota se la parola è in una qualunque delle su
 nel contesto scritto da Claude o nel motivo di un cambiamento. Di ogni nota mostra l'ultima versione
 intera e poi la sua storia, una riga per versione dalla più vecchia: codice, data, chi, che cosa è
 cambiato e il motivo (per una correzione del testo, anche la prima riga del testo di prima; per una
-riapertura «riaperta il …, perché «…»»). Sotto la nota, rientrate di quattro spazi, compaiono le note
+chiusura e una riapertura «chiusa il …, perché «…»» e «riaperta il …, perché «…»»). Sotto la nota, rientrate di quattro spazi, compaiono le note
 che la confermano (`confirms`); una nota che conferma un'altra dice com'è quella nota oggi, anche se è
 chiusa o se la conferma riguarda una versione vecchia («conferma di: nota I0005.1 (nota 0008),
 versione vecchia: l'ultima è I0005.2»). Una nota già comparsa più sopra si indica con una riga sola.
 
 Le note trovate vanno dalla più recente alla più vecchia, cioè dal numero più alto: è l'ordine in
-cui sono entrate nel quaderno, non il campo `date`. Le note la cui ultima versione è chiusa non si
-mostrano: l'uscita dice quante sono state nascoste («1 nota chiusa non mostrata: aggiungi --all per
+cui sono entrate nel quaderno, non il campo `date`. Le note chiuse non si mostrano, tranne le
+decisioni (vedi «Chiudere e riaprire»): l'uscita dice quante sono state nascoste («1 nota chiusa non mostrata: aggiungi --all per
 vederla.»), e `search <parola> --all` (o `--tutte`) le mostra, con la loro storia.
 
 La ricerca è per parola esatta, senza distinzione di maiuscole; una parola è delimitata da
@@ -363,7 +372,11 @@ Chiusa e aperta sono **stati** di una nota, non note a parte.
 - `fact`, `decision` e `idea` senza `remind` non si chiudono: si correggono (`corrects`), si
   cambiano (`updates`), e le idee si confermano (`confirms`).
 
-Le note chiuse non compaiono nel recap né nella ricerca di base (`search --all` le mostra).
+Il recap e la ricerca leggono ogni nota per quello che è **adesso**, cioè la sua ultima versione. Si
+nascondono solo le note chiuse che non sono decisioni: le cose da fare o da decidere ormai risolte
+(`todo`, `open` e promemoria chiusi, anche diventati fatti o idee); `search --all` le mostra. Una
+questione chiusa come decisione **è una decisione**: compare in «Ultime decisioni» e nella ricerca,
+con il suo codice (`✓D0049.3`). Il ✓ dice che la questione è risolta, non che va nascosta.
 
 ## La priorità
 
@@ -382,8 +395,11 @@ decide il numero della nota.
 
 Il comando `recap` («dove eravamo rimasti») mostra, con regole fisse, una riga per nota (codice
 dell'ultima versione, priorità `[alta]` o `[bassa]` se c'è, data dell'ultima versione, prima riga del
-testo, con `…` se il testo continua) e sotto, con `↳`, una riga per ogni versione dopo la prima (che
-cosa è cambiato) e le conferme. Vale l'ultima versione di ogni nota; le note chiuse non compaiono.
+testo, con `…` se il testo continua) e sotto, con `↳`, una riga per ogni versione dopo la prima, **dalla
+più recente alla più vecchia**, come il quaderno (che cosa è cambiato; per una chiusura e una
+riapertura anche il motivo), e le conferme. Vale l'ultima versione di ogni nota, per quello che è
+adesso: le note chiuse non compaiono, tranne le decisioni (una questione chiusa come decisione compare
+in «Ultime decisioni», con `✓`).
 
 1. i promemoria scaduti, tutti;
 2. gli ultimi discorsi aperti (`kind: open`);
@@ -415,7 +431,10 @@ niente, con 1 se c'è qualcosa da guardare. Le regole sono fisse:
    dopo: forse dice che è fatta;
 5. **senza data**: un `open` o `todo` aperto senza `remind` che nel testo ha «ricordamelo»,
    «ricordami», «remind me», «tra (o fra) … giorni/giorno/settimane/settimana/mesi/mese» oppure
-   «in … days/day/weeks/week».
+   «in … days/day/weeks/week»;
+6. **catena vecchia non permessa oggi**: una nota vecchia cambiava ciò che oggi non avrebbe il
+   permesso di cambiare (vedi «Le note di prima delle versioni»): resta nella storia ma non vale, e la
+   riga dice con quale proposta l'utente può fare il cambiamento, se lo vuole.
 
 Il programma non capisce il senso delle parole: non sa se una nota dice «è fatta» o «è superata», e
 non legge le date scritte a parole. Per questo segnala soltanto, e decide l'utente.
@@ -578,7 +597,8 @@ Claude, e la revisione (`review`) ne controlla solo la parte che ha un segno fis
 - **Dice:** `done` chiude `open`, `todo` e promemoria. Un `open` lo chiude solo l'utente; `todo` e
   promemoria anche Claude. Fatti, decisioni e idee senza `remind` non si chiudono.
 - **Chi:** come detto.
-- **Effetto:** versione chiusa (`✓`), con il motivo; sparisce dal recap.
+- **Effetto:** versione chiusa (`✓`), con il motivo; sparisce dal recap, tranne se è diventata una
+  decisione (allora compare in «Ultime decisioni», con `✓D`).
 - ✔ Claude: `{"done": "0006", "kind": "fact", "text": "Seminato oggi in tre vasi.", …}` → `✓F0006.2`.
 - ✘ Claude chiude un `open` → rifiutata: «only the user can close an open note».
 

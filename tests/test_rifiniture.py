@@ -139,7 +139,7 @@ class TestCercatore(ConQuaderno):
         _, uscita = self.comando("cerca", "semi", "--all")
         self.assertIn("--- Nota ✓I0001.1 ---", uscita)
         self.assertIn("stato: chiusa (2026-01-15)", uscita)
-        self.assertIn("✓I0001.1 2026-01-15 · claude: chiusa. Motivo: «fatto»", uscita)
+        self.assertIn("✓I0001.1 2026-01-15 · claude: chiusa il 2026-01-15, perché «fatto»", uscita)
 
 
 class TestDiarioParoleComposte(ConQuaderno):

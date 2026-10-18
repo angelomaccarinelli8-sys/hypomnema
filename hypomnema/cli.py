@@ -308,7 +308,8 @@ def _riga_recap(storia: Storia, inizio: str, quaderno: Quaderno, segno: str, con
     ultima = storia.ultima
     priorita = ETICHETTA_PRIORITA[cercatore.priorita_in_vigore(storia)]
     righe = [f"- [{ultima.etichetta(segno)}] {priorita}{inizio}: {_prima_riga(ultima.contenuto.testo)}"]
-    for versione in storia.versioni[1:]:
+    # La storia dalla versione più recente alla più vecchia, come il quaderno.
+    for versione in reversed(storia.versioni[1:]):
         righe.append(f"    ↳ {versione.etichetta(segno)} {versione.data} · {versione.autore}: "
                      f"{cercatore.descrivi_cambio(storia, versione, breve=True)}")
     if ultima.contenuto.conferma_di is not None:
@@ -325,7 +326,8 @@ def _recap(config, adesso: datetime, uscita: TextIO) -> int:
 
     In ogni blocco vengono prima le note a priorità alta, poi normale, poi bassa; a parità di
     priorità, i promemoria dal più vecchio e il resto dal più recente (per numero di nota). Vale
-    l'ultima versione di ogni nota; le note chiuse non ci sono.
+    l'ultima versione di ogni nota, per quello che è adesso: le chiuse non ci sono, tranne le decisioni
+    (una questione chiusa come decisione compare tra le decisioni, con il suo ✓).
     """
     archivio_note = cercatore.leggi(config)
     conferme = cercatore.confermata_da(archivio_note)
@@ -356,7 +358,7 @@ def _recap(config, adesso: datetime, uscita: TextIO) -> int:
          "1 decisione più vecchia non mostrata", "{} decisioni più vecchie non mostrate"),
     ):
         scelte = per_priorita(cercatore.dal_piu_recente(
-            [s for s in archivio_note.elenco() if s.ultima.contenuto.natura == natura and not s.chiusa]))
+            [s for s in archivio_note.elenco() if s.ultima.contenuto.natura == natura and not s.nascosta]))
         righe.append("")
         if not scelte:
             righe.append(f"{titolo}: {nessuno}.")

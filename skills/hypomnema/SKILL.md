@@ -94,7 +94,7 @@ anything**: the register only grows and the decision is theirs. Then carry on no
    the user) apart from the diary (only the conversation).
    Then run `P review` (in chat `H review`): read only, it lists with fixed rules what is worth
    looking at (questions or todos stuck for a long time, overdue reminders, todos named in a later
-   note, «ricordamelo» without a date, old branches). If it finds something, **tell the user in
+   note, «ricordamelo» without a date, old branches, old chains not allowed today). If it finds something, **tell the user in
    one line**, for example «La revisione segnala 2 cose: la T0006 ha il promemoria scaduto e la
    O0004 è ferma da 46 giorni.» Do not change anything by yourself: each line says what *can* be
    done, the user decides.
@@ -274,10 +274,18 @@ A change of priority by the user:
 }
 ```
 
-`recap` and `search` do not show closed notes; `search <word> --all` shows them, with their history.
+`recap` and `search` read every note as it is **now** (its last version). They hide closed todos,
+open questions and reminders, also when they became facts or ideas; `search <word> --all` shows them,
+with their history. A question closed as a **decision is a decision**: it appears in «Ultime
+decisioni» and in the search, with its code (`✓D0049.3`): the ✓ means it is settled, not hidden. In the
+recap the history lines under a note go from the most recent to the oldest.
 Notes written before versions existed (old corrections with `corrects`, old closing notes with
 `done`) are shown as versions too, with their real number next to them: `T0001.1 (nota 0002)`; their
-old number still works in a proposal if that version is the last one.
+old number still works in a proposal if that version is the last one. Today's rules apply to them
+too: an old note of yours that corrected the user's text, or made an `open` stop being open, stays in
+the history but does not count («non applicato (catena vecchia non permessa oggi)»): the user's text
+stays theirs, an open stays open. Never treat that old change as valid; if it is needed, propose it to
+the user.
 
 ### Priority
 

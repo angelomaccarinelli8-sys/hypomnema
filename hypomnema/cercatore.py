@@ -7,9 +7,9 @@ trattino basso, il punto, il trattino e la barra delle parole composte): "orto" 
 
 Dalla 0.6.0 si cerca nelle storie (vedi ``versioni``): una nota si trova se la parola è in una
 qualunque delle sue versioni, nel testo, nel contesto scritto da Claude o nel motivo di un
-cambiamento. Le note trovate vanno dalla più recente (numero più alto) alla più vecchia. Le note la
-cui ultima versione è chiusa non si mostrano, a meno di chiederle tutte (``tutte=True``, cioè
-``search --all``).
+cambiamento. Le note trovate vanno dalla più recente (numero più alto) alla più vecchia. Le note chiuse
+non si mostrano, a meno di chiederle tutte (``tutte=True``, cioè ``search --all``), tranne quelle
+chiuse come decisione (vedi ``Storia.nascosta``).
 
 Ogni nota si porta dietro le note che la confermano (``confirms``), e una nota che conferma
 un'altra dice sempre com'è quella nota oggi, anche se è chiusa o è stata cambiata.
@@ -50,7 +50,7 @@ def cerca(quaderno: Quaderno | Configurazione, parola: str, tutte: bool = False)
     schema = schema_parola(parola)
     return dal_piu_recente([
         s for s in quaderno.elenco()
-        if any(_contiene(v, schema) for v in s.versioni) and (tutte or not s.chiusa)
+        if any(_contiene(v, schema) for v in s.versioni) and (tutte or not s.nascosta)
     ])
 
 
@@ -118,20 +118,34 @@ def descrivi_cambio(storia: Storia, versione: Versione, breve: bool) -> str:
     if versione.numero == 0:
         return "creata"
     taglia = prima_riga if breve else su_una_riga
+    perche = f", perché «{taglia(versione.motivo)}»" if versione.motivo else ""
     voci = []
     for voce in versione.cambi:
         if voce == "reopened":
-            perche = f", perché «{taglia(versione.motivo)}»" if versione.motivo else ""
             voci.append(f"riaperta il {versione.data}{perche}")
+        elif voce == "closed":
+            voci.append(f"chiusa il {versione.data}{perche}")
         elif voce == "text corrected" and not breve:
             precedente = storia.versioni[storia.versioni.index(versione) - 1].contenuto
             voci.append(f"testo corretto (prima: «{prima_riga(precedente.testo)}»)")
         else:
             voci.append(in_italiano(voce))
-    descrizione = ", ".join(voci) or "nessun cambiamento scritto"
-    if versione.motivo and "reopened" not in versione.cambi and not breve:
+    descrizione = ", ".join(voci)
+    con_motivo = {"reopened", "closed"} & set(versione.cambi)
+    if versione.motivo and not con_motivo and not breve:
         descrizione += f". Motivo: «{taglia(versione.motivo)}»"
-    return descrizione
+    if versione.bloccati:
+        bloccati = []
+        for voce in versione.bloccati:
+            if voce == "text corrected" and not breve:
+                bloccati.append(f"testo corretto («{prima_riga(versione.origine.testo)}»)")
+            elif voce == "closed" and versione.motivo:
+                bloccati.append(f"chiusa{perche}")
+            else:
+                bloccati.append(in_italiano(voce))
+        descrizione += ("; " if descrizione else "") + "non applicato (catena vecchia non permessa oggi): " \
+            + ", ".join(bloccati)
+    return descrizione or "nessun cambiamento scritto"
 
 
 def righe_della_storia(storia: Storia, segno: str, breve: bool) -> list[str]:
