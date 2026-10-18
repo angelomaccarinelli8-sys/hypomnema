@@ -371,7 +371,7 @@ class TestSkillModalitaChat(unittest.TestCase):
         for comando in ("H snapshot >", "H changed", "chat/hypomnema-chat.toml", "H check"):
             self.assertIn(comando, skill)
         # Prima il registro, poi le note: il registro fa da lucchetto.
-        self.assertIn("**First `registro.md`,\n     then the chat archive files, then the created notes.**", skill)
+        self.assertIn("**First `registro.md`, then the chat archive files,\n     then the created notes and versions.**", skill)
 
 
 if __name__ == "__main__":

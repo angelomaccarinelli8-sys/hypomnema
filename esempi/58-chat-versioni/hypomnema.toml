@@ -41,3 +41,42 @@ prefisso_privato = "#privato"
 # annota quali righe erano marcate; una nota presa tutta da righe marcate viene salvata con
 # la dicitura "citazione riportata dall'utente".
 segno_citazione = ">"
+
+[archivio]
+# Nella chat Claude può rileggere la conversazione dall'archivio delle chat di Claude (serve il
+# permesso «cerca e consulta le chat passate»). Con il comando «archivio» copia nel quaderno i
+# messaggi dell'utente e le sue risposte, con l'indirizzo della chat: le note dell'utente il cui
+# testo si trova lì sono «riscontrate sull'archivio della chat». Il testo passa da Claude: per questo
+# ogni nota riscontrata porta l'indirizzo della chat, che chiunque può aprire per controllare.
+
+# File dei messaggi dell'utente copiati dall'archivio (si allunga soltanto).
+file = "archivio-chat.jsonl"
+
+# File delle risposte di Claude copiate dall'archivio: il diario della chat (si allunga soltanto).
+file_diario = "diario-chat.jsonl"
+
+# true: nelle risposte ogni blocco di codice diventa una riga con la sua impronta, come nel
+# testimone delle risposte; false: viene copiato intero.
+ometti_codice = true
+
+# Ogni quanti scambi Claude copia dall'archivio i messaggi nuovi (lo fa anche quando chiudi la chat).
+copia_ogni = 5
+
+[recap]
+# Facoltativa. Il comando «recap» («dove eravamo rimasti») mostra i promemoria scaduti e, dal più
+# recente, questi numeri di discorsi aperti, cose da fare (todo), decisioni e righe del diario.
+# Se la sezione manca valgono 5, 5, 5 e 10.
+discorsi_aperti = 5
+todo = 5
+decisioni = 5
+voci_diario = 10
+
+[revisione]
+# Facoltativa. Il comando «review» («revisione») segnala le questioni aperte e le cose da fare ferme
+# da più di questi giorni (contati dall'ultima versione della nota). Se la sezione manca vale 30.
+giorni = 30
+
+# Facoltativa. Il segno davanti al codice delle note chiuse (✓T0049.3). Se il tuo terminale non
+# mostra ✓, togli il # dalle due righe qui sotto e scegli un altro segno, per esempio "x".
+# [codici]
+# chiusa = "x"

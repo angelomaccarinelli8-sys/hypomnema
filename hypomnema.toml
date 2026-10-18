@@ -58,3 +58,13 @@ discorsi_aperti = 5
 todo = 5
 decisioni = 5
 voci_diario = 10
+
+[revisione]
+# Facoltativa. Il comando «review» («revisione») segnala le questioni aperte e le cose da fare ferme
+# da più di questi giorni (contati dall'ultima versione della nota). Se la sezione manca vale 30.
+giorni = 30
+
+# Facoltativa. Il segno davanti al codice delle note chiuse (✓T0049.3). Se il tuo terminale non
+# mostra ✓, togli il # dalle due righe qui sotto e scegli un altro segno, per esempio "x".
+# [codici]
+# chiusa = "x"

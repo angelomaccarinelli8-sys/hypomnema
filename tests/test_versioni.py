@@ -377,5 +377,36 @@ class TestRevisione(ConQuaderno):
         self.assertEqual((config.giorni_revisione, config.segno_chiusa), (30, "✓"))
 
 
+class TestDocumenti(unittest.TestCase):
+    def test_formato_con_tutte_le_regole(self):
+        formato = (RADICE / "FORMATO.md").read_text(encoding="utf-8")
+        regole = formato[formato.index("## Le regole del quaderno"):]
+        titoli = [r for r in regole.splitlines() if r.startswith("### ")]
+        self.assertEqual(len(titoli), 24)
+        for titolo in titoli:
+            blocco = regole[regole.index(titolo):].split("\n### ")[0]
+            with self.subTest(regola=titolo):
+                for parte in ("- **Dice:**", "- **Chi:**", "- **Effetto:**", "- ✔", "- ✘"):
+                    self.assertIn(parte, blocco)
+        for frammento in ("## Le versioni", "## Il codice della nota", "## Le note di prima delle versioni",
+                          "## La revisione", "`updates`", "`reopens`"):
+            self.assertIn(frammento, formato)
+
+    def test_skill_readme_storia_comandi(self):
+        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        for frammento in ("Then run `P review`", "### Changing a note: versions", "**A correction does not close**",
+                          "### The rules of the notebook, in short", "`note/0049.1.md`", "Then run\n   `H review`"):
+            with self.subTest(frammento=frammento):
+                self.assertIn(frammento, skill)
+        readme = (RADICE / "README.md").read_text(encoding="utf-8")
+        for frammento in ("### Ogni cambiamento è una versione nuova", "### Il codice della nota", "### La revisione"):
+            self.assertIn(frammento, readme)
+        self.assertIn("## 0.6.0 (prototipo) — versioni e regole", (RADICE / "STORIA.md").read_text(encoding="utf-8"))
+        for nome in ("review", "revisione"):
+            testo = (RADICE / "commands" / f"{nome}.md").read_text(encoding="utf-8")
+            self.assertIn(f"/hypomnema:{nome}", testo)
+            self.assertIn("programma.py\" review", testo)
+
+
 if __name__ == "__main__":
     unittest.main()

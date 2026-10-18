@@ -137,7 +137,7 @@ class TestLingua(ConQuaderno):
                 self.assertIn(f"/hypomnema:{nome}", testo)
 
     def test_versione(self):
-        self.assertEqual(__version__, "0.5.0")
+        self.assertEqual(__version__, "0.6.0")
 
 
 class TestPausaInInglese(ConQuaderno):
@@ -272,7 +272,7 @@ class TestDocumenti(unittest.TestCase):
     def test_skill_in_inglese_con_le_novita(self):
         skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("description: Permanent memory", skill)
-        for frammento in ("**Language by role.**", "**Only the user closes an `open`**", "### Priority",
+        for frammento in ("**Language by role.**", "**only the user** closes, reopens or changes the kind of an `open`", "### Priority",
                           "Da questa nota in poi", "`todo`: something to do", "P search <word> --all",
                           "/hypomnema:pause", "**you always talk to the user\nin Italian**"):
             with self.subTest(frammento=frammento):
@@ -280,9 +280,9 @@ class TestDocumenti(unittest.TestCase):
 
     def test_readme(self):
         readme = (RADICE / "README.md").read_text(encoding="utf-8")
-        for frammento in ("### Lingua per ruolo", "### Chiudere una questione aperta o una cosa da fare",
+        for frammento in ("### Lingua per ruolo", "### Ogni cambiamento è una versione nuova",
                           "### La priorità", "### Quando cambiano le regole del quaderno: la nota-regola",
-                          "Da questa nota in poi", "**Gli `open` li chiudi solo tu**"):
+                          "Da questa nota in poi", "**Gli `open` li chiudi e li riapri solo tu**"):
             with self.subTest(frammento=frammento):
                 self.assertIn(frammento, readme)
 
