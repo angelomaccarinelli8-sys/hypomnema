@@ -11,27 +11,29 @@ Il passaggio è annotato nel registro.
 $ hypomnema cerca orto
 Trovate 2 note con «orto» (dalla più recente).
 
---- Nota 0002 ---
+--- Nota D0002 ---
 data: 2026-01-15T10:05
 fonte: chat del 15 gennaio 2026 sul progetto dell'orto
 autore: user
 tipo: stated
 natura: decision
-conferma di: nota 0001
+conferma di: nota I0001
 verifica: author not verified (witness off)
 testo:
   D'ora in poi annaffio l'orto la mattina presto invece che la sera.
 
---- Nota 0001 ---
+--- Nota I0001 ---
 data: 2026-01-15T10:00
 fonte: chat del 15 gennaio 2026 sul progetto dell'orto
 autore: claude
 tipo: inferred
 natura: idea
-confermata da: nota 0002
+confermata da: nota D0002
 testo:
   Si potrebbe annaffiare l'orto la mattina presto invece che la sera, per perdere meno acqua.
 
-    (nota 0002, che conferma la nota 0001: già mostrata sopra)
+    (nota D0002, che conferma la nota 0001: già mostrata sopra)
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 

@@ -32,6 +32,13 @@ RIGHE_DI_ESEMPIO = {
 # numeri, approvati da Angelo (15/10/2026; «todo» dalla 0.5.0).
 RECAP_DI_BASE = {"discorsi_aperti": 5, "todo": 5, "decisioni": 5, "voci_diario": 10}
 
+# La revisione (comando «review»): dopo quanti giorni senza versioni nuove un open o un todo aperto
+# si segnala. Sezione facoltativa [revisione], dalla 0.6.0.
+GIORNI_REVISIONE_DI_BASE = 30
+# Il segno davanti al codice di una nota chiusa (✓T0049.3). Sezione facoltativa [codici], dalla 0.6.0:
+# chi ha un terminale che non mostra ✓ può scrivere per esempio chiusa = "x".
+SEGNO_CHIUSA_DI_BASE = "✓"
+
 
 class ErroreConfigurazione(Exception):
     """La configurazione manca o non è valida."""
@@ -64,6 +71,8 @@ class Configurazione:
     recap_decisioni: int = RECAP_DI_BASE["decisioni"]
     recap_todo: int = RECAP_DI_BASE["todo"]
     recap_voci_diario: int = RECAP_DI_BASE["voci_diario"]
+    giorni_revisione: int = GIORNI_REVISIONE_DI_BASE
+    segno_chiusa: str = SEGNO_CHIUSA_DI_BASE
 
 
 def trova(percorso: str | None = None) -> Path:
@@ -242,6 +251,35 @@ def carica(percorso: str | None = None) -> Configurazione:
             )
     quanti_recap = {**RECAP_DI_BASE, **recap}
 
+    revisione = dati.get("revisione", {})
+    if not isinstance(revisione, dict):
+        raise ErroreConfigurazione(f"nel file «{file}» [revisione] deve essere una sezione.")
+    for chiave in revisione:
+        if chiave != "giorni":
+            raise ErroreConfigurazione(f"nel file «{file}» la sezione [revisione] non prevede «{chiave}»: "
+                                       "l'impostazione è giorni.")
+    giorni = revisione.get("giorni", GIORNI_REVISIONE_DI_BASE)
+    if not isinstance(giorni, int) or isinstance(giorni, bool) or giorni < 1:
+        raise ErroreConfigurazione(
+            f"nel file «{file}» l'impostazione «giorni» della sezione [revisione] deve essere un numero "
+            "intero maggiore di zero (dopo quanti giorni segnalare un open o un todo fermo)."
+        )
+
+    codici = dati.get("codici", {})
+    if not isinstance(codici, dict):
+        raise ErroreConfigurazione(f"nel file «{file}» [codici] deve essere una sezione.")
+    for chiave in codici:
+        if chiave != "chiusa":
+            raise ErroreConfigurazione(f"nel file «{file}» la sezione [codici] non prevede «{chiave}»: "
+                                       "l'impostazione è chiusa.")
+    segno_chiusa = codici.get("chiusa", SEGNO_CHIUSA_DI_BASE)
+    if (not isinstance(segno_chiusa, str) or not segno_chiusa.strip() or segno_chiusa != segno_chiusa.strip()
+            or any(c.isdigit() or c.isspace() for c in segno_chiusa)):
+        raise ErroreConfigurazione(
+            f"nel file «{file}» l'impostazione «chiusa» della sezione [codici] deve essere un segno tra "
+            'virgolette, senza spazi né cifre (per esempio "✓" oppure "x").'
+        )
+
     base = file.resolve().parent
     quaderno = base / testo("cartella")
     return Configurazione(
@@ -266,4 +304,6 @@ def carica(percorso: str | None = None) -> Configurazione:
         recap_decisioni=quanti_recap["decisioni"],
         recap_todo=quanti_recap["todo"],
         recap_voci_diario=quanti_recap["voci_diario"],
+        giorni_revisione=giorni,
+        segno_chiusa=segno_chiusa,
     )

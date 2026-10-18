@@ -3,36 +3,24 @@
 La ricerca è per parola esatta: non distingue maiuscole e minuscole, e una parola è delimitata
 da qualunque segno che non sia una lettera o una cifra (spazi, punteggiatura, ma anche il
 trattino basso, il punto, il trattino e la barra delle parole composte): "orto" trova
-"orto_balcone.py", ma "caffè" non trova "caffèlatte". Si cerca nel testo delle note e nel
-contesto scritto da Claude. Le note trovate vanno dalla più recente (numero più alto) alla
-più vecchia. Le note chiuse con «done» (open, todo, promemoria) non si mostrano, a meno di
-chiederle tutte (``tutte=True``, cioè ``search --all``).
+"orto_balcone.py", ma "caffè" non trova "caffèlatte".
 
-Ogni nota si porta dietro le note collegate: quelle che la correggono (``corregge``), che la
-confermano (``conferma_di``) e che la chiudono (``done``), anche a catena (la
-correzione di una correzione), dalla più recente alla più vecchia.
+Dalla 0.6.0 si cerca nelle storie (vedi ``versioni``): una nota si trova se la parola è in una
+qualunque delle sue versioni, nel testo, nel contesto scritto da Claude o nel motivo di un
+cambiamento. Le note trovate vanno dalla più recente (numero più alto) alla più vecchia. Le note chiuse
+non si mostrano, a meno di chiederle tutte (``tutte=True``, cioè ``search --all``), tranne quelle
+chiuse come decisione (vedi ``Storia.nascosta``).
+
+Ogni nota si porta dietro le note che la confermano (``confirms``), e una nota che conferma
+un'altra dice sempre com'è quella nota oggi, anche se è chiusa o è stata cambiata.
 """
 
 import re
-from dataclasses import dataclass
 
-from hypomnema import quaderno
+from hypomnema import quaderno as quaderno_su_disco
 from hypomnema.configurazione import Configurazione
-from hypomnema.nota import Nota, chiuse
-
-# Il campo che collega una nota a un'altra, e come si legge il legame.
-LEGAMI = (
-    ("corregge", "corregge la nota", "corretta da"),
-    ("conferma_di", "conferma la nota", "confermata da"),
-    ("done", "chiude la nota", "chiusa da"),
-)
-
-
-@dataclass(frozen=True)
-class Collegata:
-    nota: Nota
-    # Per esempio "corregge la nota 0001".
-    legame: str
+from hypomnema.versioni import Quaderno, Storia, Versione, ultima_o_motivo
+from hypomnema.nota import ordine
 
 
 def schema_parola(parola: str) -> re.Pattern:
@@ -40,83 +28,130 @@ def schema_parola(parola: str) -> re.Pattern:
     return re.compile(r"(?<![^\W_])" + re.escape(parola) + r"(?![^\W_])", re.IGNORECASE)
 
 
-def dal_piu_recente(note: list[Nota]) -> list[Nota]:
-    return sorted(note, key=lambda n: (int(n.id), n.id), reverse=True)
+def dal_piu_recente(storie: list[Storia]) -> list[Storia]:
+    return sorted(storie, key=lambda s: ordine(s.base), reverse=True)
 
 
-def cerca(config: Configurazione, parola: str, tutte: bool = False) -> list[Nota]:
+def _contiene(versione: Versione, schema: re.Pattern) -> bool:
+    nota = versione.contenuto
+    return any(t is not None and schema.search(t) for t in (nota.testo, nota.contesto, versione.motivo))
+
+
+def leggi(config: Configurazione) -> Quaderno:
+    return Quaderno(quaderno_su_disco.leggi_note(config))
+
+
+def cerca(quaderno: Quaderno | Configurazione, parola: str, tutte: bool = False) -> list[Storia]:
+    if isinstance(quaderno, Configurazione):
+        quaderno = leggi(quaderno)
     parola = parola.strip()
     if not parola:
         raise ValueError("serve una parola da cercare.")
     schema = schema_parola(parola)
-    note = quaderno.leggi_note(config)
-    chiusa = chiuse(note)
     return dal_piu_recente([
-        n for n in note
-        if (schema.search(n.testo) or (n.contesto is not None and schema.search(n.contesto)))
-        and (tutte or n.id not in chiusa)
+        s for s in quaderno.elenco()
+        if any(_contiene(v, schema) for v in s.versioni) and (tutte or not s.nascosta)
     ])
 
 
-def _bersagli(nota: Nota, campo: str) -> tuple[str, ...]:
-    valore = getattr(nota, campo)
-    if valore is None:
-        return ()
-    return valore if isinstance(valore, tuple) else (valore,)
+def confermata_da(quaderno: Quaderno) -> dict[str, list[Storia]]:
+    """Per ogni storia, le storie che la confermano (``confirms``), dalla più recente."""
+    conferme: dict[str, list[Storia]] = {}
+    for storia in quaderno.elenco():
+        numero = storia.ultima.contenuto.conferma_di
+        confermata = quaderno.storia_di(numero) if numero is not None else None
+        if confermata is not None and confermata is not storia:
+            conferme.setdefault(confermata.base, []).append(storia)
+    return {b: dal_piu_recente(s) for b, s in conferme.items()}
 
 
-def legami_diretti(note: list[Nota]) -> dict[str, list[Collegata]]:
-    """Per ogni numero di nota, le note che la nominano in corregge, conferma_di o done."""
-    diretti: dict[str, list[Collegata]] = {}
-    for nota in note:
-        for campo, come, _ in LEGAMI:
-            for bersaglio in _bersagli(nota, campo):
-                diretti.setdefault(bersaglio, []).append(Collegata(nota, f"{come} {bersaglio}"))
-    return diretti
-
-
-def collegate(id_nota: str, diretti: dict[str, list[Collegata]]) -> list[Collegata]:
-    """Tutte le note collegate a una nota, anche a catena, dalla più recente alla più vecchia."""
-    trovate: dict[str, Collegata] = {}
-    da_guardare = [id_nota]
-    while da_guardare:
-        corrente = da_guardare.pop()
-        for collegata in diretti.get(corrente, []):
-            if collegata.nota.id not in trovate and collegata.nota.id != id_nota:
-                trovate[collegata.nota.id] = collegata
-                da_guardare.append(collegata.nota.id)
-    return sorted(trovate.values(), key=lambda c: (int(c.nota.id), c.nota.id), reverse=True)
-
-
-def righe_dei_legami(id_nota: str, diretti: dict[str, list[Collegata]]) -> list[str]:
-    """Le righe «corretta da: nota …», «confermata da: nota …» di una nota (solo i legami diretti)."""
-    righe = []
-    for campo, _, letto in LEGAMI:
-        numeri = sorted((c.nota.id for c in diretti.get(id_nota, []) if id_nota in _bersagli(c.nota, campo)),
-                        key=lambda n: (int(n), n), reverse=True)
-        if numeri:
-            righe.append(f"{letto}: " + ", ".join(f"nota {n}" for n in numeri))
-    return righe
+def rimando(quaderno: Quaderno, numero: str, segno: str) -> str:
+    """Com'è oggi la nota a cui si rimanda: «nota ✓I0005.1 (chiusa)», anche se è una versione vecchia."""
+    trovato = quaderno.risolvi(numero, "confirms")
+    if trovato.storia is None:
+        return f"nota {numero} (non c'è nel quaderno)"
+    ultima = trovato.storia.ultima
+    chiusa = " (chiusa)" if ultima.chiusa else ""
+    if ultima_o_motivo(trovato) is None:
+        return f"nota {ultima.etichetta(segno)}{chiusa}"
+    return f"nota {trovato.versione.etichetta(segno)}, versione vecchia: l'ultima è {ultima.etichetta(segno)}{chiusa}"
 
 
 # L'ordine delle priorità: prima le alte. Una nota senza priorità vale «normal».
 ORDINE_PRIORITA = {"high": 0, "normal": 1, "low": 2}
 
 
-def priorita_in_vigore(nota: Nota, note: list[Nota]) -> str:
-    """La priorità della nota: quella della sua correzione più recente (anche a catena) che ne ha una."""
-    correzioni = {n.corregge: [] for n in note}
-    for n in note:
-        if n.corregge is not None:
-            correzioni[n.corregge].append(n)
-    gruppo, da_guardare, visti = [nota], [nota.id], {nota.id}
-    while da_guardare:
-        for correzione in correzioni.get(da_guardare.pop(), []):
-            if correzione.id not in visti:
-                visti.add(correzione.id)
-                gruppo.append(correzione)
-                da_guardare.append(correzione.id)
-    con_priorita = [n for n in gruppo if n.priorita is not None]
-    if not con_priorita:
-        return "normal"
-    return max(con_priorita, key=lambda n: (int(n.id), n.id)).priorita
+def priorita_in_vigore(storia: Storia) -> str:
+    """La priorità dell'ultima versione (nelle catene vecchie, l'ultima che ne ha una)."""
+    return storia.ultima.contenuto.priorita or "normal"
+
+
+# Le voci dei cambiamenti (in inglese nel file) come le legge l'utente.
+VOCI_ITALIANE = (
+    ("text corrected", "testo corretto"),
+    ("kind ", "natura "),
+    ("priority ", "priorità "),
+    ("remind ", "promemoria "),
+    ("closed", "chiusa"),
+    ("reopened", "riaperta"),
+)
+
+
+def in_italiano(voce: str) -> str:
+    for inglese, italiano in VOCI_ITALIANE:
+        if voce.startswith(inglese):
+            return italiano + voce[len(inglese):]
+    return voce
+
+
+def prima_riga(testo: str) -> str:
+    righe = testo.split("\n")
+    return righe[0] + (" …" if len(righe) > 1 else "")
+
+
+def su_una_riga(testo: str) -> str:
+    return " ⏎ ".join(testo.split("\n"))
+
+
+def descrivi_cambio(storia: Storia, versione: Versione, breve: bool) -> str:
+    """Che cosa ha cambiato una versione, in italiano: «priorità normal → high. Motivo: «…»»."""
+    if versione.numero == 0:
+        return "creata"
+    taglia = prima_riga if breve else su_una_riga
+    perche = f", perché «{taglia(versione.motivo)}»" if versione.motivo else ""
+    voci = []
+    for voce in versione.cambi:
+        if voce == "reopened":
+            voci.append(f"riaperta il {versione.data}{perche}")
+        elif voce == "closed":
+            voci.append(f"chiusa il {versione.data}{perche}")
+        elif voce == "text corrected" and not breve:
+            precedente = storia.versioni[storia.versioni.index(versione) - 1].contenuto
+            voci.append(f"testo corretto (prima: «{prima_riga(precedente.testo)}»)")
+        else:
+            voci.append(in_italiano(voce))
+    descrizione = ", ".join(voci)
+    con_motivo = {"reopened", "closed"} & set(versione.cambi)
+    if versione.motivo and not con_motivo and not breve:
+        descrizione += f". Motivo: «{taglia(versione.motivo)}»"
+    if versione.bloccati:
+        bloccati = []
+        for voce in versione.bloccati:
+            if voce == "text corrected" and not breve:
+                bloccati.append(f"testo corretto («{prima_riga(versione.origine.testo)}»)")
+            elif voce == "closed" and versione.motivo:
+                bloccati.append(f"chiusa{perche}")
+            else:
+                bloccati.append(in_italiano(voce))
+        descrizione += ("; " if descrizione else "") + "non applicato (catena vecchia non permessa oggi): " \
+            + ", ".join(bloccati)
+    return descrizione or "nessun cambiamento scritto"
+
+
+def righe_della_storia(storia: Storia, segno: str, breve: bool) -> list[str]:
+    """Una riga per versione, dalla più vecchia: codice, data, chi, che cosa è cambiato."""
+    larghezza = max(len(v.etichetta(segno)) for v in storia.versioni)
+    return [
+        f"{v.etichetta(segno).ljust(larghezza)} {v.data} · {v.autore}: {descrivi_cambio(storia, v, breve)}"
+        for v in storia.versioni
+    ]

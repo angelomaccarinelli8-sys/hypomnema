@@ -1,0 +1,132 @@
+$ hypomnema propose 1-chiusura-del-basilico.json
+ACCETTATA: la versione 0006.1 della nota 0006 è stata salvata nel quaderno (note/0006.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-chiusura-della-compostiera.json
+ACCETTATA: la versione 0004.1 della nota 0004 è stata salvata nel quaderno (note/0004.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: nessuna.
+
+Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [✓D0004.1] 2026-01-15: Dove mettere la compostiera?
+    ↳ ✓D0004.1 2026-01-15 · user: chiusa il 2026-01-15, perché «Nell'angolo nord, all'ombra.», natura open → decision
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema search basilico
+Nessuna nota aperta contiene «basilico».
+(1 nota chiusa non mostrata: aggiungi --all per vederla.)
+[codice di uscita: 0]
+
+$ hypomnema search basilico --all
+Trovata 1 nota con «basilico».
+
+--- Nota ✓F0006.1 ---
+data: 2025-12-27
+fonte: chat del 2025-12-27
+autore: user
+tipo: stated
+natura: fact
+stato: chiusa (2026-01-15)
+riprendere il: 2026-01-05
+verifica: author not verified (witness off)
+testo:
+  Seminare il basilico.
+storia (dalla più vecchia):
+  T0006    2025-12-27 · user: creata
+  ✓F0006.1 2026-01-15 · claude: chiusa il 2026-01-15, perché «Seminato oggi in tre vasi.», natura todo → fact
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema propose 3-riapre-il-basilico.json
+ACCETTATA: la versione 0006.2 della nota 0006 è stata salvata nel quaderno (note/0006.2.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 4-riapre-una-nota-aperta.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- note «0006» is not closed (T0006.2): only a closed note can be reopened.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 5-claude-riapre-la-compostiera.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- only the user can reopen an open note («0004»): Claude can suggest it.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 6-riapre-la-compostiera.json
+ACCETTATA: la versione 0004.2 della nota 0004 è stata salvata nel quaderno (note/0004.2.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)
+- [T0006.2] da riprendere il 2026-01-05: Seminare il basilico.
+    ↳ T0006.2 2026-01-15 · user: riaperta il 2026-01-15, perché «Le piantine sono morte col gelo, va riseminato.», natura fact → todo
+    ↳ ✓F0006.1 2026-01-15 · claude: chiusa il 2026-01-15, perché «Seminato oggi in tre vasi.», natura todo → fact
+
+Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [O0004.2] 2026-01-15: Dove mettere la compostiera?
+    ↳ O0004.2 2026-01-15 · user: riaperta il 2026-01-15, perché «L'angolo nord è troppo umido, ci ripenso.», natura decision → open
+    ↳ ✓D0004.1 2026-01-15 · user: chiusa il 2026-01-15, perché «Nell'angolo nord, all'ombra.», natura open → decision
+
+Cose da fare: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [T0006.2] 2026-01-15: Seminare il basilico.
+    ↳ T0006.2 2026-01-15 · user: riaperta il 2026-01-15, perché «Le piantine sono morte col gelo, va riseminato.», natura fact → todo
+    ↳ ✓F0006.1 2026-01-15 · claude: chiusa il 2026-01-15, perché «Seminato oggi in tre vasi.», natura todo → fact
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema search compostiera
+Trovate 2 note con «compostiera» (dalla più recente).
+
+--- Nota I0005 ---
+data: 2025-11-30
+fonte: chat del 2025-11-30
+autore: claude
+tipo: inferred
+natura: idea
+testo:
+  Mettere la compostiera nell'angolo nord, all'ombra.
+
+--- Nota O0004.2 ---
+data: 2025-11-30
+fonte: chat del 2025-11-30
+autore: user
+tipo: stated
+natura: open
+verifica: autore non verificato (testimone spento)
+testo:
+  Dove mettere la compostiera?
+storia (dalla più vecchia):
+  O0004    2025-11-30 · user: creata
+  ✓D0004.1 2026-01-15 · user: chiusa il 2026-01-15, perché «Nell'angolo nord, all'ombra.», natura open → decision
+  O0004.2  2026-01-15 · user: riaperta il 2026-01-15, perché «L'angolo nord è troppo umido, ci ripenso.», natura decision → open
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+

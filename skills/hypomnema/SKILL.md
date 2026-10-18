@@ -92,19 +92,28 @@ anything**: the register only grows and the decision is theirs. Then carry on no
    the diary, high priority first in each block: you do not choose the words to search for.
    Report to the user **in a few lines, in Italian**, what is there, keeping the notes (chosen by
    the user) apart from the diary (only the conversation).
+   Then run `P review` (in chat `H review`): read only, it lists with fixed rules what is worth
+   looking at (questions or todos stuck for a long time, overdue reminders, todos named in a later
+   note, «ricordamelo» without a date, old branches, old chains not allowed today). If it finds something, **tell the user in
+   one line**, for example «La revisione segnala 2 cose: la T0006 ha il promemoria scaduto e la
+   O0004 è ferma da 46 giorni.» Do not change anything by yourself: each line says what *can* be
+   done, the user decides.
 2. When a specific topic is needed later, run `P search <word>`. The search is by exact word,
    case-insensitive: try singular/plural too if needed. It also finds words inside compound names
    (`orto` finds `orto_balcone.py`). Notes come **from the most recent to the oldest**. **Closed
-   notes** (open questions, todos and reminders closed with `done`) are not shown: the output says
-   how many were hidden, and `P search <word> --all` shows them too.
-3. Under each note found come, indented, the notes that **correct** it, **confirm** it or **close**
-   it, even if they do not contain the searched word. **Always read them**: if a note was
-   corrected, the most recent correction is what counts, not the original note.
+   notes** are not shown: the output says how many were hidden, and `P search <word> --all` shows
+   them too.
+3. Every note is shown at its **last version**, in full, followed by its **history**: one line per
+   version (what changed, who, when, why). **The last version is what counts**; the history tells
+   you what was wrong before, so you do not repeat it. Under a note come, indented, the notes that
+   **confirm** it.
 4. Use the notes found respecting what they are:
    - a user's **decision** counts as a decision;
    - an **idea** is only a proposal, not a decision;
    - an **inferred** note is a hypothesis: do not present it as certain;
-   - cite the note number when you use it («dalla nota 0004 …»).
+   - cite the note by its code when you use it («dalla nota T0004.2 …»). The code is the letter of
+     its kind (F fact, I idea, D decision, O open, T todo), with `✓` in front if it is closed, then
+     the number and the version: `✓T0049.3`. The recap ends with this legend.
 5. Do not invent notes the search did not return.
 
 ## 2. During the chat: prepare the notes
@@ -134,7 +143,7 @@ Format (JSON, UTF-8), with **all** these fields:
   - `stated`: the author said it explicitly;
   - `observed`: you saw it directly (in a file, in a result, in the conversation);
   - `inferred`: you worked it out by reasoning. When in doubt, `inferred`.
-- `kind`: what the note is. Five values:
+- `kind`: what the note is (optional only in a change, see below). Five values:
   - `fact`: something that is so;
   - `idea`: a proposal (your proposals are always `idea`);
   - `decision`: only if the user decided explicitly: `author: user`, `knowledge: stated`;
@@ -144,13 +153,12 @@ Format (JSON, UTF-8), with **all** these fields:
   same field.
 - `context` (optional, only in the user's notes): your explanations.
 - `quote` (optional, only in your notes): the user's words you are relying on.
-- `corrects` (optional): the number of a note this one **corrects** («era sbagliata»). Use it when
-  the user corrects something already in the notebook: the old note stays, and the search will
-  always show it together with the correction.
 - `remind` (optional): a **reminder**, the date `YYYY-MM-DD` on which to pick the note up again (for
-  example when the user says «ricordamelo lunedì»). `P reminders` lists the overdue ones.
-- `done` (optional): closes notes. See "Closing open questions, todos and reminders" below.
+  example when the user says «ricordamelo lunedì» or «tra tre giorni»: you compute the day from the
+  date of the chat). `P reminders` lists the overdue ones.
 - `priority` (optional, **only in the user's notes**): `high`, `normal` or `low`. See "Priority".
+- `corrects`, `updates`, `done`, `reopens` (optional, one at a time): they **change a note that is
+  already there**. See "Changing a note: versions" below.
 
 ### The user's notes: the text is their words
 
@@ -202,27 +210,43 @@ In a note with `author: claude` the `text` is yours. If it relies on the user's 
 those exact words in `quote`: with the witness on it is checked the same way. Do not use `context`
 in your notes: it is all yours already.
 
-### Closing open questions, todos and reminders
+### Changing a note: versions
 
-An `open` or a `todo` stays open until a **new note** closes it with `done`:
+A note is never rewritten. **Every change is a new version** of the note: the desk writes a new
+file (`0049.1.md`, `0049.2.md`) with the whole note, the change applied and, at the bottom, who
+changed what, when and why. You always change the **last** version: write only the number
+(`"0049"`), **without the letter of the code** (`"T0049"` is rejected). A change does not create a
+new note number.
 
-1. `done` lists the numbers of the notes it closes: `"done": "0012"` or `"done": "0012, 0015"`.
-2. The `text` of the closing note is the reason (what was decided, what was done).
-3. The `kind` of the closing note says what the question became: `decision`, `todo`, `fact` or
-   `idea`. A closing note cannot be `open`.
-4. **Only the user closes an `open`**: the closing note must have `author: user` (their words in
-   `text`). You may suggest closing it: «La questione 0012 sembra risolta: vuoi che la chiuda con
-   le tue parole?». A `todo` or a reminder you can close yourself, with your own note, when it was
-   really done.
-5. A note is closed only once: the desk rejects a second closure and says which note already
-   closed it.
-6. `done` works only on `open`, `todo` and reminders (notes with `remind`). A `fact`, a `decision`
-   or an `idea` is not closed: it is corrected with `corrects` (an idea can also be confirmed, see
-   section 5).
-7. A closed question that comes back: propose a **new** `open`, whose text mentions the old one
-   (for example «Torna la questione della nota 0012: …»). No special field.
+| The user (or you) want to… | Proposal | `text` is |
+|---|---|---|
+| correct the text («no, era a marzo») | `"corrects": "0049"` | the new text |
+| change kind, priority or reminder date | `"updates": "0049"` with `kind`, `priority` and/or `remind` | the reason |
+| close an open question, a todo or a reminder | `"done": "0049"` or `"done": "0012, 0015"` | the reason |
+| reopen a closed note | `"reopens": "0049"` | the reason |
 
-A closing note by the user:
+- In a change `kind` is optional: without it the kind stays as it is (with `reopens`, it goes back to
+  the kind before the closure). With `done` it can say what the question became: `decision`,
+  `fact` or `idea`.
+- `date`, `source`, `author`, `knowledge` and `text` are always needed. If the change is the user's,
+  `text` is **their exact words** (the reason, or the new text), checked by the witness like any
+  note of theirs; if it is yours, it is your words (with `quote` if you rely on theirs).
+- **A correction does not close**: correcting a todo leaves it to do. To say it is done, use `done`.
+- `done: 0012, 0015` creates one closed version for each note, with the same reason.
+- Who can do what:
+  - **only the user** closes, reopens or changes the kind of an `open`, makes a note a
+    `decision`, changes the kind of a decision or of one of the user's notes, sets `priority`, and
+    corrects the text of one of the user's notes (they are their words);
+  - you can close and reopen `todo`s and reminders, correct your own notes and change the kind of
+    your own notes (never into `decision`);
+  - an idea becomes a decision only with a **new** note with `confirms` (section 5);
+  - a `fact`, a `decision` or an `idea` without `remind` is not closed: it is corrected or changed.
+  When a rule blocks you, suggest it to the user: «La questione O0012 sembra risolta: vuoi che la
+  chiuda con le tue parole?».
+- The desk answers with the new version: `ACCETTATA: la versione 0049.1 della nota 0049 …` (one line
+  per note with `done` on several notes).
+
+A closure by the user:
 
 ```json
 {
@@ -236,16 +260,54 @@ A closing note by the user:
 }
 ```
 
-`recap` and `search` no longer show closed notes; `search <word> --all` shows them, with the
-closing note underneath.
+A change of priority by the user:
+
+```json
+{
+  "date": "2026-01-15",
+  "source": "chat del 15 gennaio 2026 sull'orto",
+  "author": "user",
+  "knowledge": "stated",
+  "updates": "0006",
+  "priority": "high",
+  "text": "il basilico è urgente"
+}
+```
+
+`recap` and `search` read every note as it is **now** (its last version). They hide closed todos,
+open questions and reminders, also when they became facts or ideas; `search <word> --all` shows them,
+with their history. A question closed as a **decision is a decision**: it appears in «Ultime
+decisioni» and in the search, with its code (`✓D0049.3`): the ✓ means it is settled, not hidden. In the
+recap the history lines under a note go from the most recent to the oldest.
+Notes written before versions existed (old corrections with `corrects`, old closing notes with
+`done`) are shown as versions too, with their real number next to them: `T0001.1 (nota 0002)`; their
+old number still works in a proposal if that version is the last one. Today's rules apply to them
+too: an old note of yours that corrected the user's text, or made an `open` stop being open, stays in
+the history but does not count («non applicato (catena vecchia non permessa oggi)»): the user's text
+stays theirs, an open stays open. Never treat that old change as valid; if it is needed, propose it to
+the user.
 
 ### Priority
 
 `priority` (`high`, `normal`, `low`) is **only the user's**: the desk rejects it in your notes. If
 you think something is urgent, say it to the user or write it in the text of one of your `idea`
 notes («Proposta: priorità alta per la nota 0012»); the user decides. To change the priority of a
-note, propose a new note by the user with `corrects: <number>` and the new `priority`. A note
-without priority counts as `normal`. The recap shows high-priority notes first in each block.
+note, propose `updates: <number>` by the user with the new `priority`. A note without priority
+counts as `normal`. The recap shows high-priority notes first in each block.
+
+### The rules of the notebook, in short
+
+The complete list, with right and wrong examples, is in `FORMATO.md` («Le regole del quaderno»).
+The ones the programs cannot check are yours to follow:
+
+- **one note = one thing**: two things are two notes;
+- `open` is a question or something still to decide; `todo` is something to do;
+- «ricordati questa cosa» (a program, an address, a number) is a `fact`, not an `open`;
+- «ricordamelo», «tra tre giorni» → the `remind` field with the date;
+- the user's words are **copied** (in chat, from the archive), never from memory; a message
+  dictated by voice keeps its transcription mistakes;
+- `source` says in which chat (or book) the note was born, not what it is about;
+- `date` is when the thing was said, not the day you save it.
 
 ### Notebook rules that change: the rule note
 
@@ -306,7 +368,7 @@ because the witness did not record them).
 2. Run `P propose proposta.json`. Alternatively you can pass it through standard input:
    `P propose -`.
 3. Read the answer:
-   - `ACCETTATA`: the note has a number and is saved;
+   - `ACCETTATA`: the note has a number (a change: a new version, such as `0049.1`) and is saved;
    - `RIFIUTATA`: read the reasons (in English). If it is a format mistake of yours, fix it and
      propose again. **Never get around a rule** (for example by changing the author to get a
      decision through): if the rule blocks the note, the note does not get in.
@@ -318,7 +380,7 @@ grows.
 ## 4. Tell the user what happened
 
 After each pass through the desk, tell the user in a few Italian words:
-- what was **saved** (note number and short text);
+- what was **saved** (note code and short text, for example «salvata la T0049.1: priorità alta»);
 - what was **rejected** and why (with the desk's reason, in plain Italian).
 
 Never say that something was saved if the desk did not answer `ACCETTATA`. When you use a note
@@ -443,7 +505,8 @@ python3 --version
      il quaderno è vuoto, nascerà con la prima nota.»). The notebook is born on the work computer
      with the first proposal and you bring it back to the user's computer as in point C4.
    - **It is there**: copy to the work computer, under `~/hypomnema-lavoro/quaderno/`, with **the
-     same paths**, the file `registro.md` and all the files of the `note/` folder, in groups of at
+     same paths**, the file `registro.md` and all the files of the `note/` folder (also the versions,
+     such as `0049.1.md`), in groups of at
      most 50 files at a time, and the chat archive files `archivio-chat.jsonl` and
      `diario-chat.jsonl` if they are there. Then check that the number of copied files equals the
      number listed. **Do not copy `testimone.jsonl` or `risposte.jsonl`**: in chat they are not
@@ -454,7 +517,8 @@ python3 --version
    reminders, open questions, things to do, latest decisions and last lines of the diary, chosen
    with fixed rules. Then tell the user, **in three lines at most**, in Italian, where we left
    off: what was in progress, what had been decided (only from the notes), what was still open.
-   Keep the notes (chosen by the user) apart from the diary (only the conversation).
+   Keep the notes (chosen by the user) apart from the diary (only the conversation). Then run
+   `H review` and, if it finds something, say it in one line (section 1).
 
 **If you do not have the tools for the user's computer** (chat on the web, mobile app): it is
 **trial mode**. Before starting say it clearly: «Qui non posso accedere al tuo computer: il
@@ -481,8 +545,11 @@ For each note, in this order:
 4. Ask which files changed: `H changed ~/hypomnema-lavoro/prima.json`
    - It answers with a list: **bring back to the user's computer exactly those files**, to the
      same path under `Hypomnema/quaderno/` (for example `note/0007.md` goes to
-     `Hypomnema/quaderno/note/0007.md`), using the check on changed files. **First `registro.md`,
-     then the chat archive files, then the created notes.** Every proposal lengthens the register:
+     `Hypomnema/quaderno/note/0007.md`, and a version `note/0049.1.md` goes to
+     `Hypomnema/quaderno/note/0049.1.md`: keep the dot in the name), using the check on changed
+     files. A change can create several files at once (`done: 0012, 0015` creates `0012.1.md` and
+     `0015.1.md`): bring back every one listed. **First `registro.md`, then the chat archive files,
+     then the created notes and versions.** Every proposal lengthens the register:
      if writing it succeeds, no other chat has written into the notebook after your copy, and you
      can write the rest. A rejected note also lengthens the register: it must be brought back.
      For **each** file to bring back:

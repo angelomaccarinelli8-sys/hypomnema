@@ -9,7 +9,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema cerca orto
 Trovata 1 nota con «orto».
 
---- Nota 0001 ---
+--- Nota D0001 ---
 data: 2026-01-15
 fonte: chat del 15 gennaio 2026 sul progetto dell'orto
 autore: user
@@ -20,5 +20,7 @@ testo:
   da lunedì annaffio l'orto alle sei, prima di andare al lavoro
 contesto scritto da Claude:
   Decisione sull'orario per annaffiare l'orto, presa parlando del caldo di primavera.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 

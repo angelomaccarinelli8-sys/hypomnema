@@ -19,7 +19,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema cerca fragole
 Trovata 1 nota con «fragole».
 
---- Nota 0001 ---
+--- Nota I0001 ---
 data: 2026-01-15
 fonte: risposta di Claude del 15 gennaio 2026 sul progetto dell'orto
 autore: claude
@@ -29,5 +29,7 @@ da una risposta di Claude: yes
 verifica: text found in Claude's reply of 2026-01-15T10:01:00+01:00
 testo:
   Per proteggere le fragole dalle lumache conviene una barriera di cenere attorno alle piante.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 

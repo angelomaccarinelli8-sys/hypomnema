@@ -5,6 +5,7 @@
     python -m hypomnema cerca parola            # cerca le note che contengono la parola (con le note collegate)
     python -m hypomnema promemoria              # le note con «riprendere_il» arrivato o passato
     python -m hypomnema recap                   # dove eravamo rimasti: promemoria, discorsi aperti, decisioni, diario
+    python -m hypomnema revisione               # che cosa conviene guardare nel quaderno (solo lettura)
     python -m hypomnema testimone               # registra un messaggio (lo lancia Claude Code)
     python -m hypomnema stato                   # dice se il testimone è acceso e l'ultimo messaggio
     python -m hypomnema impostazioni-claude     # le regole che l'avviabile passa a Claude Code
@@ -35,10 +36,11 @@ from pathlib import Path
 from typing import TextIO
 
 from hypomnema import (
-    __version__, archivio, avvio, cambiamenti, cercatore, configurazione, controllo, diario, promemoria, quaderno,
-    registro, risposte, sportello, testimone,
+    __version__, archivio, avvio, cambiamenti, cercatore, configurazione, controllo, diario, promemoria, registro,
+    revisione, risposte, sportello, testimone,
 )
-from hypomnema.nota import Nota, NotaIlleggibile, chiuse
+from hypomnema.nota import NotaIlleggibile, base_di
+from hypomnema.versioni import LEGENDA, Quaderno, Storia
 
 ORIGINE_DIRETTA = "(ingresso diretto)"
 
@@ -48,6 +50,7 @@ INGLESE = {
     "stato": "status", "istantanea": "snapshot", "cambiati": "changed", "controlla": "check",
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
+    "revisione": "review",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
@@ -71,12 +74,16 @@ def _parser() -> argparse.ArgumentParser:
     cerca = comandi.add_parser("search", aliases=["cerca"], help="cerca le note che contengono una parola")
     cerca.add_argument("parola", help="la parola (o le parole) da cercare, così come sono")
     cerca.add_argument("--all", "--tutte", dest="tutte", action="store_true",
-                       help="mostra anche le note chiuse con «done», con sotto la nota che le ha chiuse")
+                       help="mostra anche le note chiuse, con la loro storia")
     comandi.add_parser(
         "reminders", aliases=["promemoria"], help="elenca le note con «riprendere_il» arrivato o già passato, dal più vecchio"
     )
     comandi.add_parser(
         "recap", help="dove eravamo rimasti: promemoria scaduti, discorsi aperti, ultime decisioni, ultimo diario"
+    )
+    comandi.add_parser(
+        "review", aliases=["revisione"],
+        help="che cosa conviene guardare nel quaderno: rami, note ferme, promemoria scaduti, note nominate (solo lettura)",
     )
 
     registra = comandi.add_parser(
@@ -143,26 +150,32 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
-def _descrivi(nota: Nota, legami: list[str] = (), titolo: str = "") -> list[str]:
+def _descrivi(storia: Storia, quaderno: Quaderno, segno: str, conferme, titolo: str = "") -> list[str]:
+    """L'ultima versione di una nota per intero, poi la sua storia."""
+    ultima = storia.ultima
+    nota = ultima.contenuto
     righe = [
-        f"--- Nota {nota.id}{titolo} ---",
+        f"--- Nota {ultima.etichetta(segno)}{titolo} ---",
         f"data: {nota.data}",
         f"fonte: {nota.fonte}",
         f"autore: {nota.autore}",
         f"tipo: {nota.tipo}",
         f"natura: {nota.natura}",
     ]
+    if ultima.chiusa:
+        righe.append(f"stato: chiusa ({ultima.data})")
     if nota.priorita is not None:
         righe.append(f"priorità: {nota.priorita}")
     if nota.conferma_di is not None:
-        righe.append(f"conferma di: nota {nota.conferma_di}")
+        righe.append(f"conferma di: {cercatore.rimando(quaderno, nota.conferma_di, segno)}")
     if nota.corregge is not None:
         righe.append(f"corregge: nota {nota.corregge}")
     if nota.done is not None:
         righe.append("chiude: " + ", ".join(f"nota {n}" for n in nota.done))
     if nota.riprendere_il is not None:
         righe.append(f"riprendere il: {nota.riprendere_il}")
-    righe += list(legami)
+    if conferme.get(storia.base):
+        righe.append("confermata da: " + ", ".join(f"nota {s.ultima.etichetta(segno)}" for s in conferme[storia.base]))
     if nota.citazione is not None:
         righe.append(f"citazione: {nota.citazione}")
     if nota.da_risposta is not None:
@@ -174,6 +187,9 @@ def _descrivi(nota: Nota, legami: list[str] = (), titolo: str = "") -> list[str]
     if nota.contesto is not None:
         righe.append("contesto scritto da Claude:")
         righe += _rientrato(nota.contesto)
+    if len(storia.versioni) > 1:
+        righe.append("storia (dalla più vecchia):")
+        righe += [f"  {riga}" for riga in cercatore.righe_della_storia(storia, segno, breve=False)]
     return righe
 
 
@@ -190,12 +206,15 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
         origine = file.name
     esito = sportello.ricevi(dati, origine, config, adesso)
 
+    for id_nota, percorso in esito.scritte:
+        relativo = percorso.relative_to(config.cartella_quaderno).as_posix()
+        cosa = f"la versione {id_nota} della nota {base_di(id_nota)}" if "." in id_nota else f"la nota {id_nota}"
+        print(f"ACCETTATA: {cosa} è stata salvata nel quaderno ({relativo}).", file=uscita)
     if esito.accettata:
-        relativo = esito.percorso.relative_to(config.cartella_quaderno).as_posix()
-        print(f"ACCETTATA: la nota {esito.id_nota} è stata salvata nel quaderno ({relativo}).", file=uscita)
         print("Il passaggio è annotato nel registro.", file=uscita)
         return 0
-    print("RIFIUTATA: la nota non è stata salvata.", file=uscita)
+    print("RIFIUTATA: la nota non è stata salvata." if not esito.scritte
+          else "RIFIUTATA: il resto del cambiamento non è stato salvato.", file=uscita)
     print("Motivi:", file=uscita)
     for motivo in esito.motivi:
         # Come nel registro: un motivo sta su una riga, così nessuna riga falsa
@@ -205,22 +224,22 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     return 1
 
 
-def _mostra_con_collegate(nota: Nota, diretti, gia_mostrate: set[str], uscita: TextIO) -> None:
-    """La nota, e subito sotto, rientrate, le note che la correggono, confermano o segnano come fatta."""
+def _mostra_con_collegate(storia: Storia, quaderno: Quaderno, segno: str, conferme, gia_mostrate: set[str],
+                          uscita: TextIO) -> None:
+    """La nota con la sua storia, e subito sotto, rientrate, le note che la confermano."""
     print("", file=uscita)
-    for riga in _descrivi(nota, cercatore.righe_dei_legami(nota.id, diretti)):
+    for riga in _descrivi(storia, quaderno, segno, conferme):
         print(riga, file=uscita)
-    gia_mostrate.add(nota.id)
-    for collegata in cercatore.collegate(nota.id, diretti):
+    gia_mostrate.add(storia.base)
+    for collegata in conferme.get(storia.base, []):
         print("", file=uscita)
-        if collegata.nota.id in gia_mostrate:
-            print(f"    (nota {collegata.nota.id}, che {collegata.legame}: già mostrata sopra)", file=uscita)
+        legame = f"conferma la nota {storia.base}"
+        if collegata.base in gia_mostrate:
+            print(f"    (nota {collegata.ultima.etichetta(segno)}, che {legame}: già mostrata sopra)", file=uscita)
             continue
-        righe = _descrivi(collegata.nota, cercatore.righe_dei_legami(collegata.nota.id, diretti),
-                          f" ({collegata.legame})")
-        for riga in righe:
+        for riga in _descrivi(collegata, quaderno, segno, conferme, f" ({legame})"):
             print(f"    {riga}" if riga else "", file=uscita)
-        gia_mostrate.add(collegata.nota.id)
+        gia_mostrate.add(collegata.base)
 
 
 def _cerca(argomenti, config, uscita: TextIO) -> int:
@@ -228,8 +247,9 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
     if not parola:
         print("ERRORE: serve una parola da cercare.", file=uscita)
         return 2
-    trovate = cercatore.cerca(config, parola, tutte=argomenti.tutte)
-    nascoste = 0 if argomenti.tutte else len(cercatore.cerca(config, parola, tutte=True)) - len(trovate)
+    archivio_note = cercatore.leggi(config)
+    trovate = cercatore.cerca(archivio_note, parola, tutte=argomenti.tutte)
+    nascoste = 0 if argomenti.tutte else len(cercatore.cerca(archivio_note, parola, tutte=True)) - len(trovate)
     if not trovate:
         aperta = " aperta" if nascoste else ""
         print(f"Nessuna nota{aperta} contiene «{parola}».", file=uscita)
@@ -241,30 +261,33 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
         quante = ("1 nota chiusa non mostrata: aggiungi --all per vederla" if nascoste == 1
                   else f"{nascoste} note chiuse non mostrate: aggiungi --all per vederle")
         print(f"({quante}.)", file=uscita)
-    diretti = cercatore.legami_diretti(quaderno.leggi_note(config))
+    conferme = cercatore.confermata_da(archivio_note)
     gia_mostrate: set[str] = set()
-    for nota in trovate:
-        _mostra_con_collegate(nota, diretti, gia_mostrate, uscita)
+    for storia in trovate:
+        _mostra_con_collegate(storia, archivio_note, config.segno_chiusa, conferme, gia_mostrate, uscita)
+    if trovate:
+        print("", file=uscita)
+        print(f"Legenda: {LEGENDA.format(segno=config.segno_chiusa)}", file=uscita)
     return 0
 
 
 def _promemoria(config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: i promemoria scaduti, dal più vecchio."""
-    note = quaderno.leggi_note(config)
+    archivio_note = cercatore.leggi(config)
     oggi = adesso.date()
-    scaduti = promemoria.scaduti(note, oggi)
-    in_arrivo = promemoria.in_arrivo(note, oggi)
+    scaduti = promemoria.scaduti(archivio_note, oggi)
+    in_arrivo = promemoria.in_arrivo(archivio_note, oggi)
     if not scaduti:
         print(f"Nessun promemoria scaduto al {oggi.isoformat()}.", file=uscita)
     else:
         quanti = "1 promemoria scaduto" if len(scaduti) == 1 else f"{len(scaduti)} promemoria scaduti"
         print(f"{quanti} al {oggi.isoformat()} (dal più vecchio).", file=uscita)
-        diretti = cercatore.legami_diretti(note)
+        conferme = cercatore.confermata_da(archivio_note)
         gia_mostrate: set[str] = set()
         for voce in scaduti:
             print("", file=uscita)
-            print(f"=== Da riprendere il {voce.giorno}{_origine_data(voce)} ===", file=uscita)
-            _mostra_con_collegate(voce.nota, diretti, gia_mostrate, uscita)
+            print(f"=== Da riprendere il {voce.giorno} ===", file=uscita)
+            _mostra_con_collegate(voce.storia, archivio_note, config.segno_chiusa, conferme, gia_mostrate, uscita)
     if in_arrivo:
         altri = "1 promemoria ha" if in_arrivo == 1 else f"{in_arrivo} promemoria hanno"
         print("", file=uscita)
@@ -272,26 +295,29 @@ def _promemoria(config, adesso: datetime, uscita: TextIO) -> int:
     return 0
 
 
-def _origine_data(voce) -> str:
-    if voce.da.id == voce.nota.id:
-        return ""
-    return f" (data della nota {voce.da.id}, che corregge)"
-
-
 def _prima_riga(testo: str | None, dicitura: str | None = None) -> str:
     if testo is None:
         return f"({dicitura})"
-    righe = testo.split("\n")
-    return righe[0] + (" …" if len(righe) > 1 else "")
+    return cercatore.prima_riga(testo)
 
 
 ETICHETTA_PRIORITA = {"high": "[alta] ", "normal": "", "low": "[bassa] "}
 
 
-def _riga_recap(nota: Nota, inizio: str, diretti, priorita: str) -> list[str]:
-    righe = [f"- [{nota.id}] {ETICHETTA_PRIORITA[priorita]}{inizio}: {_prima_riga(nota.testo)}"]
-    for collegata in cercatore.collegate(nota.id, diretti):
-        righe.append(f"    ↳ [{collegata.nota.id}] {collegata.legame}: {_prima_riga(collegata.nota.testo)}")
+def _riga_recap(storia: Storia, inizio: str, quaderno: Quaderno, segno: str, conferme) -> list[str]:
+    ultima = storia.ultima
+    priorita = ETICHETTA_PRIORITA[cercatore.priorita_in_vigore(storia)]
+    righe = [f"- [{ultima.etichetta(segno)}] {priorita}{inizio}: {_prima_riga(ultima.contenuto.testo)}"]
+    # La storia dalla versione più recente alla più vecchia, come il quaderno.
+    for versione in reversed(storia.versioni[1:]):
+        righe.append(f"    ↳ {versione.etichetta(segno)} {versione.data} · {versione.autore}: "
+                     f"{cercatore.descrivi_cambio(storia, versione, breve=True)}")
+    if ultima.contenuto.conferma_di is not None:
+        righe.append(f"    ↳ conferma la {cercatore.rimando(quaderno, ultima.contenuto.conferma_di, segno)}")
+    for collegata in conferme.get(storia.base, []):
+        chiusa = " (chiusa)" if collegata.chiusa else ""
+        righe.append(f"    ↳ confermata dalla nota {collegata.ultima.etichetta(segno)}{chiusa}: "
+                     f"{_prima_riga(collegata.ultima.contenuto.testo)}")
     return righe
 
 
@@ -299,29 +325,27 @@ def _recap(config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura, con regole fisse: dove eravamo rimasti, in poche righe.
 
     In ogni blocco vengono prima le note a priorità alta, poi normale, poi bassa; a parità di
-    priorità, i promemoria dal più vecchio e il resto dal più recente. Le note chiuse non ci sono.
+    priorità, i promemoria dal più vecchio e il resto dal più recente (per numero di nota). Vale
+    l'ultima versione di ogni nota, per quello che è adesso: le chiuse non ci sono, tranne le decisioni
+    (una questione chiusa come decisione compare tra le decisioni, con il suo ✓).
     """
-    note = quaderno.leggi_note(config)
-    diretti = cercatore.legami_diretti(note)
-    chiusa = chiuse(note)
+    archivio_note = cercatore.leggi(config)
+    conferme = cercatore.confermata_da(archivio_note)
+    segno = config.segno_chiusa
     oggi = adesso.date()
 
-    def priorita(nota: Nota) -> str:
-        return cercatore.priorita_in_vigore(nota, note)
-
-    def per_priorita(elenco: list[Nota]) -> list[Nota]:
+    def per_priorita(elenco: list[Storia]) -> list[Storia]:
         # sorted è stabile: a parità di priorità resta l'ordine di partenza.
-        return sorted(elenco, key=lambda n: cercatore.ORDINE_PRIORITA[priorita(n)])
+        return sorted(elenco, key=lambda s: cercatore.ORDINE_PRIORITA[cercatore.priorita_in_vigore(s)])
 
     righe = [f"Dove eravamo rimasti (recap del {oggi.isoformat()}).", ""]
 
-    scaduti = promemoria.scaduti(note, oggi)
-    scaduti = sorted(scaduti, key=lambda voce: cercatore.ORDINE_PRIORITA[priorita(voce.nota)])
+    scaduti = promemoria.scaduti(archivio_note, oggi)
+    scaduti = sorted(scaduti, key=lambda voce: cercatore.ORDINE_PRIORITA[cercatore.priorita_in_vigore(voce.storia)])
     if scaduti:
         righe.append(f"Promemoria scaduti: {len(scaduti)} (prima la priorità alta, poi dal più vecchio)")
         for voce in scaduti:
-            righe += _riga_recap(voce.nota, f"da riprendere il {voce.giorno}{_origine_data(voce)}", diretti,
-                                 priorita(voce.nota))
+            righe += _riga_recap(voce.storia, f"da riprendere il {voce.giorno}", archivio_note, segno, conferme)
     else:
         righe.append("Promemoria scaduti: nessuno.")
 
@@ -334,15 +358,15 @@ def _recap(config, adesso: datetime, uscita: TextIO) -> int:
          "1 decisione più vecchia non mostrata", "{} decisioni più vecchie non mostrate"),
     ):
         scelte = per_priorita(cercatore.dal_piu_recente(
-            [n for n in note if n.natura == natura and n.id not in chiusa]))
+            [s for s in archivio_note.elenco() if s.ultima.contenuto.natura == natura and not s.nascosta]))
         righe.append("")
         if not scelte:
             righe.append(f"{titolo}: {nessuno}.")
             continue
         mostrate = scelte[:quanti]
         righe.append(f"{titolo}: {len(mostrate)} di {len(scelte)} (prima la priorità alta, poi dal più recente)")
-        for nota in mostrate:
-            righe += _riga_recap(nota, nota.data, diretti, priorita(nota))
+        for storia in mostrate:
+            righe += _riga_recap(storia, storia.ultima.data, archivio_note, segno, conferme)
         resto = len(scelte) - len(mostrate)
         if resto:
             righe.append(f"({uno_in_piu if resto == 1 else tanti_in_piu.format(resto)})")
@@ -357,10 +381,28 @@ def _recap(config, adesso: datetime, uscita: TextIO) -> int:
         for voce in mostrate:
             righe.append(f"- {voce.quando} · {voce.chi}: {_prima_riga(voce.testo, voce.dicitura)}")
         righe.append(f"(per leggerle intere: diary --last {len(mostrate)})")
+    righe += ["", f"Legenda: {LEGENDA.format(segno=segno)}"]
 
     for riga in righe:
         print(riga, file=uscita)
     return 0
+
+
+def _revisione(config, adesso: datetime, uscita: TextIO) -> int:
+    """Solo lettura: che cosa conviene guardare. 0 = niente, 1 = qualcosa da guardare."""
+    archivio_note = cercatore.leggi(config)
+    oggi = adesso.date()
+    segnalazioni = revisione.rivedi(archivio_note, oggi, config.giorni_revisione, config.segno_chiusa)
+    if not segnalazioni:
+        print(f"Revisione del quaderno ({oggi.isoformat()}): niente da segnalare.", file=uscita)
+        return 0
+    quante = "1 cosa da guardare" if len(segnalazioni) == 1 else f"{len(segnalazioni)} cose da guardare"
+    print(f"Revisione del quaderno ({oggi.isoformat()}): {quante}. Non è stato cambiato niente.", file=uscita)
+    for voce in segnalazioni:
+        print(f"- {voce.storia.ultima.etichetta(config.segno_chiusa)}: {voce.testo}", file=uscita)
+    print("", file=uscita)
+    print(f"Legenda: {LEGENDA.format(segno=config.segno_chiusa)}", file=uscita)
+    return 1
 
 
 def _rientrato(testo: str) -> list[str]:
@@ -506,13 +548,15 @@ def _controlla(config, uscita: TextIO) -> int:
     """Solo lettura: segnala, non ripara. 0 = in ordine, 1 = qualcosa non corrisponde."""
     esito = controllo.controlla(config)
     if esito.in_ordine:
-        if esito.note == 0:
+        quante = "1 nota" if esito.note == 1 else f"{esito.note} note"
+        if esito.versioni:
+            quante += " e 1 versione" if esito.versioni == 1 else f" e {esito.versioni} versioni"
+        if esito.note + esito.versioni == 0:
             print("Quaderno in ordine: nessuna nota.", file=uscita)
-        elif esito.note == 1:
-            print("Quaderno in ordine: 1 nota, con la sua riga ACCETTATA nel registro.", file=uscita)
+        elif esito.note + esito.versioni == 1:
+            print(f"Quaderno in ordine: {quante}, con la sua riga ACCETTATA nel registro.", file=uscita)
         else:
-            print(f"Quaderno in ordine: {esito.note} note, tutte con la loro riga ACCETTATA nel registro.",
-                  file=uscita)
+            print(f"Quaderno in ordine: {quante}, tutte con la loro riga ACCETTATA nel registro.", file=uscita)
         return 0
     print("ATTENZIONE: note e registro non corrispondono.", file=uscita)
     if esito.senza_intestazione:
@@ -773,6 +817,8 @@ def main(
             return _promemoria(config, adesso, uscita)
         if comando == "recap":
             return _recap(config, adesso, uscita)
+        if comando == "review":
+            return _revisione(config, adesso, uscita)
         if comando == "claude-settings":
             return _impostazioni_claude(argomenti, config, uscita)
         return _cerca(argomenti, config, uscita)

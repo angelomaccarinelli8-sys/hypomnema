@@ -3,6 +3,56 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.6.0 (prototipo) — versioni e regole
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **Ogni cambiamento è una versione nuova.** Correggere il testo, cambiare natura, priorità o data
+  del promemoria, chiudere e riaprire non creano più una nota nuova che rimanda alla vecchia: creano
+  la versione successiva della stessa nota (`0049.1`, `0049.2`…). Ogni versione è un file vero
+  (`note/0049.1.md`) con tutta la nota e in fondo un blocco «Change»: quando, chi, che cosa e perché
+  (con le tue parole, se il cambiamento è tuo). Ogni versione ha la sua riga nel registro; i file di
+  prima non si toccano mai. Si cambia sempre l'ultima versione.
+- **Due campi nuovi** per le proposte: `updates` (in italiano `aggiorna`) cambia natura, priorità o
+  promemoria senza toccare il testo; `reopens` (`riapre`) riapre una nota chiusa. `corrects` ora
+  corregge il testo, `done` chiude (anche più note: una versione chiusa per ciascuna).
+- **Nessuna chiusura definitiva.** Chiusa e aperta sono stati: una nota chiusa si riapre, con il
+  motivo («riaperta il …, perché …»). Una correzione non chiude.
+- **Il codice della nota.** Ogni nota si mostra con la lettera della sua natura davanti al numero:
+  F fatto, I idea, D decisione, O aperta, T da fare, e ✓ se è chiusa (`✓T0049.3`). Il recap finisce
+  con la legenda. Se il terminale non mostra ✓, si può scegliere un altro segno (`[codici]`,
+  `chiusa = "x"`).
+- **Le note di prima si leggono come versioni**, senza riscriverle: una vecchia correzione compare
+  come `0049.1 (nota 0050)`, una vecchia chiusura come versione chiusa. Le note con i campi italiani
+  si mostrano come le nuove. Le regole di oggi valgono anche per loro: una vecchia nota di Claude che
+  correggeva il tuo testo, o che faceva smettere una questione aperta di essere aperta, resta nella
+  storia ma non vale (il testo resta il tuo, l'open resta open), e la revisione la segnala.
+- **Il recap legge ogni nota per quello che è adesso.** Si nascondono le cose da fare o da decidere
+  ormai chiuse; una questione chiusa come decisione compare in «Ultime decisioni» con il suo ✓
+  (`✓D0049.3`). Sotto ogni nota la storia va dalla più recente alla più vecchia, e la chiusura dice il
+  suo motivo come la riapertura.
+- **Il comando `review` (`revisione`)**, solo lettura: segnala le questioni ferme da più di 30 giorni,
+  i promemoria scaduti, le cose da fare nominate in una nota successiva, «ricordamelo» senza data, i
+  rami delle note vecchie e le catene vecchie non permesse oggi. Dice che cosa si può fare, non lo
+  fa. Claude lo lancia a inizio chat, dopo il recap. Nel plugin c'è anche `/hypomnema:review`.
+- **Tutte le regole scritte.** FORMATO.md ha una sezione «Le regole del quaderno»: 24 regole, ognuna
+  con chi può usarla, che effetto ha e un esempio giusto e uno sbagliato.
+
+Il quaderno e la configurazione che hai funzionano senza modifiche (le sezioni `[revisione]` e
+`[codici]` sono facoltative).
+
+**Aggiornare il plugin in Claude Code:**
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+La nuova versione vale dalla sessione successiva (o dopo `/reload-plugins`).
+
+**Nella chat di claude.ai:** scarica il nuovo `hypomnema-skill.zip` e caricalo tra le skill nelle
+impostazioni di Claude, sostituendo quello vecchio.
+
 ## 0.5.0 (prototipo) — lingua per ruolo e chiusure
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*

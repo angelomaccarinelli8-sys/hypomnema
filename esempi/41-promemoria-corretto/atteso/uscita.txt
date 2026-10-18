@@ -4,7 +4,7 @@ Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
 $ hypomnema proponi 2-correzione.json
-ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
@@ -13,27 +13,18 @@ $ hypomnema promemoria
 
 === Da riprendere il 2026-01-10 ===
 
---- Nota 0001 ---
-data: 2026-01-14
+--- Nota F0001.1 ---
+data: 2026-01-15
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: user
 tipo: stated
 natura: fact
 riprendere il: 2026-01-10
-corretta da: nota 0002
 verifica: author not verified (witness off)
 testo:
-  Ricordami di rinvasare il limone.
-
-    --- Nota 0002 (corregge la nota 0001) ---
-    data: 2026-01-15
-    fonte: chat del 14 gennaio 2026 sull'orto
-    autore: user
-    tipo: stated
-    natura: fact
-    corregge: nota 0001
-    verifica: author not verified (witness off)
-    testo:
-      Non il limone: l'arancio.
+  Ricordami di rinvasare l'arancio.
+storia (dalla più vecchia):
+  F0001   2026-01-14 · user: creata
+  F0001.1 2026-01-15 · user: testo corretto (prima: «Ricordami di rinvasare il limone.»)
 [codice di uscita: 0]
 

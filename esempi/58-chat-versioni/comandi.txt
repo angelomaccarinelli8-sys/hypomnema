@@ -1,0 +1,9 @@
+snapshot > prima.json
+propose 1-chiude-due.json
+changed prima.json
+check
+snapshot > prima.json
+propose 2-riapre.json
+changed prima.json
+compare riporto/0006.2.md atteso/quaderno/note/0006.2.md
+check

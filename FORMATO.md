@@ -4,6 +4,12 @@ Dalla versione 0.5.0 la struttura è in inglese (nomi dei campi, valori, motivi 
 contenuto resta nella sua lingua. I nomi e i valori italiani delle versioni precedenti valgono per
 sempre, nelle proposte e nelle note già salvate: vedi «Nomi italiani» in fondo a questa sezione.
 
+Dalla versione 0.6.0 **ogni cambiamento di una nota è una versione nuova**: un file nuovo con il
+punto (`0049.1.md`, `0049.2.md`), che contiene tutta la nota con il cambiamento applicato e in fondo
+un blocco «Change» (vedi «Le versioni»). Ogni nota ha un **codice**, con la lettera della sua natura
+davanti al numero: `T0049.2`, e `✓T0049.3` se è chiusa (vedi «Il codice della nota»). Tutte le regole
+del quaderno sono raccolte in «Le regole del quaderno», in fondo.
+
 ## La proposta: cosa Claude passa allo sportello
 
 Una proposta è **una sola nota** scritta in JSON, salvata in UTF-8.
@@ -25,16 +31,24 @@ Una proposta è **una sola nota** scritta in JSON, salvata in UTF-8.
 | `source` | sì | testo su una riga | Da dove viene: quale chat, oppure "dal libro …", "dalla spiegazione di Claude …", "mio pensiero". |
 | `author` | sì | `user`, `claude` | Chi l'ha detta. |
 | `knowledge` | sì | `stated`, `observed`, `inferred` | Come si sa: detta esplicitamente, vista, oppure ricavata ragionando. |
-| `kind` | sì | `fact`, `idea`, `decision`, `open`, `todo` | Che cosa è: un fatto, un'idea, una decisione, una questione aperta, una cosa da fare. |
-| `text` | sì | testo, anche su più righe | Con `author: user`: **le parole esatte dell'utente**, copiate da un suo messaggio. Con `author: claude`: le parole di Claude. |
+| `kind` | sì (no in un cambiamento) | `fact`, `idea`, `decision`, `open`, `todo` | Che cosa è: un fatto, un'idea, una decisione, una questione aperta, una cosa da fare. In un cambiamento (`corrects`, `updates`, `done`, `reopens`) dice che cosa diventa la nota; se manca, la natura non cambia. |
+| `text` | sì | testo, anche su più righe | Con `author: user`: **le parole esatte dell'utente**, copiate da un suo messaggio. Con `author: claude`: le parole di Claude. In un cambiamento è ciò che è stato detto adesso: il testo nuovo con `corrects`, il motivo con `updates`, `done` e `reopens`. |
 | `context` | no; **solo** con `author: user` | testo, anche su più righe | Ciò che Claude aggiunge alle parole dell'utente (spiegazioni, di cosa si parlava). Mostrato come "Context written by Claude". |
 | `quote` | no; **solo** con `author: claude` | testo, anche su più righe | Le parole esatte dell'utente su cui Claude basa la sua nota. |
 | `confirms` | no | numero di una nota esistente, per esempio `"0001"` | Solo per una decisione che conferma un'idea già nel quaderno. |
-| `corrects` | no | numero di una nota esistente, per esempio `"0007"` | Questa nota corregge quella indicata («era sbagliata»). La nota vecchia resta; il cercatore la mostra sempre con la sua correzione. |
+| `corrects` | no | numero di una nota esistente, per esempio `"0007"` | Corregge il **testo** della nota: crea la sua versione successiva, con il `text` della proposta come testo nuovo. Insieme si possono cambiare `kind`, `priority` e `remind`. |
+| `updates` | no | numero di una nota esistente | Cambia natura (`kind`), priorità (`priority`) o promemoria (`remind`) senza toccare il testo: crea la versione successiva; il `text` è il motivo. |
+| `reopens` | no | numero di una nota chiusa | Riapre la nota: crea una versione non chiusa; il `text` è il motivo. Se `kind` manca, torna la natura che la nota aveva prima della chiusura. |
 | `remind` | no | solo il giorno: `AAAA-MM-GG` | Promemoria: il giorno in cui riprendere la nota. Il comando `reminders` elenca quelli arrivati o passati. |
-| `done` | no | uno o più numeri di note esistenti, separati da virgole: `"0012"` oppure `"0012, 0015"` | Questa nota chiude le note indicate: questioni aperte (`open`), cose da fare (`todo`) o promemoria (con `remind`). Vedi «Chiudere». |
-| `priority` | no; **solo** con `author: user` | `high`, `normal`, `low` | La priorità; senza, vale `normal`. Si cambia con una nota nuova che ha `corrects` e la priorità nuova. |
+| `done` | no | uno o più numeri di note esistenti, separati da virgole: `"0012"` oppure `"0012, 0015"` | Chiude le note indicate: questioni aperte (`open`), cose da fare (`todo`) o promemoria (con `remind`). Crea una versione chiusa per ciascuna, con lo stesso motivo (il `text`). Vedi «Chiudere e riaprire». |
+| `priority` | no; **solo** con `author: user` | `high`, `normal`, `low` | La priorità; senza, vale `normal`. Si cambia con `updates`. |
 | `from_reply` | no; **solo** con `author: claude`, mai insieme a `quote` | `"yes"` | Il `text` è un pezzo di una risposta di Claude («Salva questa risposta di Claude»). Con il testimone delle risposte acceso, lo sportello lo cerca nelle risposte registrate. |
+
+`corrects`, `updates`, `done` e `reopens` sono i **cambiamenti**: una proposta ne usa uno solo e non
+crea una nota nuova, ma la versione successiva della nota indicata. In un rimando si scrive solo il
+numero, senza la lettera del codice: `"0049"` vuol dire l'ultima versione, `"0049.1"` quella versione
+precisa (va bene solo se è l'ultima). Il numero di una nota scritta prima della 0.6.0 che è diventata
+una versione (per esempio una vecchia correzione) vale come quella versione.
 
 Le parole dell'utente e quelle di Claude non stanno mai nello stesso campo: in una nota
 dell'utente sono `text` (utente) e `context` (Claude); in una nota di Claude sono `text`
@@ -45,7 +59,8 @@ I valori vanno scritti esattamente così, in minuscolo. Gli spazi all'inizio e a
 **Nomi italiani.** Nelle proposte si possono usare anche i nomi e i valori di prima: `data`,
 `fonte`, `autore` (`utente`), `tipo` (`dichiarata`, `osservata`, `dedotta`), `natura` (`fatto`,
 `idea`, `decisione`, `discorso aperto`), `testo`, `contesto`, `citazione`, `conferma_di`,
-`corregge`, `riprendere_il`, `da_risposta` (`sì`), `priorità` (`alta`, `normale`, `bassa`).
+`corregge`, `aggiorna` (per `updates`), `riapre` (per `reopens`), `riprendere_il`, `da_risposta` (`sì`),
+`priorità` (`alta`, `normale`, `bassa`).
 Lo sportello li porta all'inglese e la nota nuova si scrive in inglese. Lo stesso campo non può
 comparire due volte, nemmeno con i due nomi (per esempio `data` e `date`).
 
@@ -62,27 +77,36 @@ La nota viene **rifiutata** se (i motivi sono scritti in inglese, perché li leg
 6. `author`, `knowledge`, `kind` o `priority` hanno un valore non ammesso (per esempio `choice`);
 7. è una **decisione** scritta da **Claude**: le decisioni le prende solo l'utente;
 8. è una **decisione** non **stated** (una decisione non si osserva e non si deduce: la dice l'utente);
-9. ha `confirms` ma non è una decisione, oppure la nota indicata non esiste, oppure non è un'idea;
+9. ha `confirms` ma non è una decisione, oppure la nota indicata non esiste, non è all'ultima
+   versione, oppure non è un'idea;
 10. il file non è JSON valido, non contiene una sola nota, o non è in UTF-8;
 11. ha `author: user` e il campo `quote` (le sue parole vanno in `text`), oppure ha
     `author: claude` e il campo `context` (in una nota di Claude è tutto già di Claude);
 12. `text` o `context` contengono la riga `## Context written by Claude` (o quella italiana
-    `## Contesto scritto da Claude`), riservata al formato della nota;
+    `## Contesto scritto da Claude`) oppure `## Change`, riservate al formato della nota;
 13. con il testimone acceso, ha `author: user` e il `text` non si trova parola per parola in
-    nessun messaggio registrato (vale anche per le decisioni, che sono sempre dell'utente);
+    nessun messaggio registrato (vale anche per le decisioni e per i motivi dei cambiamenti);
 14. con il testimone acceso, è una nota di Claude con una `quote` che non si trova parola
     per parola in nessun messaggio registrato;
-15. ha `corrects` con il numero di una nota che non esiste;
-16. ha `remind` con una data che non esiste o che non è solo un giorno (`AAAA-MM-GG`);
-17. ha `done` scritto male (non numeri separati da virgole), con un numero ripetuto, con il numero
-    di una nota che non esiste, o di una nota che non si può chiudere (un `fact`, una `decision` o
-    un'`idea` senza `remind`: quelle si correggono con `corrects`, le idee si confermano con `confirms`);
-18. chiude con `done` una nota `open` ma non ha `author: user` (le questioni aperte le chiude solo
-    l'utente);
-19. ha `done` ed è a sua volta una nota `open` (la nota che chiude dice che cosa è diventata la
-    questione: `decision`, `todo`, `fact` o `idea`);
-20. chiude con `done` una nota già chiusa: il motivo dice da quale nota è già chiusa;
-21. ha `priority` ma `author: claude` (Claude può proporre una priorità solo nel testo di una sua idea).
+15. ha `remind` con una data che non esiste o che non è solo un giorno (`AAAA-MM-GG`);
+16. ha `priority` ma `author: claude` (Claude può proporre una priorità solo nel testo di una sua idea);
+17. usa più di un cambiamento (`corrects`, `updates`, `done`, `reopens`), oppure un cambiamento
+    insieme a `confirms`;
+18. un rimando non è un numero (per esempio ha la lettera del codice, `T0049`), non esiste, oppure
+    non è l'ultima versione della nota: il motivo dice qual è l'ultima;
+19. `corrects` cambia il testo di una nota dell'utente ma non ha `author: user`, oppure il testo
+    nuovo è uguale a quello di prima;
+20. `updates` non cambia niente, oppure `updates`, `done` o `reopens` hanno `context` o
+    `from_reply` (appartengono al testo di una nota);
+21. `done` è scritto male, ripete una nota (anche con due numeri della stessa nota), chiude una nota
+    già chiusa (il motivo dice di usare `reopens`) o che non si può chiudere (un `fact`, una
+    `decision` o un'`idea` senza `remind`), ha `priority` o `remind`, oppure farebbe diventare la nota
+    `todo` o `open`;
+22. chiude o riapre un `open`, o fa smettere a una nota di essere `open`, ma non ha `author: user`;
+23. `reopens` indica una nota che non è chiusa;
+24. cambia la natura in `decision` senza `author: user`, cambia la natura di una decisione o di una
+    nota dell'utente senza `author: user`, oppure fa diventare decisione un'idea (per questo c'è
+    `confirms`).
 
 Tutti i motivi trovati vengono elencati insieme, sempre nello stesso ordine.
 
@@ -209,62 +233,173 @@ Nelle risposte i blocchi di codice sono sostituiti dalla loro impronta se `omett
 Lo sportello cerca il testo delle note dell'utente nell'archivio con le stesse regole del testimone;
 se non lo trova la nota resta non verificata, non viene rifiutata.
 
-## Note collegate: correzioni, conferme, chiusure
+## Le versioni
 
-Tre campi collegano una nota a note precedenti: `corrects`, `confirms` e `done`. Il cercatore
-(`search`) mostra, sotto ogni nota trovata e rientrate di quattro spazi, **tutte** le note collegate,
-anche a catena (la correzione di una correzione), dalla più recente alla più vecchia, anche se non
-contengono la parola cercata. Nella nota trovata compaiono le righe `corretta da: nota …`,
-`confermata da: nota …` e `chiusa da: nota …`. Una nota collegata che è già comparsa
-più sopra si indica con una riga sola: `(nota 0002, che corregge la nota 0001: già mostrata sopra)`.
+Ogni cambiamento di una nota (`corrects`, `updates`, `done`, `reopens`) è una **versione nuova**: lo
+sportello scrive un file nuovo, `note/<numero>.<versione>.md`, e una riga nel registro
+(`ACCETTATA | nota 0049.1`). I file di prima non cambiano mai. La versione nuova contiene tutto:
+l'intestazione e il testo dell'ultima versione, copiati e con il cambiamento applicato, la riga
+`- status: closed` se è chiusa, e in fondo il blocco del cambiamento:
+
+```markdown
+# Note 0006.1
+
+- date: 2026-01-10
+- source: chat del 10 gennaio 2026
+- author: user
+- knowledge: stated
+- kind: todo
+- priority: high
+- remind: 2026-01-20
+- verification: author not verified (witness off)
+
+## Text
+
+Seminare il basilico.
+
+## Change
+
+- date: 2026-01-15
+- source: chat del 15 gennaio 2026
+- author: user
+- knowledge: stated
+- change: priority normal → high
+- verification: author not verified (witness off)
+
+### Reason
+
+Il basilico è urgente, sta finendo la stagione buona.
+```
+
+- `change` elenca che cosa cambia, separato da `; `: `text corrected`, `kind todo → decision`,
+  `priority normal → high`, `remind 2026-01-20` (oppure `remind 2026-01-20 → 2026-01-25`), `closed`,
+  `reopened`.
+- `### Reason` è il motivo: il `text` della proposta, cioè le parole di chi ha chiesto il cambiamento
+  (verificate dal testimone come ogni nota dell'utente). In una correzione del testo non c'è: le
+  parole nuove sono il testo stesso, e l'intestazione (data, fonte, autore, knowledge, verifica)
+  diventa quella della correzione.
+- Una nota di Claude può avere nel blocco anche `quote`, le parole dell'utente su cui si basa.
+- Si cambia sempre l'**ultima** versione; un rimando a una versione vecchia è rifiutato.
+- Il numero delle note nuove è il primo numero intero dopo il più alto: le versioni non contano e
+  i buchi non si riempiono.
+
+Il blocco `## Change` si legge solo nei file con il punto: una nota vecchia che ha quella riga nel
+testo resta com'è.
+
+## Il codice della nota
+
+Ogni nota si mostra con un codice: la lettera della natura della sua **ultima** versione davanti al
+numero, e un segno davanti se è chiusa.
+
+| Lettera | Natura |
+|---|---|
+| F | fatto (`fact`) |
+| I | idea (`idea`) |
+| D | decisione (`decision`) |
+| O | aperta (`open`) |
+| T | da fare (`todo`) |
+| ✓ | chiusa (davanti alla lettera) |
+
+Per esempio `T0049.2` (una cosa da fare, alla versione 2) e `✓T0049.3` (chiusa). La lettera si mostra
+soltanto: non fa parte del numero, e in un rimando di una proposta si scrive solo il numero
+(`"0049"`): un rimando con la lettera è rifiutato con un motivo che dice come scriverlo. Chi ha un
+terminale che non mostra `✓` può scegliere un altro segno nella sezione facoltativa `[codici]`
+(`chiusa = "x"` dà `xT0049.3`). Il recap, la ricerca e la revisione finiscono con la legenda
+`Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa`.
+
+## Le note di prima delle versioni
+
+Le note salvate prima della 0.6.0 non si riscrivono: si leggono con le stesse regole delle versioni.
+
+- Una nota vecchia con `corrects: X` è la versione successiva della nota X, e si mostra con il suo
+  numero vero accanto: `T0001.1 (nota 0002)`. Il suo testo e la sua natura valgono da lì in poi (una
+  vecchia correzione che cambiava natura conta come cambio di natura); priorità e `remind` valgono se
+  ce li ha, altrimenti restano quelli di prima.
+- Una nota vecchia con `done` è la versione **chiusa** di ogni nota che chiude (una volta sola per
+  nota, anche se ne chiude anche la correzione), con il suo testo come motivo. La natura chiusa è la
+  sua se è `decision`, `fact` o `idea`; altrimenti resta quella di prima.
+- Se la nota vecchia che chiude è essa stessa un `todo` o un promemoria, se conferma un'idea
+  (`confirms`) o se un'altra nota la corregge, resta **anche** una nota a sé: così non si perde.
+- **Le regole di oggi valgono anche per le catene vecchie.** Una nota vecchia che oggi non sarebbe
+  permessa resta nella storia, ma non cambia ciò che oggi non avrebbe il permesso di cambiare:
+  - se Claude correggeva il testo di una nota dell'utente, il testo che vale resta quello dell'utente;
+  - se Claude faceva smettere un `open` di essere `open` (lo chiudeva, o lo correggeva con un'altra
+    natura), l'`open` resta `open`;
+  - vale lo stesso per gli altri cambi di natura non permessi (regola 12).
+
+  La storia dice che cosa non vale: «non applicato (catena vecchia non permessa oggi): …», e la
+  revisione la segnala. Nessuna regola nuova fa sparire qualcosa dell'utente per mano di Claude.
+- Le versioni vecchie di una nota sono numerate per numero di nota, prima delle versioni nuove.
+- Due note vecchie che correggono (o chiudono) la stessa versione formano un **ramo**: vale la più
+  recente, e la revisione lo segnala. Con le note nuove non può succedere.
+- Il numero vecchio vale nei rimandi come la versione che è diventata (`0002` = `0001.1`).
+
+Esempio: la 0001 è un `todo`, la 0002 la corregge, la 0003 (un `fact`) chiude con `done: 0001, 0002`.
+È una storia sola: `T0001`, `T0001.1 (nota 0002)`, `✓F0001.2 (nota 0003)`. Il recap non la mostra;
+`search terriccio --all` la mostra una volta, con la sua storia.
+
+## La ricerca
+
+Il cercatore (`search`) trova una nota se la parola è in una qualunque delle sue versioni: nel testo,
+nel contesto scritto da Claude o nel motivo di un cambiamento. Di ogni nota mostra l'ultima versione
+intera e poi la sua storia, una riga per versione dalla più vecchia: codice, data, chi, che cosa è
+cambiato e il motivo (per una correzione del testo, anche la prima riga del testo di prima; per una
+chiusura e una riapertura «chiusa il …, perché «…»» e «riaperta il …, perché «…»»). Sotto la nota, rientrate di quattro spazi, compaiono le note
+che la confermano (`confirms`); una nota che conferma un'altra dice com'è quella nota oggi, anche se è
+chiusa o se la conferma riguarda una versione vecchia («conferma di: nota I0005.1 (nota 0008),
+versione vecchia: l'ultima è I0005.2»). Una nota già comparsa più sopra si indica con una riga sola.
 
 Le note trovate vanno dalla più recente alla più vecchia, cioè dal numero più alto: è l'ordine in
-cui sono entrate nel quaderno, non il campo `date`. Le note chiuse non si mostrano: l'uscita dice
-quante sono state nascoste («1 nota chiusa non mostrata: aggiungi --all per vederla.»), e
-`search <parola> --all` (o `--tutte`) le mostra, con sotto la nota che le ha chiuse.
+cui sono entrate nel quaderno, non il campo `date`. Le note chiuse non si mostrano, tranne le
+decisioni (vedi «Chiudere e riaprire»): l'uscita dice quante sono state nascoste («1 nota chiusa non mostrata: aggiungi --all per
+vederla.»), e `search <parola> --all` (o `--tutte`) le mostra, con la loro storia.
 
 La ricerca è per parola esatta, senza distinzione di maiuscole; una parola è delimitata da
 qualunque segno che non sia una lettera o una cifra, compresi il trattino basso, il punto, il
 trattino e la barra: `orto` trova `orto_balcone.py`. Il diario segue la stessa regola.
 
-## Chiudere: questioni aperte, cose da fare, promemoria
+## Chiudere e riaprire
 
-Una nota `open`, `todo` o con `remind` resta aperta finché una **nota nuova** non la chiude con
-`done`. Le regole (vedi anche «Le regole dello sportello», 17-20):
+Chiusa e aperta sono **stati** di una nota, non note a parte.
 
-- `done` elenca uno o più numeri, separati da virgole;
-- il `text` della nota che chiude è il motivo; il suo `kind` dice che cosa è diventata la questione
-  (`decision`, `todo`, `fact` o `idea`, mai `open`);
-- un `open` lo chiude solo l'utente (`author: user`); `todo` e promemoria li può chiudere anche Claude;
-- una nota si chiude una volta sola;
-- `fact`, `decision` e `idea` senza `remind` non si chiudono: si correggono (`corrects`), e le idee
-  si confermano (`confirms`);
-- una questione chiusa che ritorna è un `open` nuovo, senza campi speciali.
+- `done` chiude un `open`, un `todo` o un promemoria (una nota con `remind`): crea la versione chiusa
+  di ogni nota indicata, con lo stesso motivo (`text`). Il `kind` facoltativo dice che cosa è
+  diventata la questione (`decision`, `fact` o `idea`); se manca, la natura resta.
+- `reopens` riapre una nota chiusa: crea una versione aperta, con il motivo. Se `kind` manca, torna
+  la natura di prima della chiusura.
+- Un `open` lo chiude e lo riapre solo l'utente (`author: user`); `todo` e promemoria li possono
+  chiudere e riaprire anche Claude.
+- `fact`, `decision` e `idea` senza `remind` non si chiudono: si correggono (`corrects`), si
+  cambiano (`updates`), e le idee si confermano (`confirms`).
 
-Le note chiuse non compaiono nel recap né nella ricerca di base (`search --all` le mostra).
+Il recap e la ricerca leggono ogni nota per quello che è **adesso**, cioè la sua ultima versione. Si
+nascondono solo le note chiuse che non sono decisioni: le cose da fare o da decidere ormai risolte
+(`todo`, `open` e promemoria chiusi, anche diventati fatti o idee); `search --all` le mostra. Una
+questione chiusa come decisione **è una decisione**: compare in «Ultime decisioni» e nella ricerca,
+con il suo codice (`✓D0049.3`). Il ✓ dice che la questione è risolta, non che va nascosta.
 
 ## La priorità
 
-`priority` (`high`, `normal`, `low`) è facoltativa e solo dell'utente. Vale la priorità della nota
-o, se la nota è stata corretta (`corrects`, anche a catena), quella della correzione più recente che
-ne ha una; senza priorità vale `normal`. Il recap la usa per l'ordine, dentro ogni blocco.
+`priority` (`high`, `normal`, `low`) è facoltativa e solo dell'utente. Vale la priorità dell'ultima
+versione; si cambia con `updates`. Senza priorità vale `normal`. Il recap la usa per l'ordine,
+dentro ogni blocco.
 
 ## I promemoria
 
-Un promemoria è una nota con `remind`. Insieme alle sue correzioni (`corrects`, anche a
-catena) forma un gruppo, che il comando `reminders` mostra una volta sola, sotto la prima nota:
-
-- vale la data della nota **più recente** del gruppo che ha un suo `remind`: una correzione
-  senza data lascia il promemoria com'era, una correzione con una data nuova lo sposta;
-- se una nota chiude (`done`) una nota del gruppo, il promemoria non è più tra gli scaduti;
-- sono scaduti i promemoria con la data uguale o precedente a oggi (la data del computer), dal più
-  vecchio al più recente; a parità di data decide il numero della nota.
+Un promemoria è una nota con `remind`; vale la data dell'ultima versione (si sposta con `updates`).
+Il comando `reminders` mostra quelli scaduti: la data è uguale o precedente a oggi (la data del
+computer) e l'ultima versione non è chiusa. Vanno dal più vecchio al più recente; a parità di data
+decide il numero della nota.
 
 ## Il recap
 
-Il comando `recap` («dove eravamo rimasti») mostra, con regole fisse, una riga per nota (numero,
-priorità `[alta]` o `[bassa]` se c'è, data, prima riga del testo, con `…` se il testo continua) e
-sotto, con `↳`, le note collegate. Le note chiuse non compaiono.
+Il comando `recap` («dove eravamo rimasti») mostra, con regole fisse, una riga per nota (codice
+dell'ultima versione, priorità `[alta]` o `[bassa]` se c'è, data dell'ultima versione, prima riga del
+testo, con `…` se il testo continua) e sotto, con `↳`, una riga per ogni versione dopo la prima, **dalla
+più recente alla più vecchia**, come il quaderno (che cosa è cambiato; per una chiusura e una
+riapertura anche il motivo), e le conferme. Vale l'ultima versione di ogni nota, per quello che è
+adesso: le note chiuse non compaiono, tranne le decisioni (una questione chiusa come decisione compare
+in «Ultime decisioni», con `✓`).
 
 1. i promemoria scaduti, tutti;
 2. gli ultimi discorsi aperti (`kind: open`);
@@ -273,12 +408,36 @@ sotto, con `↳`, le note collegate. Le note chiuse non compaiono.
 5. le ultime voci del diario, nell'ordine in cui sono state dette, con la prima riga del testo.
 
 Nei blocchi 1-4 vengono prima le note a priorità alta, poi le normali, poi le basse; a parità di
-priorità, i promemoria dal più vecchio e il resto dal più recente.
+priorità, i promemoria dal più vecchio e il resto dal più recente (per numero di nota). In fondo c'è
+la legenda dei codici.
 
 Quante voci mostrare per i blocchi 2, 3, 4 e 5 si regola nella sezione facoltativa `[recap]`
 (`discorsi_aperti`, `todo`, `decisioni`, `voci_diario`, numeri interi maggiori di zero). Se la
 sezione o un'impostazione mancano valgono 5, 5, 5 e 10. Se le voci sono di più, il recap dice quante
 non ha mostrato.
+
+## La revisione
+
+Il comando `review` (o `revisione`) dice che cosa conviene guardare nel quaderno. È solo lettura:
+ogni riga ha il codice della nota e dice che cosa si può fare, senza farlo. Esce con 0 se non trova
+niente, con 1 se c'è qualcosa da guardare. Le regole sono fisse:
+
+1. **ramo**: due o più note vecchie correggono (o chiudono) la stessa versione;
+2. **ferma**: un `open` o un `todo` aperto la cui ultima versione è più vecchia di N giorni (sezione
+   facoltativa `[revisione]`, `giorni`, di base 30);
+3. **promemoria scaduto** e ancora aperto;
+4. **nominata**: il numero di un `open` o `todo` aperto (anche con la lettera o la versione, non
+   dentro una data come `2026-01-15`) compare nel testo, nel contesto o nel motivo di una nota venuta
+   dopo: forse dice che è fatta;
+5. **senza data**: un `open` o `todo` aperto senza `remind` che nel testo ha «ricordamelo»,
+   «ricordami», «remind me», «tra (o fra) … giorni/giorno/settimane/settimana/mesi/mese» oppure
+   «in … days/day/weeks/week»;
+6. **catena vecchia non permessa oggi**: una nota vecchia cambiava ciò che oggi non avrebbe il
+   permesso di cambiare (vedi «Le note di prima delle versioni»): resta nella storia ma non vale, e la
+   riga dice con quale proposta l'utente può fare il cambiamento, se lo vuole.
+
+Il programma non capisce il senso delle parole: non sa se una nota dice «è fatta» o «è superata», e
+non legge le date scritte a parole. Per questo segnala soltanto, e decide l'utente.
 
 ## Da idea a decisione
 
@@ -289,8 +448,9 @@ L'idea originale non viene toccata: il quaderno conserva sia l'idea sia la decis
 
 ## La nota salvata nel quaderno
 
-Ogni nota accettata riceve il numero successivo (`0001`, `0002`, ...) e diventa un file
-`note/<numero>.md`, leggibile da una persona:
+Ogni nota nuova accettata riceve il numero successivo (`0001`, `0002`, ...) e diventa un file
+`note/<numero>.md`, leggibile da una persona (le versioni sono i file con il punto, vedi «Le
+versioni»):
 
 ```markdown
 # Note 0002
@@ -313,7 +473,7 @@ Conferma dell'idea 0001: annaffiare la mattina presto invece che la sera.
 ```
 
 La sezione "Context written by Claude" compare solo se la nota ha un `context`. I campi
-d'intestazione hanno quest'ordine: `date`, `source`, `author`, `knowledge`, `kind`, `priority`,
+d'intestazione hanno quest'ordine: `date`, `source`, `author`, `knowledge`, `kind`, `status`, `priority`,
 `confirms`, `corrects`, `done`, `remind`, `quote`, `from_reply`, `verification`; quelli facoltativi
 compaiono solo se presenti.
 
@@ -332,7 +492,11 @@ accettato o rifiutato. Si apre solo in aggiunta.
 ```
 - 2026-01-15T10:00:00+01:00 | ACCETTATA | nota 0001 | da: 1-idea.json
 - 2026-01-15T10:01:00+01:00 | RIFIUTATA | da: nota.json | motivi: the field «source» is missing: every note must say where it comes from.
+- 2026-01-15T10:02:00+01:00 | ACCETTATA | nota 0001.1 | da: 2-chiusura.json
 ```
+
+Una versione ha la sua riga come una nota; una chiusura di più note (`done: 0012, 0015`) ha una riga
+per ogni versione chiusa.
 
 L'ora è quella del computer al momento del passaggio. `da:` è il nome del file proposto,
 oppure `(ingresso diretto)` se la nota arriva dall'ingresso standard.
@@ -344,3 +508,229 @@ forma di una riga dello sportello, con il loro numero.
 Ogni passaggio occupa sempre una sola riga: se il nome del file o un motivo contengono un
 "a capo" (per esempio un nome di campo inventato), al suo posto viene scritto il segno ⏎.
 Lo stesso vale per i motivi di rifiuto mostrati a schermo: ogni motivo sta su una riga.
+
+## Le regole del quaderno
+
+Tutte le regole, in un posto solo. Per ognuna: che cosa dice, chi può usarla, che effetto ha, un
+esempio giusto (✔) e uno sbagliato (✘). Gli esempi sono inventati. Le regole segnate con «(Claude)»
+il programma non le può controllare, perché servirebbe capire il senso delle parole: le segue
+Claude, e la revisione (`review`) ne controlla solo la parte che ha un segno fisso.
+
+### 1. Ogni cambiamento è una versione; si cambia sempre l'ultima
+
+- **Dice:** correzione del testo, cambio di natura, priorità, promemoria, chiusura e riapertura
+  creano una versione nuova della nota (`0049.1.md`); niente si riscrive. Si cambia sempre l'ultima
+  versione.
+- **Chi:** l'utente e Claude, con i limiti delle regole 9-12.
+- **Effetto:** lo sportello scrive il file della versione e la sua riga nel registro; un rimando a una
+  versione vecchia è rifiutato, e il motivo dice qual è l'ultima.
+- ✔ `{"updates": "0049", "priority": "high", "text": "È urgente.", …}` → `0049.1`.
+- ✘ `{"corrects": "0049.1", …}` quando l'ultima è `0049.2` → rifiutata: «the last is T0049.2».
+
+### 2. La correzione non chiude
+
+- **Dice:** correggere una nota (`corrects`) cambia il suo testo, non il suo stato: una cosa da fare
+  corretta resta da fare, una questione aperta corretta resta aperta.
+- **Chi:** chi può correggere quel testo (regola 11).
+- **Effetto:** la versione nuova ha lo stesso stato (aperta o chiusa) di prima.
+- ✔ «Non il terriccio per agrumi: quello universale.» → `corrects: 0001`, la `T0001.1` resta da fare.
+- ✘ Usare `corrects` con il testo «Comprato» per dire che è fatta: per chiudere c'è `done`.
+
+### 3. «Ricordamelo», «tra tre giorni» → `remind` con la data (Claude)
+
+- **Dice:** quando l'utente chiede di ricordargli una cosa, la nota ha il campo `remind` con il giorno
+  (Claude lo calcola dalla data della chat: «tra tre giorni» il 15/01 → `2026-01-18`).
+- **Chi:** l'utente e Claude.
+- **Effetto:** il promemoria compare nel recap e in `reminders` quando arriva la data. La revisione
+  segnala gli `open` e i `todo` con queste parole nel testo ma senza `remind`.
+- ✔ «Ricordamelo tra tre giorni: travasare il limone.» → `kind: todo`, `remind: 2026-01-18`.
+- ✘ La stessa nota senza `remind`: non tornerà mai da sola.
+
+### 4. «Ricordati questa cosa» è un fatto, non una questione aperta (Claude)
+
+- **Dice:** un'informazione da tenere a mente (un programma, un indirizzo, un numero) è un `fact`.
+- **Chi:** l'utente e Claude.
+- **Effetto:** la nota si trova con la ricerca, ma non resta nel recap come questione da chiudere.
+- ✔ «Ricordati: il vivaio è in via dei Tigli 4.» → `kind: fact`.
+- ✘ La stessa frase come `kind: open`: resterebbe aperta per sempre.
+
+### 5. `open` è una domanda, `todo` è una cosa da fare (Claude)
+
+- **Dice:** `open` = una domanda o una cosa ancora da decidere; `todo` = una cosa decisa che resta da
+  fare.
+- **Chi:** l'utente e Claude.
+- **Effetto:** il recap li mostra in due blocchi diversi («Discorsi aperti» e «Cose da fare»).
+- ✔ «Dove mettiamo la compostiera?» → `open`; «Montare la compostiera.» → `todo`.
+- ✘ «Montare la compostiera.» come `open`.
+
+### 6. Una nota = una cosa sola (Claude)
+
+- **Dice:** ogni nota dice una cosa; due cose diventano due note.
+- **Chi:** l'utente e Claude.
+- **Effetto:** si possono correggere, chiudere e ritrovare una per una.
+- ✔ «Il fico va potato a marzo.» e «Il limone va rinvasato.» in due note.
+- ✘ «Il fico va potato a marzo e il limone va rinvasato.» in una nota sola: chiudere una delle due
+  chiuderebbe anche l'altra.
+
+### 7. Le parole dell'utente si copiano, mai a memoria (Claude)
+
+- **Dice:** il `text` di una nota dell'utente è copiato dal suo messaggio (in chat, dall'archivio
+  della chat), mai riscritto a memoria; un messaggio dettato a voce resta con i suoi errori di
+  trascrizione.
+- **Chi:** Claude, per le note dell'utente.
+- **Effetto:** il testimone (o l'archivio) trova le parole e la nota è verificata (o riscontrata).
+- ✔ Il messaggio dettato dice «il fico va potato a marzo e non a febraio» → `text` identico, con
+  «febraio».
+- ✘ Correggere in «febbraio» o riassumere: il testimone non lo trova e la nota è rifiutata (le
+  spiegazioni di Claude vanno in `context`).
+
+### 8. La fonte dice in che chat è nata la nota, non di che cosa parla (Claude)
+
+- **Dice:** `source` dice da dove viene la nota (quale chat, quale libro).
+- **Chi:** l'utente e Claude.
+- **Effetto:** si può risalire alla conversazione.
+- ✔ `"source": "chat del 15 gennaio 2026"`.
+- ✘ `"source": "il fico"`.
+
+### 9. Chiudere: chi chiude che cosa
+
+- **Dice:** `done` chiude `open`, `todo` e promemoria. Un `open` lo chiude solo l'utente; `todo` e
+  promemoria anche Claude. Fatti, decisioni e idee senza `remind` non si chiudono.
+- **Chi:** come detto.
+- **Effetto:** versione chiusa (`✓`), con il motivo; sparisce dal recap, tranne se è diventata una
+  decisione (allora compare in «Ultime decisioni», con `✓D`).
+- ✔ Claude: `{"done": "0006", "kind": "fact", "text": "Seminato oggi in tre vasi.", …}` → `✓F0006.2`.
+- ✘ Claude chiude un `open` → rifiutata: «only the user can close an open note».
+
+### 10. Riaprire
+
+- **Dice:** `reopens` riapre una nota chiusa, con il motivo; un `open` lo riapre solo l'utente.
+- **Chi:** l'utente; Claude per `todo` e promemoria.
+- **Effetto:** versione aperta che dice «riaperta il …, perché «…»»; torna nel recap.
+- ✔ `{"reopens": "0006", "text": "Le piantine sono morte col gelo.", …}` → `T0006.3`.
+- ✘ `reopens` su una nota non chiusa → rifiutata.
+
+### 11. Correggere il testo: chi
+
+- **Dice:** il testo di una nota dell'utente sono le sue parole: lo corregge solo l'utente. Claude
+  corregge le sue note; se l'utente corregge una nota di Claude, il testo nuovo è suo.
+- **Chi:** come detto.
+- **Effetto:** l'intestazione della versione descrive il testo nuovo (chi, quando, verifica).
+- ✔ L'utente: «No, il rubinetto perde dalla guarnizione.» → `corrects: 0007`.
+- ✘ Claude corregge da solo la `F0007` dell'utente → rifiutata.
+
+### 12. Cambiare la natura: chi
+
+- **Dice:** diventare `decision`, smettere di essere `open` e ogni cambio di natura di una nota
+  dell'utente li decide solo l'utente; un'idea diventa decisione solo con `confirms`.
+- **Chi:** come detto; Claude può cambiare la natura delle sue note (per esempio un'idea che diventa
+  una cosa da fare).
+- **Effetto:** versione nuova con la lettera nuova (`O0004` → `T0004.1`).
+- ✔ L'utente: `{"updates": "0004", "kind": "todo", "text": "Ho deciso il posto, ora va solo montata."}`.
+- ✘ Claude: `{"updates": "0004", "kind": "decision", …}` → rifiutata.
+
+### 13. La priorità è dell'utente
+
+- **Dice:** `priority` (`high`, `normal`, `low`) la mette e la cambia solo l'utente.
+- **Chi:** l'utente; Claude può proporla nel testo di una sua idea.
+- **Effetto:** il recap mostra prima le note a priorità alta.
+- ✔ `{"updates": "0006", "priority": "high", "text": "Il basilico è urgente."}` dell'utente.
+- ✘ Una nota di Claude con `priority` → rifiutata.
+
+### 14. Le decisioni sono dell'utente
+
+- **Dice:** una decisione la prende l'utente, con parole sue (`knowledge: stated`).
+- **Chi:** l'utente.
+- **Effetto:** una nota di Claude non può essere una decisione; una sua idea resta idea finché
+  l'utente non la conferma (`confirms`, nota nuova).
+- ✔ L'utente: «Sì, la compostiera va sotto il fico.» → `decision`, `confirms: 0005`.
+- ✘ Claude salva «Abbiamo deciso: sotto il fico.» come `decision` → rifiutata.
+
+### 15. Come si sa: `knowledge`
+
+- **Dice:** `stated` = detto esplicitamente; `observed` = visto; `inferred` = ricavato ragionando.
+  L'incerto resta incerto.
+- **Chi:** l'utente e Claude.
+- **Effetto:** chi legge sa quanto fidarsi.
+- ✔ Claude deduce che il vaso è troppo piccolo → `inferred`.
+- ✘ La stessa deduzione come `stated`.
+
+### 16. Il codice della nota; nei rimandi solo il numero
+
+- **Dice:** ogni nota si mostra con la lettera della sua natura e `✓` se è chiusa (`✓T0049.3`); nei
+  rimandi si scrive solo il numero.
+- **Chi:** tutti.
+- **Effetto:** un rimando con la lettera è rifiutato con il modo giusto di scriverlo.
+- ✔ `"done": "0049"`.
+- ✘ `"done": "T0049"` → rifiutata: «write only the number».
+
+### 17. Testo e contesto separati; la citazione nelle note di Claude
+
+- **Dice:** in una nota dell'utente `text` sono le sue parole e `context` le aggiunte di Claude; in
+  una nota di Claude le parole dell'utente vanno in `quote`.
+- **Chi:** l'utente e Claude.
+- **Effetto:** parole dell'utente e di Claude non si mescolano mai.
+- ✔ `text`: «annaffio alle sei», `context`: «Parlava dell'orto sul balcone.»
+- ✘ `text`: «L'utente annaffia alle sei.» in una nota dell'utente.
+
+### 18. Testo incollato e segno `>`
+
+- **Dice:** un testo incollato dall'utente conta come suo; da dove viene lo dice `source`. Le righe che
+  iniziano con `>` sono parole riportate da altri.
+- **Chi:** l'utente.
+- **Effetto:** una nota presa tutta da righe con `>` porta la dicitura «quote reported by the user».
+- ✔ Un passo di un libro incollato con `>` e `source`: «dal libro …».
+- ✘ Lo stesso passo con `source` «chat del 15 gennaio».
+
+### 19. I messaggi privati non si citano
+
+- **Dice:** un messaggio che inizia con `#privato` non viene registrato e non si può citare.
+- **Chi:** l'utente decide; Claude rispetta.
+- **Effetto:** una nota con quelle parole è rifiutata (il testimone non le trova).
+- ✔ Nessuna nota dal messaggio privato.
+- ✘ Salvare le parole di un messaggio privato.
+
+### 20. Il diario non è il quaderno
+
+- **Dice:** il diario è la conversazione registrata; il quaderno sono le note scelte. Una cosa trovata
+  solo nel diario non è una decisione.
+- **Chi:** Claude, quando risponde «cosa ci eravamo detti».
+- **Effetto:** dal diario si può proporre una nota, che passa dallo sportello come le altre.
+- ✔ «Nel diario del 10 gennaio avevi scritto…: vuoi che lo salvi?»
+- ✘ «Avevamo deciso…» citando solo il diario.
+
+### 21. I pezzi delle risposte di Claude: `from_reply`
+
+- **Dice:** per salvare un pezzo di una risposta di Claude si usa `from_reply: yes`, con il testo
+  copiato identico dalla risposta.
+- **Chi:** Claude, quando l'utente lo chiede.
+- **Effetto:** con il testimone delle risposte acceso, lo sportello cerca il testo nelle risposte.
+- ✔ «Salva questa risposta» → nota di Claude con `from_reply: yes`.
+- ✘ Un riassunto della risposta con `from_reply`.
+
+### 22. La data è quando la cosa è stata detta (Claude)
+
+- **Dice:** `date` è il giorno (e l'ora) in cui la cosa è stata detta o vista, non quello del
+  salvataggio.
+- **Chi:** l'utente e Claude.
+- **Effetto:** le note restano in ordine di tempo anche se salvate dopo.
+- ✔ Una cosa detta il 10 gennaio, salvata il 15 → `date: 2026-01-10`.
+- ✘ `date: 2026-01-15`.
+
+### 23. Claude non scrive mai nei file del quaderno
+
+- **Dice:** tutto entra dallo sportello (`propose`); Claude non modifica mai i file del quaderno.
+- **Chi:** Claude.
+- **Effetto:** ogni ingresso ha la sua riga nel registro; nel plugin la protezione ferma gli strumenti
+  di Claude sul quaderno.
+- ✔ `propose proposta.json`.
+- ✘ Aprire `note/0049.md` e cambiarlo a mano.
+
+### 24. La nota-regola
+
+- **Dice:** quando le regole del quaderno cambiano, l'utente salva una decisione «Da questa nota in
+  poi…».
+- **Chi:** l'utente.
+- **Effetto:** chi rilegge il quaderno sa da quando vale la regola nuova.
+- ✔ «Da questa nota in poi le spese dell'orto vanno nelle note con la parola "spesa".» → `decision`.
+- ✘ Cambiare abitudine senza dirlo: le note vecchie e le nuove non si capiscono più.

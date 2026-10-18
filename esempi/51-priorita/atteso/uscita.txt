@@ -21,17 +21,19 @@ Promemoria scaduti: nessuno.
 Discorsi aperti: nessuno.
 
 Cose da fare: 3 di 3 (prima la priorità alta, poi dal più recente)
-- [0003] [alta] 2026-01-15: Coprire le piante per il gelo.
-- [0001] 2026-01-15: Rinvasare il limone.
-- [0002] [bassa] 2026-01-15: Riordinare gli attrezzi.
+- [T0003] [alta] 2026-01-15: Coprire le piante per il gelo.
+- [T0001] 2026-01-15: Rinvasare il limone.
+- [T0002] [bassa] 2026-01-15: Riordinare gli attrezzi.
 
 Ultime decisioni: nessuna.
 
 Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema propose 4-cambia-priorita.json
-ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+ACCETTATA: la versione 0002.1 della nota 0002 è stata salvata nel quaderno (note/0002.1.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
@@ -57,13 +59,15 @@ Promemoria scaduti: nessuno.
 Discorsi aperti: nessuno.
 
 Cose da fare: 3 di 3 (prima la priorità alta, poi dal più recente)
-- [0003] [alta] 2026-01-15: Coprire le piante per il gelo.
-- [0002] [alta] 2026-01-15: Riordinare gli attrezzi.
-    ↳ [0004] corregge la nota 0002: Diventa urgente.
-- [0001] 2026-01-15: Rinvasare il limone.
+- [T0003] [alta] 2026-01-15: Coprire le piante per il gelo.
+- [T0002.1] [alta] 2026-01-15: Riordinare gli attrezzi.
+    ↳ T0002.1 2026-01-15 · user: priorità low → high
+- [T0001] 2026-01-15: Rinvasare il limone.
 
 Ultime decisioni: nessuna.
 
 Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 

@@ -55,9 +55,10 @@ Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
 |---|---|
 | **Sportello** (`propose`, o `proponi`) | Riceve una nota proposta, la controlla, la salva come file Markdown se è completa, altrimenti la rifiuta spiegando perché. |
 | **Registro** (`registro.md`) | Annota ogni passaggio dallo sportello, accettato o rifiutato, con data e motivo. Solo aggiunta. |
-| **Cercatore** (`search`, o `cerca`) | Trova le note che contengono una parola, dalla più recente, senza quelle chiuse (con `--all` anche quelle); sotto ogni nota mostra le note che la correggono, la confermano o la chiudono. Solo lettura. |
+| **Cercatore** (`search`, o `cerca`) | Trova le note che contengono una parola, dalla più recente, senza quelle chiuse (con `--all` anche quelle); di ogni nota mostra l'ultima versione e la sua storia, e sotto le note che la confermano. Solo lettura. |
 | **Promemoria** (`reminders`, o `promemoria`) | Elenca le note con la data `remind` arrivata o già passata, dalla più vecchia. Solo lettura. |
 | **Recap** (`recap`) | «Dove eravamo rimasti»: promemoria scaduti, discorsi aperti, cose da fare, ultime decisioni e ultime righe del diario, scelti con regole fisse, prima le priorità alte. Solo lettura. |
+| **Revisione** (`review`, o `revisione`) | Che cosa conviene guardare: questioni ferme da tanto, promemoria scaduti, cose da fare nominate in una nota successiva, «ricordamelo» senza data, rami e catene vecchie non permesse oggi. Dice cosa si può fare, non lo fa. Solo lettura. |
 | **Testimone** (`testimone`) | Se lo accendi, registra le parole esatte dei tuoi messaggi, così lo sportello può controllare che una nota "dell'utente" riporti parole che hai detto davvero. |
 | **Stato** (`status`, o `stato`) | Dice se il testimone è acceso, dov'è il quaderno e quale messaggio ha registrato per ultimo. Solo lettura. |
 | **Skill** (`skills/hypomnema/SKILL.md`) | Le istruzioni per Claude: quando leggere, come controllare il testimone, come preparare le note, come confermare una decisione. |
@@ -65,7 +66,8 @@ Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
 | **Modalità chat** (`chat/`, `istantanea`, `cambiati`) | La configurazione per la chat di Claude e i due comandi, in sola lettura, che dicono quali file del quaderno riportare sul tuo computer dopo una proposta. Vedi «Usarlo nella chat di Claude». |
 | **Avviabile** (`windows/Hypomnema.cmd`) | Alternativa al plugin installato, solo Windows: un doppio clic per aprire Claude Code con Hypomnema acceso. Vedi «Alternativa: l'avviabile di Windows». |
 
-Il formato delle note e le regole dello sportello sono descritti in [FORMATO.md](FORMATO.md).
+Il formato delle note, le regole dello sportello e tutte le regole del quaderno (con esempi giusti e
+sbagliati) sono descritti in [FORMATO.md](FORMATO.md).
 
 ## Installa il plugin in Claude Code (consigliato)
 
@@ -282,6 +284,7 @@ python -m hypomnema propose esempi/01-nota-accettata/nota.json
 python -m hypomnema search orto                # aggiungi --all per vedere anche le note chiuse
 python -m hypomnema reminders                  # i promemoria con la data arrivata o passata
 python -m hypomnema recap                      # dove eravamo rimasti
+python -m hypomnema review                     # che cosa conviene guardare (solo lettura)
 python -m hypomnema witness messaggio.json     # di solito lo lancia Claude Code da solo
 python -m hypomnema status                     # testimone acceso? ultimo messaggio registrato?
 python -m hypomnema snapshot > prima.json      # chat: fotografa il quaderno prima di una proposta
@@ -344,6 +347,8 @@ Le note nuove si scrivono con i campi in inglese. Anche nelle proposte valgono t
 | `citazione` | `quote` | |
 | `conferma_di` | `confirms` | |
 | `corregge` | `corrects` | |
+| `aggiorna` (dalla 0.6.0) | `updates` | |
+| `riapre` (dalla 0.6.0) | `reopens` | |
 | `riprendere_il` | `remind` | |
 | `done` | `done` | |
 | `da_risposta` | `from_reply` | `sì` → `yes` |
@@ -363,9 +368,21 @@ Il campo `kind` dice che cosa è una nota:
 - `open`: una questione aperta (prima si chiamava «discorso aperto»);
 - `todo`: una cosa da fare.
 
-### Chiudere una questione aperta o una cosa da fare
+### Ogni cambiamento è una versione nuova
 
-Un `open` o un `todo` restano aperti finché una **nota nuova** non li chiude con `done`:
+Dalla 0.6.0 una nota non si cambia scrivendo una nota nuova che rimanda alla vecchia: **ogni
+cambiamento è una versione nuova della stessa nota**. La nota 0049 diventa `0049.1`, poi `0049.2`:
+ogni versione è un file vero (`note/0049.1.md`) con tutta la nota, il cambiamento applicato e in
+fondo un blocco «Change» che dice quando, chi, che cosa e perché (con le tue parole, se il cambiamento
+è tuo). I file di prima non si toccano e ogni versione ha la sua riga nel registro. Si cambia sempre
+l'ultima versione.
+
+| Vuoi… | Proposta | Il testo è |
+|---|---|---|
+| correggere il testo («no, era a marzo») | `"corrects": "0049"` | il testo nuovo |
+| cambiare natura, priorità o data del promemoria | `"updates": "0049"` (o `aggiorna`) con `kind`, `priority` o `remind` | il motivo |
+| chiudere una questione aperta, una cosa da fare o un promemoria | `"done": "0049"` oppure `"done": "0012, 0015"` | il motivo |
+| riaprire una nota chiusa | `"reopens": "0049"` (o `riapre`) | il motivo |
 
 ```json
 {
@@ -379,28 +396,83 @@ Un `open` o un `todo` restano aperti finché una **nota nuova** non li chiude co
 }
 ```
 
-- Il testo della nota che chiude è obbligatorio: è il motivo.
-- Il suo `kind` dice che cosa è diventata la questione: `decision`, `todo`, `fact` o `idea`. Una
-  nota `open` non chiude niente.
-- **Gli `open` li chiudi solo tu** (`author: user`); Claude può proportelo. I `todo` e i promemoria
-  li può chiudere anche Claude, quando sono fatti davvero.
-- `done` può chiudere più note insieme: `"done": "0012, 0015"`.
-- Una nota si chiude una volta sola: lo sportello rifiuta una seconda chiusura e dice da quale nota
-  è già chiusa.
-- `done` vale solo per `open`, `todo` e promemoria (note con `remind`). `fact`, `decision` e `idea`
-  non si chiudono: si correggono con `corrects` (le idee si possono anche confermare con `confirms`).
-- Se una questione chiusa ritorna, si apre un `open` nuovo, che nel testo cita quello vecchio.
+- **Una correzione non chiude**: una cosa da fare corretta resta da fare.
+- Chiusa e aperta sono **stati**: una nota chiusa si può riaprire, con il motivo («riaperta il …,
+  perché …»). Con `done` il `kind` facoltativo dice che cosa è diventata la questione (`decision`,
+  `fact` o `idea`).
+- `done: 0012, 0015` crea una versione chiusa per ciascuna, con lo stesso motivo.
+- **Gli `open` li chiudi e li riapri solo tu**, e solo tu fai diventare una nota una decisione,
+  cambi la natura delle tue note e ne correggi il testo (sono le tue parole). Claude può chiudere e
+  riaprire le cose da fare e i promemoria, e correggere le sue note.
+- `fact`, `decision` e `idea` senza promemoria non si chiudono: si correggono o si cambiano.
 
-Il `recap` e la ricerca di base **non mostrano le note chiuse**. La ricerca dice quante ne ha
-nascoste, e `search <parola> --all` le mostra, con sotto la nota che le ha chiuse.
+Il `recap` e la ricerca leggono ogni nota per quello che è **adesso**. Non mostrano le cose da fare
+o da decidere ormai chiuse: la ricerca dice quante ne ha nascoste, e `search <parola> --all` le
+mostra, con la loro storia. Una questione chiusa come decisione invece è una decisione: compare in
+«Ultime decisioni», con il suo codice (per esempio `✓D0049.3`). Il ✓ dice che è risolta, non che va
+nascosta.
+
+### Il codice della nota
+
+Ogni nota si mostra con un codice: la lettera della sua natura davanti al numero, e `✓` se è chiusa.
+
+```
+F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+```
+
+Per esempio `T0049.2` è una cosa da fare alla versione 2, `✓T0049.3` la stessa chiusa. La lettera si
+mostra soltanto: quando Claude rimanda a una nota scrive solo il numero (`"0049"`). Se il tuo
+terminale non mostra `✓`, puoi scegliere un altro segno in `hypomnema.toml`:
+
+```toml
+[codici]
+chiusa = "x"
+```
+
+Un pezzo di recap dopo tre cambiamenti (dati inventati): la priorità del basilico alzata, la
+compostiera passata da questione aperta a cosa da fare, poi il suo testo corretto.
+
+```
+Cose da fare: 2 di 2 (prima la priorità alta, poi dal più recente)
+- [T0006.1] [alta] 2026-01-15: Seminare il basilico.
+    ↳ T0006.1 2026-01-15 · user: priorità normal → high
+- [T0004.2] 2026-01-15: Montare la compostiera nell'angolo nord.
+    ↳ T0004.1 2026-01-15 · user: natura open → todo
+    ↳ T0004.2 2026-01-15 · user: testo corretto
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+```
+
+### Le note di prima
+
+Le note salvate prima della 0.6.0 non si toccano: si leggono come versioni. Una vecchia correzione
+(la 0050 con `corrects: 0049`) si mostra come `0049.1 (nota 0050)`; una vecchia nota con `done` come la
+versione chiusa di ciò che chiude. Una nota, la sua correzione e una terza nota che le chiude entrambe
+sono una storia sola: il recap non la mostra, `search --all` la mostra una volta. Se la nota che
+chiudeva è a sua volta una cosa da fare o conferma un'idea, resta visibile anche da sola, così non si
+perde niente. Le note con i campi italiani si mostrano esattamente come le nuove.
+
+Le regole di oggi valgono anche per le note vecchie. Se una nota vecchia di Claude correggeva il testo
+di una tua nota, o faceva smettere una questione aperta di essere aperta, resta nella storia ma non
+vale: il testo resta il tuo, la questione resta aperta. La storia lo scrive («non applicato (catena
+vecchia non permessa oggi)») e la revisione lo segnala: se quel cambiamento va fatto, lo decidi tu.
+
+### La revisione
+
+Il comando `review` (o `revisione`) guarda il quaderno con regole fisse e dice che cosa conviene
+controllare, senza cambiare niente: le questioni aperte e le cose da fare ferme da più di 30 giorni
+(si regola con `[revisione]` e `giorni`), i promemoria scaduti, le cose da fare nominate nel testo di
+una nota successiva («la 0006 è fatta»), quelle con «ricordamelo» o «tra tre giorni» ma senza data, i
+rami delle note vecchie (due correzioni della stessa nota) e le catene vecchie che oggi non sarebbero
+permesse. Ogni riga dice che cosa si può fare; decidi tu. Claude la lancia a inizio chat, dopo il recap, e se trova qualcosa te lo dice in una riga.
 
 ### La priorità
 
 Il campo facoltativo `priority` vale `high`, `normal` o `low` (senza priorità vale `normal`). È
 **solo tua**: in una nota di Claude lo sportello la rifiuta, e Claude può al massimo proporla nel
-testo di una sua idea. Per cambiare la priorità di una nota si salva una nota nuova con
-`"corrects": "<numero>"` e la priorità nuova. Nel recap, dentro ogni blocco, vengono prima le cose
-a priorità alta (segnate `[alta]`), poi le normali, poi le basse (`[bassa]`).
+testo di una sua idea. Per cambiarla: `"updates": "<numero>"` con la priorità nuova. Nel recap,
+dentro ogni blocco, vengono prima le cose a priorità alta (segnate `[alta]`), poi le normali, poi le
+basse (`[bassa]`).
 
 ### Quando cambiano le regole del quaderno: la nota-regola
 
@@ -410,13 +482,11 @@ una **decisione** con le tue parole, che cominci con «Da questa nota in poi…�
 «Da questa nota in poi le spese le segno solo come todo.» È una decisione come le altre: compare nel
 recap e nelle ricerche, e Claude la rispetta come regola del quaderno.
 
-### Correzioni, promemoria e «dove eravamo rimasti»
+### Ricerca, promemoria e «dove eravamo rimasti»
 
-Niente si cancella, quindi una nota sbagliata resta nel quaderno. Per correggerla si salva una
-**nota nuova** con `"corrects": "0007"`. Da lì in poi, quando il cercatore trova la nota 0007, mostra
-**sempre subito sotto** la correzione (e la correzione della correzione, se c'è), anche se la
-correzione non contiene la parola cercata. Lo stesso per le conferme (`confirms`) e le chiusure
-(`done`). Così Claude non può più ripetere un errore che una correzione aveva già sistemato.
+Niente si cancella. Quando il cercatore trova una nota, mostra la sua **ultima versione** e sotto la
+sua storia (che cosa è cambiato, quando, chi e perché), anche se la parola cercata era solo in una
+versione vecchia. Così Claude non può ripetere un errore che una correzione aveva già sistemato.
 
 Il cercatore elenca le note **dalla più recente alla più vecchia** (cioè dal numero più alto), e
 trova anche le parole dentro i nomi composti: `orto` trova `orto_balcone.py`, `semi-orto` e
@@ -424,10 +494,9 @@ trova anche le parole dentro i nomi composti: `orto` trova `orto_balcone.py`, `s
 si mostrano.
 
 **Promemoria.** Una nota con `"remind": "2026-10-20"` è un promemoria. Il comando `reminders`
-elenca quelli con la data arrivata o già passata, dal più vecchio. Per chiuderlo si salva una nota
-con `"done": "0007"` («era giusto ed è fatto»): il promemoria esce dagli scaduti. Una correzione
-invece («era sbagliato») lo lascia tra gli scaduti, con la correzione sotto; se la correzione ha un
-suo `remind`, vale quella data.
+elenca quelli con la data arrivata o già passata, dal più vecchio. Per chiuderlo: `"done": "0007"`
+(«era giusto ed è fatto»), e il promemoria esce dagli scaduti. Per spostarlo: `"updates": "0007"` con
+il `remind` nuovo. Una correzione del testo lo lascia tra gli scaduti.
 
 **Dove eravamo rimasti.** Il comando `recap` (nel plugin anche `/hypomnema:recap`) mostra in poche
 righe, con regole fisse: i promemoria scaduti, gli ultimi 5 discorsi aperti, le ultime 5 cose da

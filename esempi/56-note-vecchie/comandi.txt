@@ -1,0 +1,9 @@
+recap
+search terriccio
+search terriccio --all
+search rubinetto --all
+search fico
+propose 1-correzione-dell-idea.json
+search fico
+recap
+check

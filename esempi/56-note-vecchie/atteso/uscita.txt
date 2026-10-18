@@ -1,0 +1,174 @@
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)
+- [T0006] da riprendere il 2026-01-05: Seminare il basilico.
+
+Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [O0004] 2025-11-30: Dove mettere la compostiera?
+
+Cose da fare: 2 di 2 (prima la priorità alta, poi dal più recente)
+- [T0011] 2025-12-04: Chiamare l'idraulico di via dei Tigli.
+- [T0006] 2025-12-27: Seminare il basilico.
+
+Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [D0009] 2025-12-02: Sì, sotto il fico.
+    ↳ conferma la nota I0005.1 (nota 0008)
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema search terriccio
+Nessuna nota aperta contiene «terriccio».
+(1 nota chiusa non mostrata: aggiungi --all per vederla.)
+[codice di uscita: 0]
+
+$ hypomnema search terriccio --all
+Trovata 1 nota con «terriccio».
+
+--- Nota ✓F0001.2 (nota 0003) ---
+data: 2025-11-28
+fonte: chat del 2025-11-28
+autore: user
+tipo: stated
+natura: fact
+stato: chiusa (2025-11-29)
+verifica: author not verified (witness off)
+testo:
+  Comprare il terriccio universale, non quello per agrumi.
+storia (dalla più vecchia):
+  T0001                2025-11-27 · user: creata
+  T0001.1 (nota 0002)  2025-11-28 · user: testo corretto (prima: «Comprare il terriccio per i vasi.»)
+  ✓F0001.2 (nota 0003) 2025-11-29 · claude: chiusa il 2025-11-29, perché «Terriccio comprato al vivaio.», natura todo → fact
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema search rubinetto --all
+Trovate 2 note con «rubinetto» (dalla più recente).
+
+--- Nota ✓O0010.1 (nota 0011) ---
+data: 2025-12-03
+fonte: chat del 2025-12-03
+autore: user
+tipo: stated
+natura: open
+stato: chiusa (2025-12-04)
+verifica: autore non verificato (testimone spento)
+testo:
+  Chi chiamare per il rubinetto?
+storia (dalla più vecchia):
+  O0010                2025-12-03 · user: creata
+  ✓O0010.1 (nota 0011) 2025-12-04 · user: chiusa il 2025-12-04, perché «Chiamare l'idraulico di via dei Tigli.»
+
+--- Nota F0007 ---
+data: 2025-11-30
+fonte: chat del 2025-11-30
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (witness off)
+testo:
+  Il rubinetto del balcone perde.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema search fico
+Trovate 2 note con «fico» (dalla più recente).
+
+--- Nota D0009 ---
+data: 2025-12-02
+fonte: chat del 2025-12-02
+autore: user
+tipo: stated
+natura: decision
+conferma di: nota I0005.1 (nota 0008)
+verifica: author not verified (witness off)
+testo:
+  Sì, sotto il fico.
+
+--- Nota I0005.1 (nota 0008) ---
+data: 2025-12-01
+fonte: chat del 2025-12-01
+autore: claude
+tipo: inferred
+natura: idea
+confermata da: nota D0009
+testo:
+  Mettere la compostiera nell'angolo nord, sotto il fico.
+storia (dalla più vecchia):
+  I0005               2025-11-30 · claude: creata
+  I0005.1 (nota 0008) 2025-12-01 · claude: testo corretto (prima: «Mettere la compostiera nell'angolo nord, all'ombra.»)
+
+    (nota D0009, che conferma la nota 0005: già mostrata sopra)
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema propose 1-correzione-dell-idea.json
+ACCETTATA: la versione 0005.2 della nota 0005 è stata salvata nel quaderno (note/0005.2.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema search fico
+Trovate 2 note con «fico» (dalla più recente).
+
+--- Nota D0009 ---
+data: 2025-12-02
+fonte: chat del 2025-12-02
+autore: user
+tipo: stated
+natura: decision
+conferma di: nota I0005.1 (nota 0008), versione vecchia: l'ultima è I0005.2
+verifica: author not verified (witness off)
+testo:
+  Sì, sotto il fico.
+
+--- Nota I0005.2 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: claude
+tipo: inferred
+natura: idea
+confermata da: nota D0009
+testo:
+  Mettere la compostiera nell'angolo nord, sotto il fico, a un metro dal muro.
+storia (dalla più vecchia):
+  I0005               2025-11-30 · claude: creata
+  I0005.1 (nota 0008) 2025-12-01 · claude: testo corretto (prima: «Mettere la compostiera nell'angolo nord, all'ombra.»)
+  I0005.2             2026-01-15 · claude: testo corretto (prima: «Mettere la compostiera nell'angolo nord, sotto il fico.»)
+
+    (nota D0009, che conferma la nota 0005: già mostrata sopra)
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)
+- [T0006] da riprendere il 2026-01-05: Seminare il basilico.
+
+Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [O0004] 2025-11-30: Dove mettere la compostiera?
+
+Cose da fare: 2 di 2 (prima la priorità alta, poi dal più recente)
+- [T0011] 2025-12-04: Chiamare l'idraulico di via dei Tigli.
+- [T0006] 2025-12-27: Seminare il basilico.
+
+Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [D0009] 2025-12-02: Sì, sotto il fico.
+    ↳ conferma la nota I0005.1 (nota 0008), versione vecchia: l'ultima è I0005.2
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 11 note e 1 versione, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

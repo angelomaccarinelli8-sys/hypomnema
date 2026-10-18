@@ -1,0 +1,6 @@
+search terriccio --all
+propose 1-lettera-nel-rimando.json
+propose 2-segno-nel-rimando.json
+propose 3-numero-vecchio.json
+propose 4-chiusura-di-una-chiusura-vecchia.json
+recap

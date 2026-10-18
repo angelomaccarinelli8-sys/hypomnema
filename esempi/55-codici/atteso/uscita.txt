@@ -1,0 +1,70 @@
+$ hypomnema search terriccio --all
+Trovata 1 nota con «terriccio».
+
+--- Nota xF0001.2 (nota 0003) ---
+data: 2025-11-28
+fonte: chat del 2025-11-28
+autore: user
+tipo: stated
+natura: fact
+stato: chiusa (2025-11-29)
+verifica: author not verified (witness off)
+testo:
+  Comprare il terriccio universale, non quello per agrumi.
+storia (dalla più vecchia):
+  T0001                2025-11-27 · user: creata
+  T0001.1 (nota 0002)  2025-11-28 · user: testo corretto (prima: «Comprare il terriccio per i vasi.»)
+  xF0001.2 (nota 0003) 2025-11-29 · claude: chiusa il 2025-11-29, perché «Terriccio comprato al vivaio.», natura todo → fact
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · x chiusa
+[codice di uscita: 0]
+
+$ hypomnema propose 1-lettera-nel-rimando.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- write only the number in «corrects»: «0006», not «T0006» (the letter of the code is only shown, it is not part of the number).
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 2-segno-nel-rimando.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- write only the number in «reopens»: «0001.2», not «✓F0001.2» (the letter of the code is only shown, it is not part of the number).
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 3-numero-vecchio.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- 0001.1 (note 0002) is not the last version of 0001: the last is xF0001.2. Changes are made only to the last version (write «0001»).
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 4-chiusura-di-una-chiusura-vecchia.json
+ACCETTATA: la versione 0001.3 della nota 0001 è stata salvata nel quaderno (note/0001.3.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)
+- [T0006] da riprendere il 2026-01-05: Seminare il basilico.
+
+Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [O0004] 2025-11-30: Dove mettere la compostiera?
+
+Cose da fare: 2 di 2 (prima la priorità alta, poi dal più recente)
+- [T0006] 2025-12-27: Seminare il basilico.
+- [T0001.3] 2026-01-15: Comprare il terriccio universale, non quello per agrumi.
+    ↳ T0001.3 2026-01-15 · user: riaperta il 2026-01-15, perché «Il terriccio è finito.», natura fact → todo
+    ↳ xF0001.2 (nota 0003) 2025-11-29 · claude: chiusa il 2025-11-29, perché «Terriccio comprato al vivaio.», natura todo → fact
+    ↳ T0001.1 (nota 0002) 2025-11-28 · user: testo corretto
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · x chiusa
+[codice di uscita: 0]
+

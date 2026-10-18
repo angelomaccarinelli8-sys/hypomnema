@@ -10,6 +10,8 @@ Cose da fare: nessuna.
 Ultime decisioni: nessuna.
 
 Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema promemoria

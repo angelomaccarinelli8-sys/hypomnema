@@ -3,8 +3,7 @@
   "source": "chat del 15 gennaio 2026 sull'orto",
   "author": "user",
   "knowledge": "stated",
-  "kind": "fact",
   "text": "Diventa urgente.",
-  "corrects": "0002",
-  "priority": "high"
+  "priority": "high",
+  "updates": "0002"
 }

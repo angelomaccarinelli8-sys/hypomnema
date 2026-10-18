@@ -2,6 +2,10 @@
 
 Riceve una nota proposta in formato JSON (testo UTF-8), la controlla con le regole fisse,
 la salva come file Markdown se è completa, e annota sempre il passaggio nel registro.
+
+Una proposta con ``corrects``, ``updates``, ``done`` o ``reopens`` non crea una nota nuova: crea
+la versione successiva della nota (``0049.1.md``), una per ogni nota chiusa con ``done``, ognuna
+con la sua riga nel registro.
 """
 
 import json
@@ -9,9 +13,11 @@ from dataclasses import dataclass, replace
 from datetime import datetime
 from pathlib import Path
 
-from hypomnema import archivio as testimone_archivio, quaderno, registro, regole, risposte as testimone_risposte, testimone
+from hypomnema import (
+    archivio as testimone_archivio, quaderno, registro, regole, risposte as testimone_risposte, testimone, versioni,
+)
 from hypomnema.configurazione import Configurazione
-from hypomnema.nota import Nota, numeri
+from hypomnema.nota import Cambio, Nota, numeri
 
 
 @dataclass(frozen=True)
@@ -20,6 +26,8 @@ class Esito:
     id_nota: str | None
     percorso: Path | None
     motivi: list[str]
+    # Tutte le note o versioni scritte: (numero, percorso). Più di una solo con «done» su più note.
+    scritte: tuple[tuple[str, Path], ...] = ()
 
 
 class _CampoDoppio(Exception):
@@ -81,7 +89,8 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
     if proposta is not None:
         # I nomi e i valori italiani di prima valgono per sempre: qui diventano inglesi.
         proposta, motivi = regole.in_inglese(proposta)
-        motivi += regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte)
+        motivi += regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte,
+                                   config.segno_chiusa)
 
     if motivi:
         registro.annota(config, adesso, origine, None, motivi)
@@ -95,7 +104,18 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
     autore = proposta["author"].strip()
     testo = proposta["text"].strip()
     da_risposta = _facoltativo(proposta, "from_reply")
-    chiude = _facoltativo(proposta, "done")
+    dicitura = regole.verifica(
+        autore, testo, citazione, messaggi, config.segno_citazione, config.in_chat,
+        da_risposta=da_risposta is not None, risposte=risposte, in_pausa=in_pausa,
+        archivio=testimone_archivio.leggi_messaggi(config) if config.file_archivio else None,
+        diario_chat=testimone_archivio.leggi_risposte(config) if config.file_archivio else None,
+    )
+    campo = next((c for c in regole.CAMPI_CAMBIAMENTO if _facoltativo(proposta, c) is not None), None)
+    if campo is not None:
+        valori = {k: v.strip() for k, v in proposta.items() if isinstance(v, str)}
+        if citazione is not None:
+            valori["quote"] = citazione
+        return _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura)
     nota = Nota(
         id=id_nota,
         data=proposta["date"].strip(),
@@ -106,18 +126,11 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
         testo=testo,
         priorita=_facoltativo(proposta, "priority"),
         conferma_di=_facoltativo(proposta, "confirms"),
-        corregge=_facoltativo(proposta, "corrects"),
-        done=numeri(chiude) if chiude is not None else None,
         riprendere_il=_facoltativo(proposta, "remind"),
         citazione=citazione,
         contesto=_facoltativo(proposta, "context"),
         da_risposta=da_risposta,
-        verifica=regole.verifica(
-            autore, testo, citazione, messaggi, config.segno_citazione, config.in_chat,
-            da_risposta=da_risposta is not None, risposte=risposte, in_pausa=in_pausa,
-            archivio=testimone_archivio.leggi_messaggi(config) if config.file_archivio else None,
-            diario_chat=testimone_archivio.leggi_risposte(config) if config.file_archivio else None,
-        ),
+        verifica=dicitura,
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)
     numero = int(id_nota)
@@ -135,4 +148,48 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
             numero += 1
     id_nota = nota.id
     registro.annota(config, adesso, origine, id_nota, [])
-    return Esito(accettata=True, id_nota=id_nota, percorso=percorso, motivi=[])
+    return Esito(accettata=True, id_nota=id_nota, percorso=percorso, motivi=[], scritte=((id_nota, percorso),))
+
+
+def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura) -> Esito:
+    """Scrive la versione successiva di ogni nota cambiata. Le regole sono già state controllate tutte."""
+    elenco = numeri(valori[campo]) if campo == "done" else (valori[campo],)
+    archivio_note = versioni.Quaderno(note_esistenti)
+    cambio = Cambio(
+        data=valori["date"], fonte=valori["source"], autore=valori["author"], tipo=valori["knowledge"], cambio="",
+        citazione=None if campo == "corrects" else valori.get("quote"), verifica=dicitura,
+        # In una correzione le parole nuove sono il testo stesso: non c'è un motivo a parte.
+        motivo=None if campo == "corrects" else valori["text"],
+    )
+    config.cartella_note.mkdir(parents=True, exist_ok=True)
+    scritte = []
+    for numero in elenco:
+        storia = archivio_note.risolvi(numero, campo).storia
+        attuale = storia.ultima.contenuto
+        dopo = regole.dopo_il_cambiamento(campo, valori, storia)
+        voci = versioni.differenze(attuale, dopo)
+        if campo == "done":
+            voci.insert(0, versioni.CHIUSA)
+        elif campo == "reopens":
+            voci.insert(0, versioni.RIAPERTA)
+        id_versione = storia.prossima_versione()
+        nota = replace(
+            dopo, id=id_versione, corregge=None, done=None,
+            verifica=dicitura if campo == "corrects" else attuale.verifica,
+            cambio=replace(cambio, cambio="; ".join(voci)),
+        )
+        percorso = config.cartella_note / f"{id_versione}.md"
+        try:
+            # Modo "x": se il file esiste già, Python si ferma invece di sovrascriverlo.
+            with open(percorso, "x", encoding="utf-8", newline="\n") as f:
+                f.write(nota.in_markdown())
+        except FileExistsError:
+            # Un altro passaggio ha appena cambiato la stessa nota: questo cambiamento è stato
+            # controllato su una versione che non è più l'ultima, quindi non si scrive.
+            motivi = [f"version {id_versione} was written by another passage in the meantime: nothing more "
+                      "was written. Look at the note again and make a new proposal."]
+            registro.annota(config, adesso, origine, None, motivi)
+            return Esito(accettata=False, id_nota=None, percorso=None, motivi=motivi, scritte=tuple(scritte))
+        registro.annota(config, adesso, origine, id_versione, [])
+        scritte.append((id_versione, percorso))
+    return Esito(accettata=True, id_nota=scritte[0][0], percorso=scritte[0][1], motivi=[], scritte=tuple(scritte))
