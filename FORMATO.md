@@ -484,6 +484,18 @@ portati all'inglese (`utente` → `user`, `discorso aperto` → `open`, …), e 
 
 Il file si crea una volta sola: il programma non sovrascrive mai una nota esistente.
 
+## Date e ore: il fuso orario
+
+Le date e le ore che scrive il programma (righe del registro, data delle versioni, file dei testimoni)
+e il giorno di «oggi» (recap, promemoria, revisione) sono quelli del computer. Dalla 0.6.1 la sezione
+`[quaderno]` accetta l'impostazione facoltativa `fuso`, con il nome di un fuso orario (per esempio
+`fuso = "Europe/Rome"`): date e ore si scrivono in quel fuso, con l'ora legale, qualunque sia
+l'orologio del computer. Serve alla chat collegata al computer, la cui macchina può avere l'orologio
+in UTC: alle 00:30 italiane del 15 luglio «oggi» è già il 15 e la riga del registro dice
+`2026-07-15T00:30:00+02:00`. Se l'impostazione c'è ma il fuso non si trova (nome sbagliato, o manca la
+tabella dei fusi orari, come di solito su Windows) il programma si ferma con un errore e non scrive
+niente: non torna mai in silenzio all'ora del computer.
+
 ## Il registro degli ingressi
 
 Il file `registro.md` del quaderno riceve una riga per ogni passaggio dallo sportello,

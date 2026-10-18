@@ -21,7 +21,7 @@ from unittest import mock
 
 from hypomnema import _tomli, archivio, blocco, cambiamenti, configurazione, controllo, sportello
 from hypomnema.cli import main
-from tests.esecutore import CONFIG_DI_PROVA, RADICE
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, fuso_disponibile, modello_chat, per_questo_computer
 
 
 def registro_intestazione() -> str:
@@ -112,7 +112,8 @@ class TestGiroDellaChat(CartellaDellUtente):
         config_code_prima = self.config_code.read_bytes()
         # D2: la configurazione della chat nasce dal modello, senza sovrascrivere (cp -n).
         self.assertFalse(self.config_chat.exists())
-        shutil.copyfile(programma / "chat" / "hypomnema-chat.toml", self.config_chat)
+        self.config_chat.write_text(per_questo_computer((programma / "chat" / "hypomnema-chat.toml").read_text(
+            encoding="utf-8")), encoding="utf-8", newline="\n")
 
         codice, uscita = self.lancia(programma, "--version")
         self.assertEqual((codice, uscita.strip()), (0, "hypomnema 0.6.1"))
@@ -184,7 +185,7 @@ def _proponi_senza_blocco(argomenti):
 class TestDueCheScrivonoInsieme(CartellaDellUtente):
     def setUp(self):
         super().setUp()
-        shutil.copyfile(MODELLO_CHAT, self.config_chat)
+        modello_chat(self.hypomnema)
         self.quaderno = self.hypomnema / "quaderno"
 
     def test_quaranta_proposte_insieme_da_due_configurazioni(self):
@@ -347,8 +348,8 @@ class TestStessiByteDaWindowsELinux(unittest.TestCase):
     )
 
     def scrivi_tutto(self, cartella: Path) -> dict[str, bytes]:
-        (cartella / "hypomnema.toml").write_text(MODELLO_CHAT.read_text(encoding="utf-8"), encoding="utf-8",
-                                                 newline="\n")
+        (cartella / "hypomnema.toml").write_text(per_questo_computer(MODELLO_CHAT.read_text(encoding="utf-8")),
+                                                 encoding="utf-8", newline="\n")
         config = configurazione.carica(str(cartella / "hypomnema.toml"))
         for i, campi in enumerate(self.PROPOSTE):
             # kind=None diventa «"kind": null», cioè un campo che manca: in un cambiamento si può.
@@ -400,6 +401,83 @@ class TestStessiByteDaWindowsELinux(unittest.TestCase):
                     self.assertIn('encoding="utf-8', arg)
                     if re.search(r'"[wax]"', arg) or chiamata.group("metodo") == "write_text":
                         self.assertIn('newline="\\n"', arg)
+
+
+class TestFuso(unittest.TestCase):
+    """Il fuso orario della configurazione (dalla 0.6.1): la macchina della chat può avere l'orologio in UTC."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.cartella = Path(self._tmp.name).resolve()
+        self.proposta = self.cartella / "proposta.json"
+        self.proposta.write_bytes(proposta(text="Una nota scritta di notte."))
+
+    def config(self, fuso: str | None) -> Path:
+        riga = f'fuso = "{fuso}"\n' if fuso is not None else ""
+        file = self.cartella / "hypomnema.toml"
+        file.write_text(CONFIG_DI_PROVA.replace("cifre_numero_nota = 4\n", "cifre_numero_nota = 4\n" + riga),
+                        encoding="utf-8", newline="\n")
+        return file
+
+    def lancia(self, config: Path, adesso: datetime, *comando):
+        uscita = io.StringIO()
+        codice = main(["--config", str(config), *comando], adesso=adesso, uscita=uscita, errori=uscita)
+        return codice, uscita.getvalue()
+
+    def registro(self) -> str:
+        return (self.cartella / "quaderno" / "registro.md").read_text(encoding="utf-8")
+
+    @unittest.skipUnless(fuso_disponibile(), "su questo computer manca la tabella dei fusi orari")
+    def test_macchina_in_utc_alle_00_30_italiane(self):
+        config = self.config("Europe/Rome")
+        for adesso, giorno, ora in (
+            (datetime(2026, 7, 14, 22, 30, tzinfo=timezone.utc), "2026-07-15", "2026-07-15T00:30:00+02:00"),  # ora legale
+            (datetime(2026, 1, 14, 23, 30, tzinfo=timezone.utc), "2026-01-15", "2026-01-15T00:30:00+01:00"),  # inverno
+        ):
+            with self.subTest(giorno=giorno):
+                self.assertEqual(self.lancia(config, adesso, "propose", str(self.proposta))[0], 0)
+                self.assertIn(f"- {ora} | ACCETTATA |", self.registro())
+                _, recap = self.lancia(config, adesso, "recap")
+                self.assertTrue(recap.startswith(f"Dove eravamo rimasti (recap del {giorno})."))
+
+    @unittest.skipUnless(fuso_disponibile(), "su questo computer manca la tabella dei fusi orari")
+    def test_il_modello_della_chat_ha_il_fuso_italiano(self):
+        config = configurazione.carica(str(MODELLO_CHAT))
+        self.assertEqual(config.nome_fuso, "Europe/Rome")
+        self.assertEqual(configurazione.nel_fuso(config, datetime(2026, 7, 14, 22, 30, tzinfo=timezone.utc)).isoformat(),
+                         "2026-07-15T00:30:00+02:00")
+
+    def test_senza_fuso_vale_l_ora_del_computer(self):
+        self.assertIsNone(configurazione.carica(str(RADICE / "hypomnema.toml")).fuso)  # come Claude Code
+        config = self.config(None)
+        self.assertEqual(self.lancia(config, datetime(2026, 1, 14, 23, 30, tzinfo=timezone.utc), "propose",
+                                     str(self.proposta))[0], 0)
+        self.assertIn("- 2026-01-14T23:30:00+00:00 | ACCETTATA |", self.registro())
+
+    def test_fuso_che_non_si_trova_ferma_tutto(self):
+        """Nome sbagliato o tabella mancante: errore chiaro e niente scritto, mai l'ora del computer in silenzio."""
+        import zoneinfo
+
+        def senza_tabella(nome):
+            raise zoneinfo.ZoneInfoNotFoundError(f"No time zone found with key {nome}")
+
+        for caso, fuso, sostituto in (("nome sbagliato", "Europa/Roma", None), ("tabella mancante", "Europe/Rome",
+                                                                              senza_tabella)):
+            with self.subTest(caso=caso):
+                config = self.config(fuso)
+                with mock.patch.object(zoneinfo, "ZoneInfo", sostituto or zoneinfo.ZoneInfo):
+                    codice, uscita = self.lancia(config, ADESSO, "propose", str(self.proposta))
+                    self.assertEqual(codice, 2)
+                    self.assertIn(f'c\'è fuso = "{fuso}", ma su questo computer il fuso non si trova', uscita)
+                    self.assertIn("Non ho scritto niente.", uscita)
+                    # Il testimone (un aggancio) non esce mai con 2, ma non registra niente.
+                    messaggio = self.cartella / "messaggio.json"
+                    messaggio.write_text(json.dumps({"prompt": "Ciao."}), encoding="utf-8")
+                    self.assertEqual(self.lancia(config, ADESSO, "witness", str(messaggio))[0], 1)
+                self.assertFalse((self.cartella / "quaderno").exists())
+        with self.assertRaisesRegex(configurazione.ErroreConfigurazione, "deve essere il nome di un fuso orario"):
+            configurazione.carica(str(self.config(" Europe/Rome")))
 
 
 class TestAggiunta(unittest.TestCase):

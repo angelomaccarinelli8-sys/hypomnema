@@ -551,6 +551,11 @@ the user in one line («Non riesco a scrivere direttamente sul quaderno: uso la 
 copia.») and go on with C1-C5. If a proposal may have been half done, first run `H check` (or,
 in C1-C5, check the copied register): a note already saved must not be proposed again.
 
+**The time zone.** The chat configuration has `fuso = "Europe/Rome"`: the chat's machine may keep
+its clock in UTC, and with this setting «today» and the times in the register are the Italian ones.
+If a command answers with an `ERRORE` about `fuso` (the name or the time zone table is missing),
+nothing was written: **never remove the setting yourself**; tell the user the error in one line.
+
 ### C1. Prepare the work computer (once per chat)
 
 ```

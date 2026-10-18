@@ -104,7 +104,7 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `skills/hypomnema/SKILL.md` | La skill, in inglese (istruzioni per Claude); le frasi da dire all'utente restano in italiano. |
 | `windows/` | L'avviabile (`Hypomnema.cmd` → `avvia-hypomnema.ps1`), il modello della configurazione in uso (`hypomnema-uso.toml`) e l'aggiornamento della copia in uso (`aggiorna-hypomnema.cmd`). I `.cmd` sono ASCII con fine riga CRLF; il `.ps1` è UTF-8 con BOM. |
 | `.claude/settings.json` | Nella copia di sviluppo vieta a Claude di modificare `quaderno/`. Nessun aggancio. |
-| `hypomnema/configurazione.py` | Lettura di `hypomnema.toml` (con `tomllib`, o con la copia di tomli in `_tomli/` su Python 3.10). |
+| `hypomnema/configurazione.py` | Lettura di `hypomnema.toml` (con `tomllib`, o con la copia di tomli in `_tomli/` su Python 3.10); il fuso orario facoltativo `fuso` di `[quaderno]` (0.6.1, `nel_fuso`): se non si trova, errore e niente scritto. Le prove tolgono la riga `fuso` dove manca la tabella dei fusi (`tests/esecutore.per_questo_computer`). |
 | `hypomnema/blocco.py` | Il blocco del quaderno (0.6.1): `fcntl.flock`/`msvcrt.locking` su `.sportello.lock`, attesa al massimo 10 secondi, si va avanti senza se il disco non permette i blocchi. |
 | `hypomnema/aggiunta.py` | Una riga in fondo a un file con una sola scrittura in aggiunta (0.6.1): `O_APPEND` su Linux e macOS, il solo permesso di aggiungere (`FILE_APPEND_DATA`) su Windows. La usano registro, testimoni e archivio. |
 | `hypomnema/_tomli/` | Copia non modificata di tomli 2.0.1 (MIT), solo per Python 3.10. |

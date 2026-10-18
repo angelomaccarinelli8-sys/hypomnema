@@ -16,6 +16,7 @@ from pathlib import Path
 from hypomnema import (
     archivio as testimone_archivio, blocco, quaderno, registro, regole, risposte as testimone_risposte, testimone, versioni,
 )
+from hypomnema import configurazione
 from hypomnema.configurazione import Configurazione
 from hypomnema.nota import Cambio, Nota, numeri
 
@@ -77,6 +78,7 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
     registro.RegistroToccato. Tiene il blocco del quaderno per tutto il passaggio (vedi ``blocco``);
     se un altro passaggio lo tiene troppo a lungo solleva blocco.QuadernoOccupato senza scrivere.
     """
+    adesso = configurazione.nel_fuso(config, adesso)
     # Prima del blocco, così un registro toccato a mano ferma tutto senza creare niente; poi di nuovo
     # dentro il passaggio.
     registro.controlla_fine(config)

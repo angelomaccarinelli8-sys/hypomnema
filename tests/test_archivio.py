@@ -9,7 +9,7 @@ from pathlib import Path
 
 from hypomnema import archivio, configurazione, sportello
 from hypomnema.cli import main
-from tests.esecutore import RADICE
+from tests.esecutore import RADICE, modello_chat
 from tests.test_chat import CONFIG_CHAT
 from tests.test_regole import ADESSO, NOTA_BUONA
 from tests.test_testimone import CONFIG_ACCESO
@@ -91,7 +91,8 @@ class TestConfigurazioneArchivio(ConArchivio):
                     configurazione.carica(str(self.file_config))
 
     def test_modello_della_chat_ha_l_archivio(self):
-        config = configurazione.carica(str(RADICE / "chat" / "hypomnema-chat.toml"))
+        with tempfile.TemporaryDirectory() as cartella:
+            config = configurazione.carica(str(modello_chat(Path(cartella))))
         self.assertTrue(config.in_chat)
         self.assertEqual(config.file_archivio.name, "archivio-chat.jsonl")
 

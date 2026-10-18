@@ -14,7 +14,7 @@ from pathlib import Path
 
 from hypomnema import configurazione, diario, risposte, sportello, testimone
 from hypomnema.cli import main
-from tests.esecutore import CONFIG_DI_PROVA, RADICE
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, modello_chat
 from tests.test_chat import CONFIG_CHAT
 from tests.test_regole import ADESSO, NOTA_BUONA
 from tests.test_testimone import CONFIG_ACCESO
@@ -121,7 +121,8 @@ class TestConfigurazioneRisposte(ConQuaderno):
         self.assertFalse(configurazione.carica(str(RADICE / "hypomnema.toml")).risposte_attive)
         uso = configurazione.carica(str(RADICE / "windows" / "hypomnema-uso.toml"))
         self.assertTrue(uso.risposte_attive and uso.ometti_codice)
-        self.assertFalse(configurazione.carica(str(RADICE / "chat" / "hypomnema-chat.toml")).sezione_risposte)
+        with tempfile.TemporaryDirectory() as cartella:
+            self.assertFalse(configurazione.carica(str(modello_chat(Path(cartella)))).sezione_risposte)
 
 
 class TestFiltroSulCodice(unittest.TestCase):

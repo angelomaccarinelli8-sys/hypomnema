@@ -658,6 +658,7 @@ def _risposte(argomenti, adesso: datetime, errori: TextIO) -> int:
     # Come il testimone: niente a schermo e mai il codice 2 (costringerebbe Claude a continuare).
     try:
         config = configurazione.carica(argomenti.config)
+        adesso = configurazione.nel_fuso(config, adesso)
         if config.risposte_attive and _quaderno_nel_programma(config, errori, " delle risposte"):
             return 1
         if argomenti.file == "-":
@@ -740,6 +741,7 @@ def _testimone(argomenti, adesso: datetime, errori: TextIO) -> int:
     # Su successo non scrive niente: per Claude Code, ciò che esce qui finirebbe nella chat.
     try:
         config = configurazione.carica(argomenti.config)
+        adesso = configurazione.nel_fuso(config, adesso)
         if config.testimone_attivo and _quaderno_nel_programma(config, errori, ""):
             return 1
         if argomenti.file == "-":
@@ -802,6 +804,7 @@ def main(
     except configurazione.ErroreConfigurazione as errore:
         print(f"ERRORE: {errore}", file=uscita)
         return 2
+    adesso = configurazione.nel_fuso(config, adesso)
     try:
         if comando in LETTURA:
             # Chi legge aspetta che un passaggio dello sportello finisca: non vede mai una nota a metà.

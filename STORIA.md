@@ -21,6 +21,10 @@ Hypomnema e come aggiornarsi.
   non passa: lì valgono l'apertura esclusiva delle note, le righe del registro aggiunte con una sola
   scrittura, la rilettura delle note appena create e il `check` che Claude fa dopo ogni proposta in
   chat. Prima, con due scrittori insieme, il registro poteva sporcarsi; ora no.
+- **Il fuso orario.** La configurazione della chat ha `fuso = "Europe/Rome"`: anche se la macchina
+  della chat ha l'orologio in UTC, «oggi» e le ore del registro sono quelli italiani. Se il fuso non
+  si trova, il programma si ferma con un errore e non scrive niente. Nella configurazione di Claude
+  Code non c'è: vale l'ora del computer.
 - **Stessi byte su Windows e su Linux**: sempre UTF-8 e a capo `\n`, provato da una prova apposta.
 
 **Una volta sola, su Windows** (PowerShell), per la chat collegata:

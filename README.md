@@ -251,6 +251,14 @@ sovrascrivere niente; puoi anche copiarlo tu:
 Copy-Item programma-chat\chat\hypomnema-chat.toml hypomnema-chat.toml
 ```
 
+**Il fuso orario.** Il modello ha `fuso = "Europe/Rome"`: la macchina della chat può avere
+l'orologio in UTC, e con questa impostazione «oggi» (recap, promemoria, revisione) e le ore del
+registro sono quelle italiane, con l'ora legale. Sulla macchina della chat la tabella dei fusi c'è
+(verificato il 18/10/2026). Se il fuso non si trova (nome scritto male, o tabella dei fusi mancante,
+come di solito su Windows) il programma si ferma con un errore chiaro e non scrive niente: non torna
+mai in silenzio all'ora del computer. Nella configurazione di Claude Code non serve: lì vale l'ora
+del tuo computer.
+
 Il tuo `hypomnema.toml` (quello di Claude Code, con i testimoni accesi) resta com'è: la chat non lo
 usa. Le note salvate dalla chat sono marcate come sempre: «chat, no witness», oppure riscontrate
 sull'archivio della chat.

@@ -19,6 +19,12 @@ file_registro = "registro.md"
 # Quante cifre usare per il numero delle note (4 => 0001, 0002, ...).
 cifre_numero_nota = 4
 
+# Il fuso orario in cui si scrivono date e ore (dalla 0.6.1). La macchina della chat può avere
+# l'orologio in UTC: con questa impostazione «oggi» e le ore del registro sono quelli italiani, con
+# l'ora legale. Se il fuso non si trova (nome sbagliato o tabella dei fusi mancante) il programma si
+# ferma con un errore e non scrive niente. Senza questa riga vale l'ora del computer.
+fuso = "Europe/Rome"
+
 [testimone]
 # Il testimone registra le parole esatte di ogni tuo messaggio a Claude, con data e ora,
 # in un file dentro la cartella del quaderno. Serve allo sportello per controllare che

@@ -62,6 +62,33 @@ segno_citazione = ">"
 CARTELLA_DI_PROVA = "<cartella di prova>"
 
 
+def fuso_disponibile(nome: str = "Europe/Rome") -> bool:
+    """C'è la tabella dei fusi orari su questo computer? (Su Windows di solito no.)"""
+    import zoneinfo
+    try:
+        zoneinfo.ZoneInfo(nome)
+        return True
+    except (zoneinfo.ZoneInfoNotFoundError, ValueError, OSError):
+        return False
+
+
+def per_questo_computer(testo: str) -> str:
+    """Una configurazione per le prove: se su questo computer manca la tabella dei fusi orari, senza la
+    riga «fuso = …», che altrimenti fermerebbe il programma (è la regola, dalla 0.6.1). Le prove sul fuso
+    stanno in test_chat_diretta e lì, senza la tabella, si saltano."""
+    if fuso_disponibile():
+        return testo
+    return "".join(r for r in testo.splitlines(keepends=True) if not r.startswith("fuso = "))
+
+
+def modello_chat(cartella: Path) -> Path:
+    """Il modello della configurazione della chat, scritto in ``cartella`` per questo computer."""
+    file = cartella / "hypomnema-chat.toml"
+    file.write_text(per_questo_computer((RADICE / "chat" / "hypomnema-chat.toml").read_text(encoding="utf-8")),
+                    encoding="utf-8", newline="\n")
+    return file
+
+
 def senza_cartella_di_prova(testo: str, lavoro: Path, esempio: Path | None = None) -> str:
     for cartella, etichetta in ((lavoro, CARTELLA_DI_PROVA), (esempio, "<esempio>")):
         if cartella is None:
@@ -81,10 +108,11 @@ def esegui(esempio: Path, lavoro: Path) -> str:
     config = lavoro / "hypomnema.toml"
     proprio = esempio / "hypomnema.toml"
     testo_config = proprio.read_text(encoding="utf-8") if proprio.is_file() else CONFIG_DI_PROVA
-    config.write_text(testo_config, encoding="utf-8")
+    config.write_text(per_questo_computer(testo_config), encoding="utf-8")
     config_chat = lavoro / "hypomnema-chat.toml"
     if (esempio / "hypomnema-chat.toml").is_file():
-        shutil.copyfile(esempio / "hypomnema-chat.toml", config_chat)
+        config_chat.write_text(per_questo_computer((esempio / "hypomnema-chat.toml").read_text(encoding="utf-8")),
+                               encoding="utf-8")
     iniziale = esempio / "quaderno-iniziale"
     if iniziale.is_dir():
         shutil.copytree(iniziale, lavoro / "quaderno")
