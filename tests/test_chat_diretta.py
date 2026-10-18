@@ -71,6 +71,9 @@ class CartellaDellUtente(unittest.TestCase):
 
     def setUp(self):
         self._tmp = tempfile.TemporaryDirectory()
+        # Registrata per prima, gira per ultima: dopo che ogni processo aperto da una prova è finito
+        # davvero e ha chiuso i suoi file (su Windows un file aperto non si può cancellare).
+        self.addCleanup(self._tmp.cleanup)
         base = Path(self._tmp.name).resolve()
         self.hypomnema = base / "mnt" / "Hypomnema"
         self.casa = base / "casa"  # la cartella personale della macchina della chat
@@ -80,8 +83,6 @@ class CartellaDellUtente(unittest.TestCase):
         self.config_code = self.hypomnema / "hypomnema.toml"
         self.config_chat = self.hypomnema / "hypomnema-chat.toml"
 
-    def tearDown(self):
-        self._tmp.cleanup()
 
     def copia_il_programma(self) -> Path:
         """Come «git clone … programma-chat»: i file del programma, senza le cartelle __pycache__."""
@@ -239,10 +240,16 @@ class TestDueCheScrivonoInsieme(CartellaDellUtente):
              "time.sleep(30)", str(RADICE), str(self.quaderno)],
             stdout=subprocess.PIPE,
         )
-        self.addCleanup(tieni.wait)
-        self.addCleanup(tieni.kill)
+        self.addCleanup(self.ferma, tieni)
         self.assertEqual(tieni.stdout.readline().strip(), b"preso")
-        self.addCleanup(tieni.stdout.close)
+
+    @staticmethod
+    def ferma(processo):
+        """Ferma il processo che tiene il blocco e aspetta che sia finito davvero: solo allora il file
+        del blocco è chiuso e la cartella della prova si può cancellare (su Windows prima no)."""
+        processo.kill()
+        processo.wait(timeout=30)
+        processo.stdout.close()
 
     def file_del_quaderno(self):
         # Senza il file del blocco, come fanno snapshot e changed.
