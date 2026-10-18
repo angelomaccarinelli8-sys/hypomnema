@@ -1,0 +1,11 @@
+propose 1-chiusura-del-basilico.json
+propose 2-chiusura-della-compostiera.json
+recap
+search basilico
+search basilico --all
+propose 3-riapre-il-basilico.json
+propose 4-riapre-una-nota-aperta.json
+propose 5-claude-riapre-la-compostiera.json
+propose 6-riapre-la-compostiera.json
+recap
+search compostiera

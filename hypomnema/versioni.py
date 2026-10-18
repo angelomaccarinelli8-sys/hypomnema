@@ -9,8 +9,8 @@ si riscrivono: si leggono con le stesse regole, come versioni «virtuali»:
   ne ha una sua, resta quella di prima);
 - una nota vecchia con ``done: X`` è la versione chiusa della storia di X (una volta sola per
   storia), con il suo testo come motivo; la natura chiusa è la sua se è decision, fact o idea,
-  altrimenti resta quella di prima. Se è essa stessa un todo o un promemoria, resta anche una nota
-  a sé, perché è ancora una cosa da fare;
+  altrimenti resta quella di prima. Se è essa stessa un todo o un promemoria, se conferma un'idea
+  (``confirms``) o se un'altra nota la corregge, resta anche una nota a sé, perché non si perda;
 - le versioni virtuali di una storia sono numerate per numero di nota, prima delle versioni vere.
 
 Il codice di una versione è la lettera della sua natura davanti al numero (F fact, I idea,
@@ -158,8 +158,10 @@ class Quaderno:
             if bersaglio_valido(nota) is not None and radice(numero) != numero:
                 continue
             chiude = any(t in vecchie for t in nota.done or ())
+            # Una nota vecchia che chiude resta anche una nota a sé se è ancora una cosa da fare, se
+            # conferma un'idea o se qualcuno la corregge: altrimenti si perderebbe.
             resta_da_fare = nota.natura == "todo" or nota.riprendere_il is not None
-            if not chiude or resta_da_fare or numero in corrette:
+            if not chiude or resta_da_fare or nota.conferma_di is not None or numero in corrette:
                 basi.append(numero)
 
         # Gli avvenimenti di ogni storia: (nota vecchia, "corregge" o "chiude", bersaglio).

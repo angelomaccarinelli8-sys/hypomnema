@@ -1,0 +1,26 @@
+$ hypomnema review
+Revisione del quaderno (2026-01-15): 5 cose da guardare. Non è stato cambiato niente.
+- F0007.2 (nota 0010): ramo: le note vecchie 0009, 0010 cambiano tutte la versione F0007. Vale l'ultima (F0007.2 (nota 0010)); se un'altra diceva qualcosa che serve ancora, si può riportarla con corrects: 0007 o updates: 0007.
+- O0004: aperta da 46 giorni (ultima versione del 2025-11-30). Si può chiudere (done: 0004), cambiare (updates: 0004) o lasciarla com'è.
+- T0006: promemoria scaduto il 2026-01-05, ancora aperto. Si può chiudere (done: 0006) o spostare (updates: 0006 con remind).
+- T0006: nominata nella nota F0008 (2026-01-15). Leggila: se dice che è fatta o risolta, si può chiudere con done: 0006.
+- T0011: nel testo c'è «ricordamelo» ma la nota non ha la data del promemoria. Si può aggiungere con updates: 0011 e remind.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 1]
+
+$ hypomnema propose 1-promemoria-del-fico.json
+ACCETTATA: la versione 0011.1 della nota 0011 è stata salvata nel quaderno (note/0011.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema review
+Revisione del quaderno (2026-01-15): 4 cose da guardare. Non è stato cambiato niente.
+- F0007.2 (nota 0010): ramo: le note vecchie 0009, 0010 cambiano tutte la versione F0007. Vale l'ultima (F0007.2 (nota 0010)); se un'altra diceva qualcosa che serve ancora, si può riportarla con corrects: 0007 o updates: 0007.
+- O0004: aperta da 46 giorni (ultima versione del 2025-11-30). Si può chiudere (done: 0004), cambiare (updates: 0004) o lasciarla com'è.
+- T0006: promemoria scaduto il 2026-01-05, ancora aperto. Si può chiudere (done: 0006) o spostare (updates: 0006 con remind).
+- T0006: nominata nella nota F0008 (2026-01-15). Leggila: se dice che è fatta o risolta, si può chiudere con done: 0006.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 1]
+

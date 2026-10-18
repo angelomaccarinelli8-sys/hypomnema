@@ -1,0 +1,42 @@
+$ hypomnema snapshot > prima.json
+[codice di uscita: 0]
+
+$ hypomnema propose 1-chiude-due.json
+ACCETTATA: la versione 0004.1 della nota 0004 è stata salvata nel quaderno (note/0004.1.md).
+ACCETTATA: la versione 0006.1 della nota 0006 è stata salvata nel quaderno (note/0006.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema changed prima.json
+File del quaderno da riportare sul computer dell'utente: 3
+- note/0004.1.md (creato)
+- note/0006.1.md (creato)
+- registro.md (allungato)
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 7 note e 2 versioni, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+
+$ hypomnema snapshot > prima.json
+[codice di uscita: 0]
+
+$ hypomnema propose 2-riapre.json
+ACCETTATA: la versione 0006.2 della nota 0006 è stata salvata nel quaderno (note/0006.2.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema changed prima.json
+File del quaderno da riportare sul computer dell'utente: 2
+- note/0006.2.md (creato)
+- registro.md (allungato)
+[codice di uscita: 0]
+
+$ hypomnema compare riporto/0006.2.md atteso/quaderno/note/0006.2.md
+UGUALI: «<esempio>/riporto/0006.2.md» e «<esempio>/atteso/quaderno/note/0006.2.md» sono identici byte per byte (434 byte).
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 7 note e 3 versioni, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

@@ -1,0 +1,151 @@
+$ hypomnema review
+Revisione del quaderno (2026-01-15): 2 cose da guardare. Non è stato cambiato niente.
+- O0004: aperta da 46 giorni (ultima versione del 2025-11-30). Si può chiudere (done: 0004), cambiare (updates: 0004) o lasciarla com'è.
+- T0006: promemoria scaduto il 2026-01-05, ancora aperto. Si può chiudere (done: 0006) o spostare (updates: 0006 con remind).
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 1]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)
+- [T0006] da riprendere il 2026-01-05: Seminare il basilico.
+
+Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [O0004] 2025-11-30: Dove mettere la compostiera?
+
+Cose da fare: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [T0006] 2025-12-27: Seminare il basilico.
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema propose 1a-priorita.json
+ACCETTATA: la versione 0006.1 della nota 0006 è stata salvata nel quaderno (note/0006.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 1b-natura.json
+ACCETTATA: la versione 0004.1 della nota 0004 è stata salvata nel quaderno (note/0004.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 1c-correzione.json
+ACCETTATA: la versione 0004.2 della nota 0004 è stata salvata nel quaderno (note/0004.2.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)
+- [T0006.1] [alta] da riprendere il 2026-01-05: Seminare il basilico.
+    ↳ T0006.1 2026-01-15 · user: priorità normal → high
+
+Discorsi aperti: nessuno.
+
+Cose da fare: 2 di 2 (prima la priorità alta, poi dal più recente)
+- [T0006.1] [alta] 2026-01-15: Seminare il basilico.
+    ↳ T0006.1 2026-01-15 · user: priorità normal → high
+- [T0004.2] 2026-01-15: Montare la compostiera nell'angolo nord.
+    ↳ T0004.1 2026-01-15 · user: natura open → todo
+    ↳ T0004.2 2026-01-15 · user: testo corretto
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema propose 1d-claude-corregge-l-utente.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- the text of note «0007» is the user's words: only the user can correct it. Claude can suggest the correction to the user, or save its own idea note.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 1e-versione-vecchia.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- 0004.1 is not the last version of 0004: the last is T0004.2. Changes are made only to the last version (write «0004»).
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 1f-chiusura-di-claude.json
+ACCETTATA: la versione 0006.2 della nota 0006 è stata salvata nel quaderno (note/0006.2.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 1g-chiusura-doppia.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- note «0006» is already closed (✓F0006.2): to reopen it use «reopens».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 1h-decisione-di-claude.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- a decision must be stated by the user: it cannot be «inferred».
+- only the user can make a note a decision: Claude can suggest it to the user.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 1i-nota-nuova.json
+ACCETTATA: la nota 0008 è stata salvata nel quaderno (note/0008.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 1l-niente-cambia.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- «updates» on note «0004» changes nothing: write in «kind», «priority» or «remind» the new value.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 1m-due-cambiamenti.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- a proposal can make only one change: use only one of «corrects», «updates», «done» and «reopens».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema search compostiera
+Trovate 2 note con «compostiera» (dalla più recente).
+
+--- Nota I0005 ---
+data: 2025-11-30
+fonte: chat del 2025-11-30
+autore: claude
+tipo: inferred
+natura: idea
+testo:
+  Mettere la compostiera nell'angolo nord, all'ombra.
+
+--- Nota T0004.2 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: todo
+verifica: author not verified (witness off)
+testo:
+  Montare la compostiera nell'angolo nord.
+storia (dalla più vecchia):
+  O0004   2025-11-30 · user: creata
+  T0004.1 2026-01-15 · user: natura open → todo. Motivo: «Ho deciso il posto, ora la compostiera va solo montata.»
+  T0004.2 2026-01-15 · user: testo corretto (prima: «Dove mettere la compostiera?»)
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 8 note e 4 versioni, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

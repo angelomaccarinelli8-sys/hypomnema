@@ -1,0 +1,16 @@
+review
+recap
+propose 1a-priorita.json
+propose 1b-natura.json
+propose 1c-correzione.json
+recap
+propose 1d-claude-corregge-l-utente.json
+propose 1e-versione-vecchia.json
+propose 1f-chiusura-di-claude.json
+propose 1g-chiusura-doppia.json
+propose 1h-decisione-di-claude.json
+propose 1i-nota-nuova.json
+propose 1l-niente-cambia.json
+propose 1m-due-cambiamenti.json
+search compostiera
+check
