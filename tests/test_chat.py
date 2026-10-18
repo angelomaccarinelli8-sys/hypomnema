@@ -6,7 +6,6 @@ Solo dati inventati, in cartelle temporanee.
 import io
 import json
 import tempfile
-import tomllib
 import unittest
 from pathlib import Path
 
@@ -82,10 +81,10 @@ class TestConfigurazioneChat(ConQuaderno):
         self.assertTrue(config.in_chat)
         self.assertEqual(config.cartella_quaderno, MODELLO_CHAT.resolve().parent / "quaderno")
         # Stesse impostazioni del file di sviluppo, più modalita = "chat".
-        sviluppo = tomllib.loads((RADICE / "hypomnema.toml").read_text(encoding="utf-8"))
+        sviluppo = configurazione.tomllib.loads((RADICE / "hypomnema.toml").read_text(encoding="utf-8"))
         sviluppo["testimone"]["modalita"] = "chat"
         del sviluppo["risposte"]  # in chat il testimone delle risposte non esiste
-        modello = tomllib.loads(MODELLO_CHAT.read_text(encoding="utf-8"))
+        modello = configurazione.tomllib.loads(MODELLO_CHAT.read_text(encoding="utf-8"))
         self.assertEqual(modello.pop("archivio"), {"file": "archivio-chat.jsonl", "file_diario": "diario-chat.jsonl",
                                                    "ometti_codice": True, "copia_ogni": 5})
         self.assertEqual(modello, sviluppo)

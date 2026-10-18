@@ -7,7 +7,11 @@ Ordine di ricerca del file:
 """
 
 import os
-import tomllib
+
+try:
+    import tomllib
+except ImportError:  # Python 3.10: la copia di tomli, da cui è nato tomllib (vedi _tomli/LEGGIMI.md).
+    from hypomnema import _tomli as tomllib
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
 

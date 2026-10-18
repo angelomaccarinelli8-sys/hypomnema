@@ -10,7 +10,6 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import tomllib
 import unittest
 from datetime import timedelta
 from pathlib import Path, PurePosixPath, PureWindowsPath
@@ -161,8 +160,8 @@ class TestPluginEModello(unittest.TestCase):
         self.assertTrue(config.testimone_attivo)
         self.assertEqual(config.cartella_quaderno, modello.resolve().parent / "quaderno")
         # Stesse impostazioni del file di sviluppo: cambia solo il testimone acceso.
-        sviluppo = tomllib.loads((RADICE / "hypomnema.toml").read_text(encoding="utf-8"))
-        uso = tomllib.loads(modello.read_text(encoding="utf-8"))
+        sviluppo = configurazione.tomllib.loads((RADICE / "hypomnema.toml").read_text(encoding="utf-8"))
+        uso = configurazione.tomllib.loads(modello.read_text(encoding="utf-8"))
         sviluppo["testimone"]["attivo"] = True
         sviluppo["risposte"]["attivo"] = True
         self.assertEqual(uso, sviluppo)
