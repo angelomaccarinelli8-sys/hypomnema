@@ -3,6 +3,44 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.6.1 (prototipo) — la chat scrive direttamente sul quaderno
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **La chat collegata al computer scrive direttamente sul quaderno vero.** Con l'app desktop, la
+  chat ha una riga di comando su una macchina Linux che vede la tua cartella Hypomnema: se lì trova
+  il programma aggiornato, propone allo sportello del quaderno vero. Per salvare una nota basta un
+  comando (due con la copia dall'archivio della chat), invece di otto-dieci; niente copia, niente
+  riporto, niente confronto. Se qualcosa non va, Claude usa la procedura di prima.
+- **Python 3.10.** Hypomnema funziona dal 3.10 (sulla macchina della chat c'è il 3.10): quando manca
+  `tomllib`, usa la sua copia di tomli (licenza MIT). Niente da installare.
+- **Una configurazione per la chat accanto a quella di Claude Code**: `hypomnema-chat.toml`, stesso
+  quaderno, testimone spento. Il tuo `hypomnema.toml` non si tocca.
+- **Due che scrivono insieme.** Claude Code e la chat possono scrivere sullo stesso quaderno nello
+  stesso momento: lo sportello tiene un blocco per ogni passaggio (il file vuoto
+  `quaderno/.sportello.lock`, che non va cancellato). Prima, con due scrittori insieme, il registro
+  poteva sporcarsi; ora no.
+- **Stessi byte su Windows e su Linux**: sempre UTF-8 e a capo `\n`, provato da una prova apposta.
+
+**Una volta sola, su Windows** (PowerShell), per la chat collegata:
+
+```powershell
+cd $env:USERPROFILE\Hypomnema
+git clone --branch main https://github.com/angelomaccarinelli8-sys/hypomnema.git programma-chat
+```
+
+Per aggiornarla: `git -C programma-chat pull`.
+
+**Aggiornare il plugin in Claude Code:**
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+**Nella chat di claude.ai:** scarica il nuovo `hypomnema-skill.zip` e caricalo tra le skill nelle
+impostazioni di Claude, sostituendo quello vecchio.
+
 ## 0.6.0 (prototipo) — versioni e regole
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*

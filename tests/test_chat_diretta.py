@@ -291,5 +291,22 @@ class TestStessiByteDaWindowsELinux(unittest.TestCase):
                         self.assertIn('newline="\\n"', arg)
 
 
+class TestDocumenti(unittest.TestCase):
+    def test_skill_readme_storia(self):
+        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        for frammento in ("### C0. Chat connected to the computer", "python3 -B <HY>/programma-chat/programma.py",
+                          "**you must never delete or overwrite files in the connected\nfolders**",
+                          "`H status` must say `Testimone: NON C'È (configurazione per la chat di Claude)`",
+                          "~/hypomnema-temp/proposta.json", "go on with C1-C5", "Python 3.10 or newer"):
+            with self.subTest(frammento=frammento):
+                self.assertIn(frammento, skill)
+        readme = (RADICE / "README.md").read_text(encoding="utf-8")
+        self.assertIn("### Chat collegata al computer: scrive direttamente sul quaderno (dalla 0.6.1)", readme)
+        self.assertIn("programma-chat", readme)
+        self.assertIn("## 0.6.1 (prototipo) — la chat scrive direttamente sul quaderno",
+                      (RADICE / "STORIA.md").read_text(encoding="utf-8"))
+        self.assertIn("`.sportello.lock`", (RADICE / "FORMATO.md").read_text(encoding="utf-8"))
+
+
 if __name__ == "__main__":
     unittest.main()

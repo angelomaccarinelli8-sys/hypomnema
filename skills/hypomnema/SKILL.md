@@ -25,9 +25,10 @@ commands or scripts: its whole value lies in the fact that you do not touch it.
 
 - **In Claude Code** (you can run commands on the user's computer): follow the sections from
   "How to run the programs" to 6.
-- **In a Claude chat** (claude.ai, desktop or mobile app: you cannot run commands on the user's
-  computer): follow the "Chat mode" section at the end, and otherwise sections 1, 2, 4 and 5.
-  Sections 0 and 6 do not apply: in chat there are neither witnesses nor diary.
+- **In a Claude chat** (claude.ai, desktop or mobile app): follow the "Chat mode" section at the
+  end, and otherwise sections 1, 2, 4 and 5. Sections 0 and 6 do not apply: in chat there are
+  neither witnesses nor diary. Start from **C0**: if the chat has a command line on the user's
+  computer, it writes directly on the real notebook.
 
 ## How to run the programs (Claude Code)
 
@@ -462,6 +463,85 @@ All the other rules of this skill stay the same, and **you never save a note by 
 go through the desk. You do the dirty work; from the user you only ask permission for their
 folder.
 
+There are two ways, try them in this order:
+- **C0, chat connected to the computer**: you have a command line on a machine that sees the
+  user's `Hypomnema` folder, and the program works there. You use the desk of the **real notebook**
+  directly: one command to save, nothing to copy back.
+- **C1-C5, the work computer**: otherwise. You copy the notebook to your work computer, propose
+  there and bring back the changed files.
+
+### C0. Chat connected to the computer (from version 0.6.1)
+
+With the desktop app the chat may have a command line on a Linux machine that sees the folders the
+user connected, for example the `Hypomnema` folder as `$HOME/mnt/Hypomnema`. Below, `<HY>` is that
+folder as you see it. On that machine **you must never delete or overwrite files in the connected
+folders**, and GitHub cannot be reached.
+
+**D1. Recognise the case** (at the start of the chat, once):
+
+```
+ls <HY>                                    # quaderno/ and programma-chat/ must be there
+python3 --version                          # 3.10 or newer
+python3 -B <HY>/programma-chat/programma.py --version   # hypomnema 0.6.1 or newer
+```
+
+- `programma-chat` is a copy of the program **updated by the user on Windows** with git (README,
+  «Chat collegata al computer»). Never use the old `programma` folder, and never copy, change or
+  update the program yourself from here.
+- If `programma-chat` is missing or older than 0.6.1, tell the user once: «Per scrivere direttamente
+  sul quaderno serve la cartella programma-chat aggiornata: su Windows, nella cartella Hypomnema,
+  lancia `git clone --branch main https://github.com/angelomaccarinelli8-sys/hypomnema.git
+  programma-chat` la prima volta, oppure `git -C programma-chat pull` per aggiornarla.» Then go on
+  with C1-C5.
+- **Always `python3 -B`**: so Python writes no `__pycache__` folders into the connected folder.
+
+**D2. The chat configuration.** The chat uses its own file, `<HY>/hypomnema-chat.toml`, next to
+`hypomnema.toml` (Claude Code's, with the witnesses on), **which you never use and never touch**.
+If `hypomnema-chat.toml` is missing, create it from the model, without overwriting anything, and
+tell the user («Ho creato hypomnema-chat.toml, la configurazione della chat, accanto a quella di
+Claude Code: stesso quaderno.»):
+
+```
+[ -e <HY>/hypomnema-chat.toml ] || cp <HY>/programma-chat/chat/hypomnema-chat.toml <HY>/hypomnema-chat.toml
+```
+
+From here on `H` means exactly:
+
+```
+python3 -B <HY>/programma-chat/programma.py --config <HY>/hypomnema-chat.toml
+```
+
+**D3. At the start: check, recap, review on the real notebook.**
+- `H status` must say `Testimone: NON C'È (configurazione per la chat di Claude)`. If it says
+  anything else you are using the wrong configuration: **save nothing**, and go back to D2.
+- Then `H check`, `H recap` and `H review`, with the rules of section 1 and of C2 point 4 (three
+  lines to the user about where you left off, one line for the review).
+
+**D4. Saving a note.**
+1. If you have the chat archive, copy the new messages first (as in C5, step 2), writing the copy
+   in `~/hypomnema-temp/archivio.json` in the **personal folder of the machine** (create it with
+   `mkdir -p ~/hypomnema-temp`), **never** in the notebook or in a connected folder; then
+   `H archive ~/hypomnema-temp/archivio.json`.
+2. Write the proposal in `~/hypomnema-temp/proposta.json` (same folder), with the rules of
+   section 2; the user's words from the archive copy, never from memory.
+3. `H propose ~/hypomnema-temp/proposta.json`.
+4. Tell the user `ACCETTATA` or `RIFIUTATA` (section 4), and at which level («riscontrata
+   sull'archivio della chat» or «non verificata»).
+
+That is all: **no snapshot, no copy, no bringing back, no compare**. The temporary files stay
+where they are: they are outside the connected folders.
+
+**Two writers.** Claude Code (with the plugin) may write on the same notebook at the same moment:
+the desk holds a lock (the empty file `quaderno/.sportello.lock`, never to be deleted) for each
+pass. If `propose` answers «ERRORE: il quaderno è occupato da un altro passaggio», nothing was
+written: wait a few seconds and propose again.
+
+**D5. If something does not work** (the machine does not answer, Python older than 3.10,
+`programma-chat` missing or old, `status` not saying «NON C'È», an `ERRORE` of the program), tell
+the user in one line («Non riesco a scrivere direttamente sul quaderno: uso la procedura con la
+copia.») and go on with C1-C5. If a proposal may have been half done, first run `H check` (or,
+in C1-C5, check the copied register): a note already saved must not be proposed again.
+
 ### C1. Prepare the work computer (once per chat)
 
 ```
@@ -471,7 +551,7 @@ cp ~/hypomnema-programma/chat/hypomnema-chat.toml ~/hypomnema-lavoro/hypomnema.t
 python3 --version
 ```
 
-- You need Python 3.11 or newer (Hypomnema is guaranteed from 3.12; with 3.11 the tests pass).
+- You need Python 3.10 or newer (with 3.10 the program uses its own copy of the TOML reader).
   If `git` is not there, download and unpack
   `https://github.com/angelomaccarinelli8-sys/hypomnema/archive/refs/heads/main.zip`.
 - From here on run every command from the folder `~/hypomnema-programma`, always with the chat
