@@ -8,7 +8,7 @@ $ hypomnema promemoria
 
 === Da riprendere il 2026-01-10 ===
 
---- Nota 0001 ---
+--- Nota F0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: user
@@ -21,7 +21,7 @@ testo:
 [codice di uscita: 0]
 
 $ hypomnema proponi 2-fatto.json
-ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
@@ -29,10 +29,10 @@ $ hypomnema promemoria
 Nessun promemoria scaduto al 2026-01-15.
 [codice di uscita: 0]
 
-$ hypomnema proponi 3-fatto-di-una-nota-qualsiasi.json
+$ hypomnema proponi 3-fatto-di-nuovo.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- note «0002» is a «fact»: «done» closes only open, todo and reminder notes (with «remind»). A fact, a decision or an idea is not closed: write a new note with «corrects».
+- note «0001» is already closed (✓F0001.1): to reopen it use «reopens».
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
@@ -44,18 +44,7 @@ Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 
 $ hypomnema cerca zucca
-Trovata 1 nota con «zucca».
+Nessuna nota aperta contiene «zucca».
 (1 nota chiusa non mostrata: aggiungi --all per vederla.)
-
---- Nota 0002 ---
-data: 2026-01-15
-fonte: chat del 14 gennaio 2026 sull'orto
-autore: user
-tipo: stated
-natura: fact
-chiude: nota 0001
-verifica: author not verified (witness off)
-testo:
-  Semi di zucca comprati.
 [codice di uscita: 0]
 

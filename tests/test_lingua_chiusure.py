@@ -166,57 +166,61 @@ class TestKind(ConQuaderno):
 
 
 class TestChiusure(ConQuaderno):
+    """Dalla 0.6.0 una chiusura è una versione chiusa della nota (vedi anche test_versioni)."""
+
     def test_chiudere_un_open(self):
         aperta = self.nota(author="claude", knowledge="inferred", kind="open")
         self.assertIn("only the user can close an open note",
-                      self.proponi(author="claude", knowledge="inferred", kind="idea", done=aperta).motivi[0])
-        self.assertIn("cannot be «open»", self.proponi(kind="open", done=aperta).motivi[0])
-        chiude = self.nota(kind="decision", done=aperta)
+                      self.proponi(author="claude", knowledge="inferred", kind=..., done=aperta).motivi[0])
+        self.assertIn("closing cannot turn note «0001» into «todo»", self.proponi(kind="todo", done=aperta).motivi[0])
+        chiusa = self.nota(kind="decision", done=aperta)
+        self.assertEqual(chiusa, "0001.1")
         self.assertEqual(self.proponi(kind="decision", done=aperta).motivi,
-                         [f"note «{aperta}» is already closed by note «{chiude}»."])
+                         [f"note «{aperta}» is already closed (✓D0001.1): to reopen it use «reopens»."])
 
     def test_todo_e_promemoria_li_chiude_anche_claude(self):
         da_fare = self.nota(author="claude", knowledge="inferred", kind="todo")
         promemoria = self.nota(author="claude", knowledge="inferred", kind="idea", remind="2026-01-10")
-        numero = self.nota(author="claude", knowledge="observed", kind="fact", done=f"{da_fare}, {promemoria}")
-        self.assertIn(f"- done: {da_fare}, {promemoria}\n", self.file_nota(numero))
+        esito = self.proponi(author="claude", knowledge="observed", kind=..., done=f"{da_fare}, {promemoria}")
+        self.assertEqual([numero for numero, _ in esito.scritte], ["0001.1", "0002.1"])
+        self.assertIn("- status: closed\n", self.file_nota("0001.1"))
+        self.assertIn("- change: closed\n", self.file_nota("0002.1"))
 
     def test_cosa_non_si_chiude(self):
         fatto = self.nota()
         idea = self.nota(author="claude", knowledge="inferred", kind="idea")
         decisione = self.nota(kind="decision")
-        for numero, consiglio in ((fatto, "«corrects»."), (decisione, "«corrects»."),
-                                  (idea, "«confirms», for an idea).")):
+        for numero in (fatto, idea, decisione):
             with self.subTest(numero=numero):
-                motivo = self.proponi(done=numero).motivi[0]
+                motivo = self.proponi(kind=..., done=numero).motivi[0]
                 self.assertIn("«done» closes only open, todo and reminder notes", motivo)
-                self.assertTrue(motivo.endswith(consiglio), motivo)
+                self.assertTrue(motivo.endswith("correct it with «corrects» or change it with «updates»."), motivo)
 
     def test_elenco_di_numeri(self):
         da_fare = self.nota(kind="todo")
         for valore, motivo in (("0001, 0001", "listed twice"), ("0099", "does not exist"),
-                               ("uno", "must list note numbers"), ("0001,", "must list note numbers")):
+                               ("uno", "must contain a note number"), ("0001,", "must contain a note number")):
             with self.subTest(valore=valore):
-                self.assertIn(motivo, self.proponi(done=valore).motivi[0])
+                self.assertIn(motivo, " ".join(self.proponi(kind=..., done=valore).motivi))
         self.assertEqual(da_fare, "0001")
 
     def test_ricerca_e_recap_senza_le_chiuse(self):
         self.nota(text="Comprare il terriccio.", kind="todo")
-        self.nota(text="Il terriccio è arrivato.", done="0001")
+        self.nota(text="Il terriccio è arrivato.", kind=..., done="0001")
         _, uscita = self.comando("search", "terriccio")
-        self.assertIn("Trovata 1 nota con «terriccio».\n(1 nota chiusa non mostrata: aggiungi --all per vederla.)",
-                      uscita)
-        self.assertNotIn("--- Nota 0001", uscita)
+        self.assertIn("Nessuna nota aperta contiene «terriccio».\n(1 nota chiusa non mostrata: aggiungi --all per "
+                      "vederla.)", uscita)
+        self.assertNotIn("--- Nota", uscita)
         _, tutte = self.comando("search", "terriccio", "--all")
-        self.assertIn("--- Nota 0001 ---", tutte)
-        self.assertIn("chiusa da: nota 0002", tutte)
+        self.assertIn("--- Nota ✓T0001.1 ---", tutte)
+        self.assertIn("✓T0001.1 2026-01-15 · user: chiusa. Motivo: «Il terriccio è arrivato.»", tutte)
         _, recap = self.comando("recap")
         self.assertIn("Cose da fare: nessuna.", recap)
-        self.assertEqual([n.id for n in cercatore.cerca(self.config, "terriccio")], ["0002"])
+        self.assertEqual(cercatore.cerca(self.config, "terriccio"), [])
 
     def test_nessuna_aperta(self):
         self.nota(text="Comprare il terriccio.", kind="todo")
-        self.nota(text="Fatto.", done="0001")
+        self.nota(text="Fatto.", kind=..., done="0001")
         _, uscita = self.comando("search", "terriccio")
         self.assertEqual(uscita, "Nessuna nota aperta contiene «terriccio».\n"
                                  "(1 nota chiusa non mostrata: aggiungi --all per vederla.)\n")
@@ -225,7 +229,7 @@ class TestChiusure(ConQuaderno):
         for i in range(7):
             self.nota(text=f"Cosa {i}.", kind="todo")
         _, recap = self.comando("recap")
-        self.assertIn("Cose da fare: 5 di 7 (prima la priorità alta, poi dal più recente)\n- [0007]", recap)
+        self.assertIn("Cose da fare: 5 di 7 (prima la priorità alta, poi dal più recente)\n- [T0007]", recap)
         self.assertIn("(2 cose da fare più vecchie non mostrate)", recap)
 
     def test_sezione_recap_todo(self):
@@ -243,13 +247,11 @@ class TestPriorita(ConQuaderno):
     def test_priorita_in_vigore(self):
         prima = self.nota(kind="todo")
         seconda = self.nota(kind="todo", priority="low")
-        note = quaderno.leggi_note(self.config)
-        self.assertEqual([cercatore.priorita_in_vigore(n, note) for n in note], ["normal", "low"])
-        self.nota(corrects=seconda, priority="high")
-        correzione_senza = self.nota(corrects="0003")
-        note = quaderno.leggi_note(self.config)
-        self.assertEqual(cercatore.priorita_in_vigore(note[1], note), "high")
-        self.assertEqual(correzione_senza, "0004")
+        storie = cercatore.leggi(self.config).elenco()
+        self.assertEqual([cercatore.priorita_in_vigore(s) for s in storie], ["normal", "low"])
+        self.assertEqual(self.nota(kind=..., updates=seconda, priority="high"), "0002.1")
+        self.assertEqual(cercatore.priorita_in_vigore(cercatore.leggi(self.config).storie["0002"]), "high")
+        self.assertIn("changes nothing", self.proponi(kind=..., updates=seconda, priority="high").motivi[0])
         self.assertEqual(prima, "0001")
 
     def test_ordine_nel_recap(self):
@@ -259,11 +261,11 @@ class TestPriorita(ConQuaderno):
         self.nota(text="Promemoria basso.", kind="todo", priority="low", remind="2026-01-01")
         self.nota(text="Promemoria alto.", kind="todo", priority="high", remind="2026-01-10")
         _, recap = self.comando("recap")
-        self.assertIn("- [0005] [alta] da riprendere il 2026-01-10: Promemoria alto.\n"
-                      "- [0004] [bassa] da riprendere il 2026-01-01: Promemoria basso.\n", recap)
-        self.assertIn("- [0005] [alta] 2026-01-15: Promemoria alto.\n- [0003] [alta] 2026-01-15: Alta.\n"
-                      "- [0001] 2026-01-15: Normale.\n- [0004] [bassa] 2026-01-15: Promemoria basso.\n"
-                      "- [0002] [bassa] 2026-01-15: Bassa.\n", recap)
+        self.assertIn("- [T0005] [alta] da riprendere il 2026-01-10: Promemoria alto.\n"
+                      "- [T0004] [bassa] da riprendere il 2026-01-01: Promemoria basso.\n", recap)
+        self.assertIn("- [T0005] [alta] 2026-01-15: Promemoria alto.\n- [T0003] [alta] 2026-01-15: Alta.\n"
+                      "- [T0001] 2026-01-15: Normale.\n- [T0004] [bassa] 2026-01-15: Promemoria basso.\n"
+                      "- [T0002] [bassa] 2026-01-15: Bassa.\n", recap)
 
 
 class TestDocumenti(unittest.TestCase):

@@ -21,6 +21,25 @@ Dalla versione 0.5.0 le note nuove si scrivono con la struttura in inglese::
 Le note scritte prima (``# Nota``, ``- data:``, ``## Testo``, ``## Contesto scritto da Claude``,
 valori come «utente», «dichiarata», «discorso aperto») si leggono come prima e non si riscrivono
 mai: chi legge riceve sempre i valori in inglese.
+
+Dalla versione 0.6.0 ogni cambiamento di una nota è una versione nuova, in un file con il punto
+(``0049.1.md``): intestazione e testo copiati con il cambiamento applicato, ``- status: closed``
+se la versione è chiusa, e in fondo il blocco del cambiamento::
+
+    ## Change
+
+    - date: 2026-02-20
+    - source: chat del 20 febbraio 2026
+    - author: user
+    - knowledge: stated
+    - change: priority normal → high
+    - verification: author not verified (witness off)
+
+    ### Reason
+
+    Il motivo, con le parole di chi ha chiesto il cambiamento.
+
+Il blocco si legge solo nei file con il punto: una nota vecchia con quella riga nel testo resta com'è.
 """
 
 from dataclasses import dataclass
@@ -33,6 +52,9 @@ TITOLO_TESTO_ITALIANO = "## Testo"
 TITOLO_CONTESTO_ITALIANO = "## Contesto scritto da Claude"
 TITOLI_TESTO = (TITOLO_TESTO, TITOLO_TESTO_ITALIANO)
 TITOLI_CONTESTO = (TITOLO_CONTESTO, TITOLO_CONTESTO_ITALIANO)
+# Il blocco del cambiamento, solo nelle versioni (file con il punto).
+TITOLO_CAMBIO = "## Change"
+TITOLO_MOTIVO = "### Reason"
 
 # I campi d'intestazione: il nome inglese (quello che si scrive), il nome italiano (che si legge
 # per sempre) e l'attributo della nota. Ordine fisso; i campi facoltativi compaiono solo se presenti.
@@ -42,6 +64,7 @@ CAMPI = (
     ("author", "autore", "autore"),
     ("knowledge", "tipo", "tipo"),
     ("kind", "natura", "natura"),
+    ("status", "status", "stato"),
     ("priority", "priorità", "priorita"),
     ("confirms", "conferma_di", "conferma_di"),
     ("corrects", "corregge", "corregge"),
@@ -52,6 +75,11 @@ CAMPI = (
     ("verification", "verifica", "verifica"),
 )
 CAMPI_SEMPRE_PRESENTI = ("data", "fonte", "autore", "tipo", "natura")
+# I campi del blocco del cambiamento, in ordine fisso.
+CAMPI_CAMBIO = (
+    ("date", "data"), ("source", "fonte"), ("author", "autore"), ("knowledge", "tipo"),
+    ("change", "cambio"), ("quote", "citazione"), ("verification", "verifica"),
+)
 ATTRIBUTO = {nome: attributo for inglese, italiano, attributo in CAMPI for nome in (inglese, italiano)}
 
 # I valori italiani delle note vecchie e delle proposte, con il loro valore inglese.
@@ -70,6 +98,49 @@ def in_inglese(attributo: str, valore: str) -> str:
 
 class NotaIlleggibile(Exception):
     """Un file del quaderno non ha il formato previsto."""
+
+
+def base_di(id_nota: str) -> str:
+    """Il numero della nota senza la versione: «0049.2» → «0049»."""
+    return id_nota.partition(".")[0]
+
+
+def versione_di(id_nota: str) -> int:
+    """Il numero della versione: «0049.2» → 2, «0049» → 0."""
+    _, punto, versione = id_nota.partition(".")
+    return int(versione) if punto else 0
+
+
+def ordine(id_nota: str) -> tuple[int, int, str]:
+    """Per mettere in ordine i numeri delle note e delle versioni."""
+    return int(base_di(id_nota)), versione_di(id_nota), id_nota
+
+
+@dataclass(frozen=True)
+class Cambio:
+    """Il blocco «## Change» di una versione: chi ha cambiato che cosa, quando e perché."""
+    data: str
+    fonte: str
+    autore: str
+    tipo: str
+    # Le voci del cambiamento, separate da «; », per esempio «priority normal → high».
+    cambio: str
+    citazione: str | None = None
+    verifica: str | None = None
+    # Il motivo: le parole di chi ha chiesto il cambiamento. Manca nelle correzioni del testo,
+    # dove le parole nuove sono il testo stesso.
+    motivo: str | None = None
+
+    def in_markdown(self) -> list[str]:
+        righe = [TITOLO_CAMBIO, ""]
+        for inglese, attributo in CAMPI_CAMBIO:
+            valore = getattr(self, attributo)
+            if valore is not None:
+                righe.append(f"- {inglese}: {valore}")
+        righe.append("")
+        if self.motivo is not None:
+            righe += [TITOLO_MOTIVO, "", self.motivo, ""]
+        return righe
 
 
 @dataclass(frozen=True)
@@ -96,6 +167,10 @@ class Nota:
     verifica: str | None = None
     # high, normal o low: solo nelle note dell'utente.
     priorita: str | None = None
+    # "closed" nelle versioni chiuse; altrimenti None.
+    stato: str | None = None
+    # Solo nelle versioni: il blocco del cambiamento.
+    cambio: Cambio | None = None
 
     def in_markdown(self) -> str:
         righe = [f"# Note {self.id}", ""]
@@ -108,6 +183,8 @@ class Nota:
         righe += ["", TITOLO_TESTO, "", self.testo, ""]
         if self.contesto is not None:
             righe += [TITOLO_CONTESTO, "", self.contesto, ""]
+        if self.cambio is not None:
+            righe += self.cambio.in_markdown()
         return "\n".join(righe)
 
 
@@ -116,8 +193,30 @@ def numeri(valore: str) -> tuple[str, ...]:
     return tuple(parte.strip() for parte in valore.split(","))
 
 
+def _cambio(id_nota: str, righe: list[str]) -> Cambio:
+    campi: dict[str, str] = {}
+    fine = righe.index(TITOLO_MOTIVO) if TITOLO_MOTIVO in righe else len(righe)
+    for riga in righe[:fine]:
+        if riga.startswith("- "):
+            chiave, separatore, valore = riga[2:].partition(": ")
+            for inglese, attributo in CAMPI_CAMBIO:
+                if separatore and chiave == inglese:
+                    campi[attributo] = valore
+    mancanti = [c for c in ("data", "fonte", "autore", "tipo", "cambio") if c not in campi]
+    if mancanti:
+        raise NotaIlleggibile(f"nel cambiamento della nota {id_nota} mancano: {', '.join(mancanti)}")
+    motivo = "\n".join(righe[fine + 1:]).strip() if fine < len(righe) else None
+    return Cambio(motivo=motivo, **campi)
+
+
 def da_markdown(id_nota: str, contenuto: str) -> Nota:
     righe = contenuto.split("\n")
+    cambio = None
+    if "." in id_nota and TITOLO_CAMBIO in righe:
+        # L'ultima riga «## Change»: il testo copiato da una nota vecchia potrebbe contenerla.
+        inizio_cambio = len(righe) - 1 - righe[::-1].index(TITOLO_CAMBIO)
+        cambio = _cambio(id_nota, righe[inizio_cambio + 1:])
+        righe = righe[:inizio_cambio]
     inizio_testo = next((i for i, riga in enumerate(righe) if riga in TITOLI_TESTO), None)
     if inizio_testo is None:
         raise NotaIlleggibile(f"nella nota {id_nota} manca la sezione «{TITOLO_TESTO}»")
@@ -145,13 +244,4 @@ def da_markdown(id_nota: str, contenuto: str) -> Nota:
         contesto = "\n".join(corpo[inizio_contesto + 1:]).strip()
         corpo = corpo[:inizio_contesto]
     testo = "\n".join(corpo).strip()
-    return Nota(id=id_nota, testo=testo, contesto=contesto, **campi)
-
-
-def chiuse(note: list[Nota]) -> dict[str, str]:
-    """Per ogni nota chiusa con «done», il numero della prima nota che l'ha chiusa."""
-    chiusura: dict[str, str] = {}
-    for nota in sorted(note, key=lambda n: (int(n.id), n.id)):
-        for numero in nota.done or ():
-            chiusura.setdefault(numero, nota.id)
-    return chiusura
+    return Nota(id=id_nota, testo=testo, contesto=contesto, cambio=cambio, **campi)

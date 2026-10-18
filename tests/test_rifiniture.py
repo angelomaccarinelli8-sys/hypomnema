@@ -40,6 +40,8 @@ class ConQuaderno(unittest.TestCase):
     def proponi(self, testo="Una nota.", **campi):
         nota = {"data": "2026-01-15", "fonte": "prova", "autore": "claude", "tipo": "dedotta",
                 "natura": "idea", "testo": testo, **campi}
+        # natura=... toglie il campo: in un cambiamento (dalla 0.6.0) la natura è facoltativa.
+        nota = {k: v for k, v in nota.items() if v is not ...}
         esito = sportello.ricevi(json.dumps(nota, ensure_ascii=False).encode("utf-8"), "prova.json",
                                  self.config, ADESSO)
         return esito
@@ -58,7 +60,7 @@ class ConQuaderno(unittest.TestCase):
 class TestCampiNuovi(ConQuaderno):
     def test_corregge_una_nota_che_esiste(self):
         self.nota()
-        self.assertTrue(self.proponi(corregge="0001").accettata)
+        self.assertEqual(self.proponi("Una nota corretta.", corregge="0001").id_nota, "0001.1")
         self.assertEqual(self.proponi(corregge="0099").motivi,
                          ["note «0099» named in «corrects» does not exist in the notebook."])
 
@@ -71,19 +73,21 @@ class TestCampiNuovi(ConQuaderno):
     def test_done_solo_su_un_promemoria_che_esiste(self):
         self.nota(riprendere_il="2026-01-10")
         self.nota()
-        self.assertTrue(self.proponi(done="0001").accettata)
+        self.assertTrue(self.proponi(natura=..., done="0001").accettata)
         self.assertIn("«done» closes only open, todo and reminder notes", self.proponi(done="0002").motivi[0])
         self.assertIn("does not exist in the notebook", self.proponi(done="0099").motivi[0])
 
     def test_campi_scritti_e_riletti(self):
         self.nota(riprendere_il="2026-01-10")
-        numero = self.nota(corregge="0001", riprendere_il="2026-02-01")
-        self.nota(done="0001")
+        numero = self.nota("Una nota corretta.", corregge="0001", riprendere_il="2026-02-01")
+        chiusa = self.nota("Fatto.", natura=..., done="0001")
         testo = (self.config.cartella_note / f"{numero}.md").read_text(encoding="utf-8")
-        self.assertIn("- corrects: 0001\n- remind: 2026-02-01\n", testo)
+        self.assertIn("- remind: 2026-02-01\n", testo)
+        self.assertIn("- change: text corrected; remind 2026-01-10 → 2026-02-01\n", testo)
         rilette = quaderno.leggi_note(self.config)
-        self.assertEqual((rilette[1].corregge, rilette[1].riprendere_il, rilette[2].done),
-                         ("0001", "2026-02-01", ("0001",)))
+        self.assertEqual([n.id for n in rilette], ["0001", numero, chiusa])
+        self.assertEqual((rilette[1].riprendere_il, rilette[2].stato, rilette[2].cambio.motivo),
+                         ("2026-02-01", "closed", "Fatto."))
 
     def test_nota_vecchia_senza_campi_nuovi(self):
         vecchia = ("# Note 0001\n\n- data: 2026-01-10\n- fonte: f\n- autore: utente\n- tipo: dichiarata\n"
@@ -109,31 +113,33 @@ class TestCercatore(ConQuaderno):
 
     def test_correzioni_e_conferme_anche_senza_la_parola(self):
         self.nota("Il pomodoro va annaffiato ogni giorno.", natura="idea")
-        self.nota("No, a giorni alterni.", corregge="0001")
-        self.nota("Ancora: due volte a settimana.", corregge="0002")
+        self.nota("No, a giorni alterni.", natura=..., corregge="0001")
+        self.nota("Ancora: due volte a settimana.", natura=..., corregge="0001")
         self.nota("Confermo.", autore="utente", tipo="dichiarata", natura="decisione", conferma_di="0001")
         codice, uscita = self.comando("cerca", "pomodoro")
         self.assertEqual(codice, 0)
         self.assertIn("Trovata 1 nota con «pomodoro».", uscita)
-        self.assertIn("corretta da: nota 0002\nconfermata da: nota 0004\n", uscita)
-        posizioni = [uscita.index(f"--- Nota {n} (") for n in ("0004", "0003", "0002")]
-        self.assertEqual(posizioni, sorted(posizioni))  # dalla più recente
-        self.assertIn("    --- Nota 0003 (corregge la nota 0002) ---", uscita)
-        self.assertIn("    --- Nota 0004 (conferma la nota 0001) ---", uscita)
+        self.assertIn("--- Nota I0001.2 ---\n", uscita)
+        self.assertIn("confermata da: nota D0002\n", uscita)
+        self.assertIn("  I0001.1 2026-01-15 · claude: testo corretto (prima: «Il pomodoro va annaffiato ogni giorno.»)\n"
+                      "  I0001.2 2026-01-15 · claude: testo corretto (prima: «No, a giorni alterni.»)\n", uscita)
+        self.assertIn("    --- Nota D0002 (conferma la nota 0001) ---", uscita)
+        self.assertIn("    conferma di: nota I0001.2\n", uscita)
 
     def test_collegata_gia_mostrata(self):
-        self.nota("pomodoro uno")
-        self.nota("pomodoro due", corregge="0001")
+        self.nota("pomodoro uno", natura="idea")
+        self.nota("pomodoro due", autore="utente", tipo="dichiarata", natura="decisione", conferma_di="0001")
         _, uscita = self.comando("cerca", "pomodoro")
-        self.assertEqual(uscita.count("--- Nota 0002"), 1)
-        self.assertIn("    (nota 0002, che corregge la nota 0001: già mostrata sopra)", uscita)
+        self.assertEqual(uscita.count("--- Nota D0002"), 1)
+        self.assertIn("    (nota D0002, che conferma la nota 0001: già mostrata sopra)", uscita)
 
     def test_done_mostrato_sotto_il_promemoria(self):
         self.nota("comprare i semi", riprendere_il="2026-01-10")
-        self.nota("fatto", done="0001")
+        self.nota("fatto", natura=..., done="0001")
         _, uscita = self.comando("cerca", "semi", "--all")
-        self.assertIn("chiusa da: nota 0002", uscita)
-        self.assertIn("--- Nota 0002 (chiude la nota 0001) ---", uscita)
+        self.assertIn("--- Nota ✓I0001.1 ---", uscita)
+        self.assertIn("stato: chiusa (2026-01-15)", uscita)
+        self.assertIn("✓I0001.1 2026-01-15 · claude: chiusa. Motivo: «fatto»", uscita)
 
 
 class TestDiarioParoleComposte(ConQuaderno):
@@ -148,7 +154,8 @@ class TestDiarioParoleComposte(ConQuaderno):
 
 class TestPromemoria(ConQuaderno):
     def scaduti(self, oggi=OGGI):
-        return [(p.nota.id, p.giorno, p.da.id) for p in promemoria.scaduti(quaderno.leggi_note(self.config), oggi)]
+        return [(p.storia.base, p.giorno, p.storia.ultima.id)
+                for p in promemoria.scaduti(cercatore.leggi(self.config), oggi)]
 
     def test_ordine_e_data_arrivata(self):
         self.nota(riprendere_il="2026-01-20")
@@ -157,43 +164,45 @@ class TestPromemoria(ConQuaderno):
         self.nota(riprendere_il="2026-01-01")
         self.assertEqual(self.scaduti(), [("0002", "2026-01-01", "0002"), ("0004", "2026-01-01", "0004"),
                                           ("0003", "2026-01-15", "0003")])
-        self.assertEqual(promemoria.in_arrivo(quaderno.leggi_note(self.config), OGGI), 1)
+        self.assertEqual(promemoria.in_arrivo(cercatore.leggi(self.config), OGGI), 1)
         self.assertEqual(self.scaduti(date(2026, 1, 20))[-1], ("0001", "2026-01-20", "0001"))
 
     def test_done_lo_toglie(self):
         self.nota(riprendere_il="2026-01-10")
-        self.nota(done="0001")
+        self.nota(natura=..., done="0001")
         self.assertEqual(self.scaduti(), [])
 
     def test_correzione_senza_data_lo_lascia(self):
         self.nota(riprendere_il="2026-01-10")
-        self.nota(corregge="0001")
-        self.assertEqual(self.scaduti(), [("0001", "2026-01-10", "0001")])
+        self.nota("Corretta.", corregge="0001")
+        self.assertEqual(self.scaduti(), [("0001", "2026-01-10", "0001.1")])
 
     def test_correzione_con_data_la_sposta(self):
         self.nota(riprendere_il="2026-01-10")
-        self.nota(corregge="0001", riprendere_il="2026-03-01")
+        self.nota(natura=..., aggiorna="0001", riprendere_il="2026-03-01")
         self.assertEqual(self.scaduti(), [])
-        self.nota(corregge="0002", riprendere_il="2026-01-12")
-        self.assertEqual(self.scaduti(), [("0001", "2026-01-12", "0003")])
+        self.nota(natura=..., aggiorna="0001", riprendere_il="2026-01-12")
+        self.assertEqual(self.scaduti(), [("0001", "2026-01-12", "0001.2")])
 
-    def test_done_su_una_correzione_chiude_tutto_il_gruppo(self):
+    def test_done_dopo_una_correzione_chiude_la_nota(self):
         self.nota(riprendere_il="2026-01-10")
-        self.nota(corregge="0001", riprendere_il="2026-01-12")
-        self.nota(done="0002")
+        self.nota("Corretta.", corregge="0001", riprendere_il="2026-01-12")
+        self.nota(natura=..., done="0001")
         self.assertEqual(self.scaduti(), [])
 
-    def test_correzione_che_aggiunge_la_data(self):
+    def test_versione_che_aggiunge_la_data(self):
         self.nota("un fatto qualsiasi")
-        self.nota(corregge="0001", riprendere_il="2026-01-12")
-        self.assertEqual(self.scaduti(), [("0001", "2026-01-12", "0002")])
+        self.nota(natura=..., aggiorna="0001", riprendere_il="2026-01-12")
+        self.assertEqual(self.scaduti(), [("0001", "2026-01-12", "0001.1")])
 
     def test_giro_di_correzioni_fatto_a_mano(self):
         self.nota(riprendere_il="2026-01-10")
-        self.nota(corregge="0001")
-        prima = self.config.cartella_note / "0001.md"
-        prima.write_text(prima.read_text(encoding="utf-8").replace("- riprendere_il:", "- corregge: 0002\n- riprendere_il:"),
-                         encoding="utf-8")
+        self.nota("Un'altra nota.")
+        # Due note vecchie che si correggono a vicenda, scritte a mano.
+        for numero, altra in (("0001", "0002"), ("0002", "0001")):
+            file = self.config.cartella_note / f"{numero}.md"
+            file.write_text(file.read_text(encoding="utf-8").replace("- kind:", f"- corrects: {altra}\n- kind:"),
+                            encoding="utf-8")
         self.assertEqual(len(self.scaduti()), 1)  # finisce, non gira all'infinito
         codice, _ = self.comando("cerca", "nota")
         self.assertEqual(codice, 0)
@@ -215,15 +224,16 @@ class TestRecap(ConQuaderno):
         self.assertEqual(codice, 0)
         self.assertEqual(uscita, "Dove eravamo rimasti (recap del 2026-01-15).\n\nPromemoria scaduti: nessuno.\n\n"
                                  "Discorsi aperti: nessuno.\n\nCose da fare: nessuna.\n\nUltime decisioni: nessuna.\n\n"
-                                 "Ultime voci del diario: nessuna.\n")
+                                 "Ultime voci del diario: nessuna.\n\n"
+                                 "Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa\n")
 
     def test_numeri_di_base_senza_sezione(self):
         for _ in range(7):
             self.nota(natura="discorso aperto")
         _, uscita = self.comando("recap")
-        self.assertIn("Discorsi aperti: 5 di 7 (prima la priorità alta, poi dal più recente)\n- [0007]", uscita)
+        self.assertIn("Discorsi aperti: 5 di 7 (prima la priorità alta, poi dal più recente)\n- [O0007]", uscita)
         self.assertIn("(2 discorsi aperti più vecchi non mostrati)", uscita)
-        self.assertNotIn("[0002]", uscita)
+        self.assertNotIn("[O0002]", uscita)
 
     def test_sezione_recap(self):
         self.scrivi_config(CONFIG_DI_PROVA + "\n[recap]\ndecisioni = 1\n")
@@ -232,7 +242,7 @@ class TestRecap(ConQuaderno):
         for _ in range(2):
             self.nota(autore="utente", tipo="dichiarata", natura="decisione")
         _, uscita = self.comando("recap")
-        self.assertIn("Ultime decisioni: 1 di 2 (prima la priorità alta, poi dal più recente)\n- [0002] 2026-01-15: Una nota.\n"
+        self.assertIn("Ultime decisioni: 1 di 2 (prima la priorità alta, poi dal più recente)\n- [D0002] 2026-01-15: Una nota.\n"
                       "(1 decisione più vecchia non mostrata)", uscita)
 
     def test_sezione_recap_sbagliata(self):
@@ -245,13 +255,13 @@ class TestRecap(ConQuaderno):
 
     def test_prima_riga_e_collegate(self):
         self.nota("Resta da capire\ndove mettere la compostiera.", natura="discorso aperto")
-        self.nota("Messa nell'angolo nord.", corregge="0001")
+        self.nota("Resta da capire\nse la compostiera va all'ombra.", natura=..., corregge="0001")
         self.nota("Controllare le fragole.", riprendere_il="2026-01-10")
         _, uscita = self.comando("recap")
-        self.assertIn("Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)\n- [0003] da riprendere il 2026-01-10: "
-                      "Controllare le fragole.\n", uscita)
-        self.assertIn("- [0001] 2026-01-15: Resta da capire …\n"
-                      "    ↳ [0002] corregge la nota 0001: Messa nell'angolo nord.\n", uscita)
+        self.assertIn("Promemoria scaduti: 1 (prima la priorità alta, poi dal più vecchio)\n- [I0002] da riprendere il "
+                      "2026-01-10: Controllare le fragole.\n", uscita)
+        self.assertIn("- [O0001.1] 2026-01-15: Resta da capire …\n"
+                      "    ↳ O0001.1 2026-01-15 · claude: testo corretto\n", uscita)
 
 
 class TestRecapDiario(ConQuaderno):

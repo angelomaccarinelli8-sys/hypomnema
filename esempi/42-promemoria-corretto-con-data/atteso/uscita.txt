@@ -8,7 +8,7 @@ $ hypomnema promemoria
 
 === Da riprendere il 2026-01-10 ===
 
---- Nota 0001 ---
+--- Nota F0001 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: user
@@ -21,7 +21,7 @@ testo:
 [codice di uscita: 0]
 
 $ hypomnema proponi 2-correzione-con-data.json
-ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
@@ -32,50 +32,28 @@ Nessun promemoria scaduto al 2026-01-15.
 [codice di uscita: 0]
 
 $ hypomnema proponi 3-seconda-correzione.json
-ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+ACCETTATA: la versione 0001.2 della nota 0001 è stata salvata nel quaderno (note/0001.2.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
 $ hypomnema promemoria
 1 promemoria scaduto al 2026-01-15 (dal più vecchio).
 
-=== Da riprendere il 2026-01-12 (data della nota 0003, che corregge) ===
+=== Da riprendere il 2026-01-12 ===
 
---- Nota 0001 ---
-data: 2026-01-14
+--- Nota F0001.2 ---
+data: 2026-01-15
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: user
 tipo: stated
 natura: fact
-riprendere il: 2026-01-10
-corretta da: nota 0002
+riprendere il: 2026-01-12
 verifica: author not verified (witness off)
 testo:
-  Ricordami di seminare il basilico.
-
-    --- Nota 0003 (corregge la nota 0002) ---
-    data: 2026-01-15
-    fonte: chat del 14 gennaio 2026 sull'orto
-    autore: user
-    tipo: stated
-    natura: fact
-    corregge: nota 0002
-    riprendere il: 2026-01-12
-    verifica: author not verified (witness off)
-    testo:
-      Anticipo: lo semino al chiuso già da domenica.
-
-    --- Nota 0002 (corregge la nota 0001) ---
-    data: 2026-01-15
-    fonte: chat del 14 gennaio 2026 sull'orto
-    autore: user
-    tipo: stated
-    natura: fact
-    corregge: nota 0001
-    riprendere il: 2026-03-01
-    corretta da: nota 0003
-    verifica: author not verified (witness off)
-    testo:
-      Troppo presto: il basilico si semina a marzo.
+  Ricordami di seminare il basilico al chiuso da domenica.
+storia (dalla più vecchia):
+  F0001   2026-01-14 · user: creata
+  F0001.1 2026-01-15 · user: testo corretto (prima: «Ricordami di seminare il basilico.»), promemoria 2026-01-10 → 2026-03-01
+  F0001.2 2026-01-15 · user: testo corretto (prima: «Ricordami di seminare il basilico a marzo.»), promemoria 2026-03-01 → 2026-01-12
 [codice di uscita: 0]
 

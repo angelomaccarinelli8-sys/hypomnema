@@ -5,7 +5,7 @@ Quaderno in ordine: 3 note, tutte con la loro riga ACCETTATA nel registro.
 $ hypomnema cerca caffè
 Trovate 2 note con «caffè» (dalla più recente).
 
---- Nota 0002 ---
+--- Nota F0002 ---
 data: 2026-01-13
 fonte: chat del 13 gennaio 2026 sulle abitudini
 autore: claude
@@ -15,7 +15,7 @@ testo:
   Caffè nominato tre volte parlando del pomeriggio.
   Ogni volta verso le 16.
 
---- Nota 0001 ---
+--- Nota F0001 ---
 data: 2026-01-12
 fonte: chat del 12 gennaio 2026 sulle abitudini
 autore: user
@@ -24,6 +24,8 @@ natura: fact
 verifica: autore non verificato (testimone spento)
 testo:
   La mattina bevo un caffè prima di qualsiasi altra cosa.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema promemoria
@@ -42,28 +44,19 @@ Cose da fare: nessuna.
 Ultime decisioni: nessuna.
 
 Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema proponi correzione.json
-ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
 $ hypomnema cerca caffè
-Trovate 3 note con «caffè» (dalla più recente).
+Trovate 2 note con «caffè» (dalla più recente).
 
---- Nota 0004 ---
-data: 2026-01-15
-fonte: chat del 14 gennaio 2026 sull'orto
-autore: user
-tipo: stated
-natura: fact
-corregge: nota 0001
-verifica: author not verified (witness off)
-testo:
-  Ora bevo il caffè solo dopo colazione.
-
---- Nota 0002 ---
+--- Nota F0002 ---
 data: 2026-01-13
 fonte: chat del 13 gennaio 2026 sulle abitudini
 autore: claude
@@ -73,21 +66,23 @@ testo:
   Caffè nominato tre volte parlando del pomeriggio.
   Ogni volta verso le 16.
 
---- Nota 0001 ---
-data: 2026-01-12
-fonte: chat del 12 gennaio 2026 sulle abitudini
+--- Nota F0001.1 ---
+data: 2026-01-15
+fonte: chat del 14 gennaio 2026 sull'orto
 autore: user
 tipo: stated
 natura: fact
-corretta da: nota 0004
-verifica: autore non verificato (testimone spento)
+verifica: author not verified (witness off)
 testo:
-  La mattina bevo un caffè prima di qualsiasi altra cosa.
+  Ora bevo il caffè solo dopo colazione.
+storia (dalla più vecchia):
+  F0001   2026-01-12 · user: creata
+  F0001.1 2026-01-15 · user: testo corretto (prima: «La mattina bevo un caffè prima di qualsiasi altra cosa.»)
 
-    (nota 0004, che corregge la nota 0001: già mostrata sopra)
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema controlla
-Quaderno in ordine: 4 note, tutte con la loro riga ACCETTATA nel registro.
+Quaderno in ordine: 3 note e 1 versione, tutte con la loro riga ACCETTATA nel registro.
 [codice di uscita: 0]
 

@@ -4,17 +4,17 @@ Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
 $ hypomnema proponi 2-correzione.json
-ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
 $ hypomnema proponi 3-correzione-della-correzione.json
-ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+ACCETTATA: la versione 0001.2 della nota 0001 è stata salvata nel quaderno (note/0001.2.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
 $ hypomnema proponi 4-altra-nota.json
-ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
@@ -28,7 +28,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema cerca pomodoro
 Trovate 2 note con «pomodoro» (dalla più recente).
 
---- Nota 0004 ---
+--- Nota F0002 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: user
@@ -38,65 +38,40 @@ verifica: author not verified (witness off)
 testo:
   Il pomodoro nano sta bene anche in un vaso piccolo.
 
---- Nota 0001 ---
+--- Nota F0001.2 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: user
 tipo: stated
 natura: fact
-corretta da: nota 0002
 verifica: author not verified (witness off)
 testo:
-  Il pomodoro va annaffiato ogni giorno.
+  Correggo ancora: d'inverno due volte a settimana.
+storia (dalla più vecchia):
+  F0001   2026-01-14 · user: creata
+  F0001.1 2026-01-14 · user: testo corretto (prima: «Il pomodoro va annaffiato ogni giorno.»)
+  F0001.2 2026-01-14 · user: testo corretto (prima: «No, a giorni alterni basta.»)
 
-    --- Nota 0003 (corregge la nota 0002) ---
-    data: 2026-01-14
-    fonte: chat del 14 gennaio 2026 sull'orto
-    autore: user
-    tipo: stated
-    natura: fact
-    corregge: nota 0002
-    verifica: author not verified (witness off)
-    testo:
-      Correggo ancora: d'inverno due volte a settimana.
-
-    --- Nota 0002 (corregge la nota 0001) ---
-    data: 2026-01-14
-    fonte: chat del 14 gennaio 2026 sull'orto
-    autore: user
-    tipo: stated
-    natura: fact
-    corregge: nota 0001
-    corretta da: nota 0003
-    verifica: author not verified (witness off)
-    testo:
-      No, a giorni alterni basta.
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema cerca alterni
 Trovata 1 nota con «alterni».
 
---- Nota 0002 ---
+--- Nota F0001.2 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: user
 tipo: stated
 natura: fact
-corregge: nota 0001
-corretta da: nota 0003
 verifica: author not verified (witness off)
 testo:
-  No, a giorni alterni basta.
+  Correggo ancora: d'inverno due volte a settimana.
+storia (dalla più vecchia):
+  F0001   2026-01-14 · user: creata
+  F0001.1 2026-01-14 · user: testo corretto (prima: «Il pomodoro va annaffiato ogni giorno.»)
+  F0001.2 2026-01-14 · user: testo corretto (prima: «No, a giorni alterni basta.»)
 
-    --- Nota 0003 (corregge la nota 0002) ---
-    data: 2026-01-14
-    fonte: chat del 14 gennaio 2026 sull'orto
-    autore: user
-    tipo: stated
-    natura: fact
-    corregge: nota 0002
-    verifica: author not verified (witness off)
-    testo:
-      Correggo ancora: d'inverno due volte a settimana.
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 

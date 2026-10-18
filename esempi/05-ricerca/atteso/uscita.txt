@@ -16,7 +16,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema cerca caffè
 Trovate 2 note con «caffè» (dalla più recente).
 
---- Nota 0002 ---
+--- Nota F0002 ---
 data: 2026-01-13
 fonte: chat del 13 gennaio 2026 sulle abitudini
 autore: claude
@@ -26,7 +26,7 @@ testo:
   Caffè nominato tre volte parlando del pomeriggio.
   Ogni volta verso le 16.
 
---- Nota 0001 ---
+--- Nota F0001 ---
 data: 2026-01-12
 fonte: chat del 12 gennaio 2026 sulle abitudini
 autore: user
@@ -35,5 +35,7 @@ natura: fact
 verifica: author not verified (witness off)
 testo:
   La mattina bevo un caffè prima di qualsiasi altra cosa.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 

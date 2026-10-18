@@ -2,6 +2,6 @@ proponi 1-promemoria.json
 promemoria
 proponi 2-fatto.json
 promemoria
-proponi 3-fatto-di-una-nota-qualsiasi.json
+proponi 3-fatto-di-nuovo.json
 proponi 4-fatto-di-una-nota-che-non-c-e.json
 cerca zucca

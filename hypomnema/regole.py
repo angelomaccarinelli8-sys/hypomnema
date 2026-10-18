@@ -7,18 +7,25 @@ Per questo stanno nel codice e non nel file di configurazione.
 Dalla versione 0.5.0 la struttura è in inglese: i nomi dei campi, i valori e i motivi di rifiuto
 (che legge Claude). I nomi e i valori italiani di prima valgono per sempre: una proposta può usare
 «autore: utente» o «author: user», e la nota nuova si scrive comunque in inglese.
+
+Dalla versione 0.6.0 ogni cambiamento è una versione nuova della nota (vedi ``versioni``): le
+proposte con ``corrects``, ``updates``, ``done`` o ``reopens`` cambiano sempre l'ultima versione.
 """
 
 import re
+from dataclasses import replace
 from datetime import date, datetime
 
-from hypomnema.nota import TITOLI_CONTESTO, VALORI_ITALIANI, Nota, chiuse, numeri
+from hypomnema import versioni
+from hypomnema.nota import TITOLI_CONTESTO, TITOLO_CAMBIO, VALORI_ITALIANI, Nota, numeri
 from hypomnema.testimone import Messaggio, Ritrovamento, trova_citazione
 
 CAMPI_OBBLIGATORI = ("date", "source", "author", "knowledge", "kind", "text")
 CAMPI_FACOLTATIVI = (
-    "priority", "confirms", "corrects", "done", "remind", "quote", "context", "from_reply",
+    "priority", "confirms", "corrects", "updates", "done", "reopens", "remind", "quote", "context", "from_reply",
 )
+# I campi che cambiano una nota che c'è già: ognuno crea una versione nuova. Uno per proposta.
+CAMPI_CAMBIAMENTO = ("corrects", "updates", "done", "reopens")
 # Campi che possono andare a capo: tutti gli altri devono stare su una riga.
 CAMPI_SU_PIU_RIGHE = ("text", "quote", "context")
 CAMPI_AMMESSI = CAMPI_OBBLIGATORI + CAMPI_FACOLTATIVI
@@ -27,6 +34,7 @@ CAMPI_AMMESSI = CAMPI_OBBLIGATORI + CAMPI_FACOLTATIVI
 NOMI_ITALIANI = {
     "data": "date", "fonte": "source", "autore": "author", "tipo": "knowledge", "natura": "kind",
     "testo": "text", "priorità": "priority", "conferma_di": "confirms", "corregge": "corrects",
+    "aggiorna": "updates", "riapre": "reopens",
     "riprendere_il": "remind", "citazione": "quote", "contesto": "context", "da_risposta": "from_reply",
 }
 # I valori italiani, accettati per sempre nelle proposte (gli stessi che si leggono nelle note vecchie).
@@ -40,8 +48,6 @@ TIPI = ("stated", "observed", "inferred")
 NATURE = ("fact", "idea", "decision", "open", "todo")
 PRIORITA = ("high", "normal", "low")
 VALORI_AMMESSI = {"author": AUTORI, "knowledge": TIPI, "kind": NATURE, "priority": PRIORITA}
-# Cosa può diventare una questione chiusa: la natura della nota che la chiude.
-NATURE_CHE_CHIUDONO = ("decision", "todo", "fact", "idea")
 
 # Perché ogni campo obbligatorio serve: compare nel motivo del rifiuto.
 PERCHE_SERVE = {
@@ -104,7 +110,7 @@ def in_inglese(proposta: dict) -> tuple[dict, list[str]]:
 
 def controlla(
     proposta: dict, note_esistenti: list[Nota], messaggi: list[Messaggio] | None, segno: str,
-    risposte: list[Messaggio] | None = None,
+    risposte: list[Messaggio] | None = None, segno_chiusa: str = versioni.SEGNO_CHIUSA,
 ) -> list[str]:
     """Restituisce i motivi di rifiuto, in ordine fisso. Lista vuota = nota accettabile.
 
@@ -114,11 +120,13 @@ def controlla(
     ``risposte`` sono le risposte di Claude registrate, oppure None se quel testimone è spento.
     """
     motivi: list[str] = []
+    # In un cambiamento «kind» è facoltativo: se manca, la natura resta quella dell'ultima versione.
+    cambiamento = any(proposta.get(c) is not None for c in CAMPI_CAMBIAMENTO)
 
     valori: dict[str, str] = {}
     for campo in CAMPI_AMMESSI:
         if campo not in proposta or proposta[campo] is None:
-            if campo in CAMPI_OBBLIGATORI:
+            if campo in CAMPI_OBBLIGATORI and not (campo == "kind" and cambiamento):
                 motivi.append(f"the field «{campo}» is missing: {PERCHE_SERVE[campo]}.")
             continue
         valore = proposta[campo]
@@ -148,9 +156,9 @@ def controlla(
 
     autore = valori.get("author")
     natura = valori.get("kind")
-    per_numero = {n.id: n for n in note_esistenti}
+    quaderno = versioni.Quaderno(note_esistenti)
     if natura == "decision":
-        if autore == "claude":
+        if autore == "claude" and not cambiamento:
             motivi.append(
                 "a note written by Claude cannot be a decision: only the user makes decisions. "
                 "If it is Claude's proposal, save it as an idea."
@@ -159,18 +167,27 @@ def controlla(
             motivi.append(f"a decision must be stated by the user: it cannot be «{valori['knowledge']}».")
 
     if "confirms" in valori:
-        riferimento = valori["confirms"]
         if natura is not None and natura != "decision":
             motivi.append("the field «confirms» is only for decisions that confirm an idea.")
-        idea = per_numero.get(riferimento)
-        if idea is None:
-            motivi.append(f"note «{riferimento}» named in «confirms» does not exist in the notebook.")
-        elif idea.natura != "idea":
-            motivi.append(f"note «{riferimento}» is a «{idea.natura}», not an idea: "
-                          "only an idea can be confirmed as a decision.")
+        rimando = quaderno.risolvi(valori["confirms"], "confirms")
+        vecchia = versioni.ultima_o_motivo(rimando, segno_chiusa)
+        if rimando.motivo is not None:
+            motivi.append(rimando.motivo)
+        elif vecchia is not None:
+            motivi.append(vecchia)
+        elif rimando.storia.ultima.contenuto.natura != "idea":
+            motivi.append(f"note «{valori['confirms']}» is a «{rimando.storia.ultima.contenuto.natura}», not an "
+                          "idea: only an idea can be confirmed as a decision.")
 
-    if "corrects" in valori and valori["corrects"] not in per_numero:
-        motivi.append(f"note «{valori['corrects']}» named in «corrects» does not exist in the notebook.")
+    usati = [c for c in CAMPI_CAMBIAMENTO if c in valori]
+    if len(usati) > 1:
+        motivi.append("a proposal can make only one change: use only one of «corrects», «updates», «done» "
+                      "and «reopens».")
+    elif usati and "confirms" in valori:
+        motivi.append(f"«confirms» makes a new decision note: it cannot be used together with «{usati[0]}».")
+    elif usati:
+        motivi += _controlla_cambiamento(usati[0], valori, autore, natura, quaderno, segno_chiusa)
+
     if "remind" in valori:
         giorno = valori["remind"]
         valida = bool(FORMATO_GIORNO.match(giorno))
@@ -182,9 +199,6 @@ def controlla(
         if not valida:
             motivi.append(f"the date «{giorno}» in «remind» is not valid: write only the day, as YYYY-MM-DD "
                           "(for example 2026-01-20).")
-    if "done" in valori:
-        motivi += _controlla_chiusura(valori, autore, natura, per_numero, note_esistenti)
-
     if "priority" in valori and autore == "claude":
         motivi.append("only the user can set «priority»: Claude can suggest a priority in the text of "
                       "one of its idea notes.")
@@ -225,7 +239,7 @@ def controlla(
 
     for campo in ("text", "context"):
         righe = [r.rstrip("\r") for r in valori.get(campo, "").split("\n")]
-        for titolo in TITOLI_CONTESTO:
+        for titolo in (*TITOLI_CONTESTO, TITOLO_CAMBIO):
             if campo in valori and titolo in righe:
                 motivi.append(f"the field «{campo}» cannot contain the line «{titolo}»: "
                               "it is reserved for the note format.")
@@ -248,38 +262,126 @@ def controlla(
     return motivi
 
 
-def _controlla_chiusura(valori, autore, natura, per_numero, note_esistenti) -> list[str]:
-    """Le regole di «done»: chiude open, todo e promemoria, una volta sola."""
-    elenco = numeri(valori["done"])
-    if any(not n.isdigit() for n in elenco):
-        return ["the field «done» must list note numbers separated by commas, for example «0012, 0015»."]
+def _natura_che_cambia(prima: str, dopo: str, autore: str, autore_nota: str, campo: str) -> str | None:
+    """Chi può cambiare la natura di una nota: il motivo del rifiuto, oppure None."""
+    if dopo == "decision" and prima == "idea":
+        return ("an idea becomes a decision only with a new note that has «confirms» "
+                "(from idea to decision): the idea stays as it is.")
+    if dopo == "decision" and autore != "user":
+        return "only the user can make a note a decision: Claude can suggest it to the user."
+    if prima == "decision" and autore != "user":
+        return "only the user can change the kind of a decision."
+    if prima == "open" and autore != "user" and campo != "done":
+        return "only the user can change an open note into something else: Claude can suggest it."
+    if campo in ("corrects", "updates") and autore_nota == "user" and autore != "user":
+        return "only the user can change the kind of one of the user's notes."
+    return None
+
+
+def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia") -> Nota:
+    """Come sarà la nota dopo il cambiamento (senza il blocco del cambiamento e senza verifica)."""
+    attuale = storia.ultima.contenuto
+    if campo == "corrects":
+        return Nota(
+            id=attuale.id, data=valori.get("date", attuale.data), fonte=valori.get("source", attuale.fonte),
+            autore=valori.get("author", attuale.autore), tipo=valori.get("knowledge", attuale.tipo),
+            natura=valori.get("kind", attuale.natura), testo=valori.get("text", attuale.testo),
+            conferma_di=attuale.conferma_di, riprendere_il=valori.get("remind", attuale.riprendere_il),
+            citazione=valori.get("quote"), contesto=valori.get("context"), da_risposta=valori.get("from_reply"),
+            priorita=valori.get("priority", attuale.priorita), stato=attuale.stato,
+        )
+    if campo == "updates":
+        return replace(attuale, natura=valori.get("kind", attuale.natura),
+                       priorita=valori.get("priority", attuale.priorita),
+                       riprendere_il=valori.get("remind", attuale.riprendere_il))
+    if campo == "done":
+        return replace(attuale, natura=valori.get("kind", attuale.natura), stato=versioni.CHIUSA)
+    return replace(attuale, natura=valori.get("kind", storia.natura_prima_della_chiusura()), stato=None,
+                   priorita=valori.get("priority", attuale.priorita),
+                   riprendere_il=valori.get("remind", attuale.riprendere_il))
+
+
+def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa) -> list[str]:
+    """Le regole dei cambiamenti: si cambia l'ultima versione, e solo chi può."""
     motivi = []
-    if natura == "open":
-        motivi.append("a note that closes something cannot be «open»: its kind says what the question "
-                      "became (decision, todo, fact or idea).")
-    gia_chiuse = chiuse(note_esistenti)
-    visti = set()
+    if campo != "corrects":
+        for estraneo in ("context", "from_reply"):
+            if estraneo in valori:
+                motivi.append(f"the field «{estraneo}» belongs to the text of a note: it can be used only in a "
+                              f"new note or with «corrects», not with «{campo}».")
+    if campo == "done":
+        for estraneo in ("priority", "remind"):
+            if estraneo in valori:
+                motivi.append(f"«done» only closes (and can say with «kind» what the note became): to change "
+                              f"«{estraneo}» use «updates».")
+        elenco = numeri(valori["done"])
+    else:
+        elenco = (valori[campo],)
+        if "," in valori[campo]:
+            return motivi + [f"«{campo}» names only one note: write one number, for example «0012»."]
+
+    viste: dict[str, str] = {}
     for numero in elenco:
-        if numero in visti:
-            motivi.append(f"note «{numero}» is listed twice in «done».")
+        if numero in viste.values():
+            motivi.append(f"note «{numero}» is listed twice in «{campo}».")
             continue
-        visti.add(numero)
-        nota = per_numero.get(numero)
-        if nota is None:
-            motivi.append(f"note «{numero}» named in «done» does not exist in the notebook.")
+        rimando = quaderno.risolvi(numero, campo)
+        if rimando.motivo is not None:
+            motivi.append(rimando.motivo)
             continue
-        if nota.natura not in ("open", "todo") and nota.riprendere_il is None:
-            consiglio = "«corrects» (or «confirms», for an idea)" if nota.natura == "idea" else "«corrects»"
-            motivi.append(
-                f"note «{numero}» is a «{nota.natura}»: «done» closes only open, todo and reminder notes "
-                f"(with «remind»). A fact, a decision or an idea is not closed: write a new note with {consiglio}."
-            )
+        storia = rimando.storia
+        if storia.base in viste:
+            motivi.append(f"«{viste[storia.base]}» and «{numero}» are the same note ({storia.base}): list it once.")
             continue
-        if nota.natura == "open" and autore != "user":
-            motivi.append(f"only the user can close an open note («{numero}»): Claude can suggest it, but "
-                          "the closing note must have author «user».")
-        if numero in gia_chiuse:
-            motivi.append(f"note «{numero}» is already closed by note «{gia_chiuse[numero]}».")
+        viste[storia.base] = numero
+        vecchia = versioni.ultima_o_motivo(rimando, segno_chiusa)
+        if vecchia is not None:
+            motivi.append(vecchia)
+            continue
+        ultima = storia.ultima
+        attuale = ultima.contenuto
+        codice = ultima.codice(segno_chiusa)
+
+        if campo == "done":
+            if ultima.chiusa:
+                motivi.append(f"note «{numero}» is already closed ({codice}): to reopen it use «reopens».")
+                continue
+            if attuale.natura not in ("open", "todo") and attuale.riprendere_il is None:
+                motivi.append(
+                    f"note «{numero}» is a «{attuale.natura}»: «done» closes only open, todo and reminder notes "
+                    "(with «remind»). A fact, a decision or an idea is not closed: correct it with «corrects» "
+                    "or change it with «updates»."
+                )
+                continue
+            if attuale.natura == "open" and autore != "user":
+                motivi.append(f"only the user can close an open note («{numero}»): Claude can suggest it, but "
+                              "the proposal must have author «user».")
+            if natura is not None and natura != attuale.natura and natura not in versioni.NATURE_DOPO_LA_CHIUSURA:
+                motivi.append(f"closing cannot turn note «{numero}» into «{natura}»: to change its kind use "
+                              "«updates».")
+                continue
+        if campo == "reopens":
+            if not ultima.chiusa:
+                motivi.append(f"note «{numero}» is not closed ({codice}): only a closed note can be reopened.")
+                continue
+            if storia.natura_prima_della_chiusura() == "open" and autore != "user":
+                motivi.append(f"only the user can reopen an open note («{numero}»): Claude can suggest it.")
+        if campo == "corrects" and attuale.autore == "user" and autore != "user":
+            motivi.append(f"the text of note «{numero}» is the user's words: only the user can correct it. "
+                          "Claude can suggest the correction to the user, or save its own idea note.")
+            continue
+
+        dopo = dopo_il_cambiamento(campo, valori, storia)
+        prima_natura = storia.natura_prima_della_chiusura() if campo == "reopens" else attuale.natura
+        if dopo.natura != prima_natura:
+            motivo = _natura_che_cambia(prima_natura, dopo.natura, autore, attuale.autore, campo)
+            if motivo is not None:
+                motivi.append(motivo)
+                continue
+        if campo in ("corrects", "updates") and not versioni.differenze(attuale, dopo):
+            motivi.append(f"«{campo}» on note «{numero}» changes nothing: "
+                          + ("the new text is the same as the current one." if campo == "corrects"
+                             else "write in «kind», «priority» or «remind» the new value."))
     return motivi
 
 

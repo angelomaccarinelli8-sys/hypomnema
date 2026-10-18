@@ -11,7 +11,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema cerca umidità
 Trovata 1 nota con «umidità».
 
---- Nota 0001 ---
+--- Nota F0001 ---
 data: 2026-01-15
 fonte: chat del 15 gennaio 2026 sull'orto
 autore: user
@@ -20,6 +20,8 @@ natura: fact
 verifica: text matched in the chat archive https://claude.ai/chat/00000000-0000-0000-0000-esempio00045, message of turn 0 (2026-01-15T09:00:00+01:00, copied by Claude)
 testo:
   Annaffia solo se l'umidità è < 30% & il vaso è asciutto.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema diario --ultimi 2

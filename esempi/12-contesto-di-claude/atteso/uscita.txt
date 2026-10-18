@@ -9,7 +9,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema cerca terrazzo
 Trovata 1 nota con «terrazzo».
 
---- Nota 0001 ---
+--- Nota F0001 ---
 data: 2026-01-15
 fonte: chat del 15 gennaio 2026 sul progetto dell'orto
 autore: user
@@ -21,5 +21,7 @@ testo:
 contesto scritto da Claude:
   Detto parlando degli alberi da frutto del giardino.
   Riguarda il fico in vaso sul terrazzo.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 

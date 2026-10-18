@@ -26,10 +26,12 @@ Promemoria scaduti: nessuno.
 Discorsi aperti: nessuno.
 
 Cose da fare: 1 di 1 (prima la priorità alta, poi dal più recente)
-- [0001] 2026-01-15: Comprare il terriccio per i semenzai.
+- [T0001] 2026-01-15: Comprare il terriccio per i semenzai.
 
 Ultime decisioni: nessuna.
 
 Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 

@@ -21,17 +21,20 @@ Promemoria scaduti: nessuno.
 Discorsi aperti: nessuno.
 
 Cose da fare: 3 di 3 (prima la priorità alta, poi dal più recente)
-- [0003] 2026-01-15: Legare i pomodori.
-- [0002] 2026-01-15: Pulire i vasi vuoti.
-- [0001] 2026-01-15: Comprare il terriccio.
+- [T0003] 2026-01-15: Legare i pomodori.
+- [T0002] 2026-01-15: Pulire i vasi vuoti.
+- [T0001] 2026-01-15: Comprare il terriccio.
 
 Ultime decisioni: nessuna.
 
 Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema propose 4-chiude-due.json
-ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
+ACCETTATA: la versione 0002.1 della nota 0002 è stata salvata nel quaderno (note/0002.1.md).
 Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
@@ -50,36 +53,44 @@ Promemoria scaduti: nessuno.
 Discorsi aperti: nessuno.
 
 Cose da fare: 1 di 1 (prima la priorità alta, poi dal più recente)
-- [0003] 2026-01-15: Legare i pomodori.
+- [T0003] 2026-01-15: Legare i pomodori.
 
 Ultime decisioni: nessuna.
 
 Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 
 $ hypomnema search terriccio --all
 Trovate 2 note con «terriccio» (dalla più recente).
 
---- Nota 0004 ---
-data: 2026-01-15
-fonte: chat del 15 gennaio 2026 sull'orto
-autore: claude
-tipo: observed
-natura: fact
-chiude: nota 0001, nota 0002
-testo:
-  Terriccio comprato e vasi puliti.
-
---- Nota 0001 ---
+--- Nota ✓F0002.1 ---
 data: 2026-01-15
 fonte: chat del 15 gennaio 2026 sull'orto
 autore: claude
 tipo: inferred
-natura: todo
-chiusa da: nota 0004
+natura: fact
+stato: chiusa (2026-01-15)
+testo:
+  Pulire i vasi vuoti.
+storia (dalla più vecchia):
+  T0002    2026-01-15 · claude: creata
+  ✓F0002.1 2026-01-15 · claude: chiusa, natura todo → fact. Motivo: «Terriccio comprato e vasi puliti.»
+
+--- Nota ✓F0001.1 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sull'orto
+autore: claude
+tipo: inferred
+natura: fact
+stato: chiusa (2026-01-15)
 testo:
   Comprare il terriccio.
+storia (dalla più vecchia):
+  T0001    2026-01-15 · claude: creata
+  ✓F0001.1 2026-01-15 · claude: chiusa, natura todo → fact. Motivo: «Terriccio comprato e vasi puliti.»
 
-    (nota 0004, che chiude la nota 0001: già mostrata sopra)
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 0]
 

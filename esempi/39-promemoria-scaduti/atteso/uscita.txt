@@ -29,7 +29,7 @@ $ hypomnema promemoria
 
 === Da riprendere il 2026-01-01 ===
 
---- Nota 0002 ---
+--- Nota I0002 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: claude
@@ -41,7 +41,7 @@ testo:
 
 === Da riprendere il 2026-01-15 ===
 
---- Nota 0003 ---
+--- Nota I0003 ---
 data: 2026-01-14
 fonte: chat del 14 gennaio 2026 sull'orto
 autore: claude

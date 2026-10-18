@@ -1,4 +1,4 @@
-"""Il confronto tra note e registro: ogni nota ha la sua riga ACCETTATA e viceversa. Solo lettura.
+"""Il confronto tra note e registro: ogni nota (e ogni versione) ha la sua riga ACCETTATA e viceversa. Solo lettura.
 
 Serve a inizio sessione, per accorgersi di un salvataggio rimasto a metà (per esempio una chat
 chiusa tra la scrittura del registro e quella della nota) o di un file toccato a mano. Segnala
@@ -9,13 +9,14 @@ from dataclasses import dataclass
 
 from hypomnema import archivio
 from hypomnema.configurazione import Configurazione
+from hypomnema.nota import ordine
 from hypomnema.quaderno import NOME_FILE_NOTA
 from hypomnema.registro import INTESTAZIONE, RIGA_ACCETTATA, RIGA_RIFIUTATA
 
 
 @dataclass(frozen=True)
 class Esito:
-    note: int  # quante note ci sono nel quaderno
+    note: int  # quante note ci sono nel quaderno (senza le versioni)
     senza_riga: list[str]  # note senza riga ACCETTATA nel registro
     senza_nota: list[str]  # righe ACCETTATA del registro senza la nota
     senza_intestazione: bool  # il registro c'è ma non comincia con l'intestazione
@@ -24,6 +25,7 @@ class Esito:
     # Nei file dell'archivio della chat: (nome del file, riga) rovinate e (nome, riga, riga già vista) doppioni.
     archivio_rovinate: tuple[tuple[str, int], ...] = ()
     archivio_doppioni: tuple[tuple[str, int, int], ...] = ()
+    versioni: int = 0  # quante versioni (file con il punto, dalla 0.6.0)
 
     @property
     def in_ordine(self) -> bool:
@@ -72,10 +74,11 @@ def controlla(config: Configurazione) -> Esito:
         doppioni += [(file.name, n, m) for n, m in coppie]
 
     def in_ordine(numeri: set[str]) -> list[str]:
-        return sorted(numeri, key=lambda n: (int(n), n))
+        return sorted(numeri, key=ordine)
 
     return Esito(
-        note=len(note),
+        note=len([n for n in note if "." not in n]),
+        versioni=len([n for n in note if "." in n]),
         senza_riga=in_ordine(note - accettate),
         senza_nota=in_ordine(accettate - note),
         senza_intestazione=senza_intestazione,

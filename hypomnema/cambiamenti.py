@@ -9,8 +9,8 @@ cambiati. Si usa così:
     hypomnema cambiati prima.json          # dopo: i file da riportare
 
 "cambiati" controlla anche che sia successo solo ciò che lo sportello sa fare: creare note
-nuove, annotate come ACCETTATA nelle righe nuove del registro, e allungare il registro con righe
-nella forma dello sportello (e con la sua intestazione, se il registro è nuovo). Una riga scritta
+nuove e versioni nuove (``0049.1.md``), annotate come ACCETTATA nelle righe nuove del registro, e
+allungare il registro con righe nella forma dello sportello (e con la sua intestazione, se il registro è nuovo). Una riga scritta
 a mano ma con la forma giusta non si può distinguere: il controllo esclude il testo libero.
 Qualunque altro cambiamento (un file sparito, riscritto, o scritto a mano) è un errore, e
 allora non si riporta niente.
@@ -22,6 +22,7 @@ from dataclasses import dataclass
 
 from hypomnema import archivio
 from hypomnema.configurazione import Configurazione
+from hypomnema.nota import ordine
 from hypomnema.quaderno import NOME_FILE_NOTA
 from hypomnema.registro import INTESTAZIONE, RIGA_ACCETTATA, RIGA_RIFIUTATA
 
@@ -184,7 +185,7 @@ def cambiati(config: Configurazione, prima: dict[str, tuple[int, str]]) -> list[
                 f"il file «{cambiamento.percorso}» ({cambiamento.tipo}) non l'ha scritto lo sportello: "
                 "lo sportello crea solo note annotate come ACCETTATA nel registro e allunga il registro."
             )
-    for numero in sorted(accettate - note_create):
+    for numero in sorted(accettate - note_create, key=ordine):
         problemi.append(f"il registro dice che la nota {numero} è stata accettata, ma la nota non è stata creata.")
 
     if problemi:
