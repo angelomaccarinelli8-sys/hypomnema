@@ -6,13 +6,12 @@ Solo dati inventati, in cartelle temporanee.
 import io
 import json
 import tempfile
-import tomllib
 import unittest
 from pathlib import Path
 
 from hypomnema import cambiamenti, configurazione, sportello
 from hypomnema.cli import main
-from tests.esecutore import CARTELLA_ESEMPI, CONFIG_DI_PROVA, RADICE
+from tests.esecutore import CARTELLA_ESEMPI, CONFIG_DI_PROVA, RADICE, modello_chat
 from tests.test_regole import ADESSO, NOTA_BUONA
 
 MODELLO_CHAT = RADICE / "chat" / "hypomnema-chat.toml"
@@ -78,14 +77,17 @@ class TestConfigurazioneChat(ConQuaderno):
         self.assertIn("attivo deve restare false", modello)
 
     def test_modello_della_chat(self):
-        config = configurazione.carica(str(MODELLO_CHAT))
-        self.assertTrue(config.in_chat)
-        self.assertEqual(config.cartella_quaderno, MODELLO_CHAT.resolve().parent / "quaderno")
-        # Stesse impostazioni del file di sviluppo, più modalita = "chat".
-        sviluppo = tomllib.loads((RADICE / "hypomnema.toml").read_text(encoding="utf-8"))
+        with tempfile.TemporaryDirectory() as cartella:
+            file = modello_chat(Path(cartella).resolve())
+            config = configurazione.carica(str(file))
+            self.assertTrue(config.in_chat)
+            self.assertEqual(config.cartella_quaderno, file.parent / "quaderno")
+        # Stesse impostazioni del file di sviluppo, più modalita = "chat" e il fuso orario (dalla 0.6.1).
+        sviluppo = configurazione.tomllib.loads((RADICE / "hypomnema.toml").read_text(encoding="utf-8"))
         sviluppo["testimone"]["modalita"] = "chat"
+        sviluppo["quaderno"]["fuso"] = "Europe/Rome"
         del sviluppo["risposte"]  # in chat il testimone delle risposte non esiste
-        modello = tomllib.loads(MODELLO_CHAT.read_text(encoding="utf-8"))
+        modello = configurazione.tomllib.loads(MODELLO_CHAT.read_text(encoding="utf-8"))
         self.assertEqual(modello.pop("archivio"), {"file": "archivio-chat.jsonl", "file_diario": "diario-chat.jsonl",
                                                    "ometti_codice": True, "copia_ogni": 5})
         self.assertEqual(modello, sviluppo)

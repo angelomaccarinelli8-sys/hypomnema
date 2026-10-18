@@ -74,7 +74,7 @@ sbagliati) sono descritti in [FORMATO.md](FORMATO.md).
 Si installa una volta; da quel momento **ogni sessione di Claude Code** ha la skill e i testimoni,
 in ogni progetto.
 
-**Prima di tutto servono:** Claude Code; Python 3.12 o più recente (su Windows il comando `py`, da
+**Prima di tutto servono:** Claude Code; Python 3.10 o più recente (su Windows il comando `py`, da
 [python.org](https://www.python.org/downloads/)); su Windows anche **Git per Windows**
 ([git-scm.com](https://git-scm.com/download/win)), perché Claude Code lancia gli agganci con Git Bash.
 
@@ -217,10 +217,90 @@ computer: legge e scrive solo lì, e non copia il file del testimone (`testimone
   strumenti per la tua cartella.
 - **Senza computer collegato è solo una prova** (sito, app mobile): il quaderno vive nella chat e
   sparisce quando la chiudi. Claude te lo dice prima di cominciare.
-- Il computer di lavoro deve poter scaricare da GitHub e avere Python 3.11 o più recente
-  (Hypomnema è garantito dal 3.12; con il 3.11 i test passano).
+- Il computer di lavoro deve poter scaricare da GitHub e avere Python 3.10 o più recente.
 - Meglio una chat alla volta sullo stesso quaderno: se due chat scrivono insieme, il controllo sui
   file cambiati ferma la seconda, che deve ricominciare.
+
+### Chat collegata al computer: scrive direttamente sul quaderno (dalla 0.6.1)
+
+Quando la chat è collegata al tuo computer con l'app desktop, Claude ha anche una riga di comando
+su una macchina Linux che vede le cartelle che hai collegato (per esempio la cartella Hypomnema
+come `$HOME/mnt/Hypomnema`). Se lì trova il programma aggiornato, Claude **propone direttamente
+allo sportello del quaderno vero**: niente copia del quaderno, niente file da riportare e
+ricontrollare. Per salvare una nota basta **un comando** (due, se prima copia la conversazione
+dall'archivio della chat), invece di otto-dieci. Lo sportello resta il guardiano, come con Claude
+Code.
+
+**Una volta sola, su Windows** (PowerShell), nella cartella Hypomnema:
+
+```powershell
+cd $env:USERPROFILE\Hypomnema
+git clone --branch main https://github.com/angelomaccarinelli8-sys/hypomnema.git programma-chat
+```
+
+Per aggiornarla, quando esce una versione nuova: `git -C programma-chat pull`. Serve a te, perché
+dalla macchina della chat GitHub non si raggiunge. La cartella `programma` che hai già (quella
+dell'avviabile) non si tocca.
+
+**La configurazione della chat** è un file a parte, `hypomnema-chat.toml`, accanto al tuo
+`hypomnema.toml`: stesso quaderno, testimone spento (`modalita = "chat"`), archivio della chat. La
+prima volta lo crea Claude dal modello (`programma-chat/chat/hypomnema-chat.toml`), senza
+sovrascrivere niente, con il **tuo** fuso orario (se non lo sa, te lo chiede); puoi anche copiarlo
+tu, e poi correggere la riga `fuso` con il tuo fuso:
+
+```powershell
+Copy-Item programma-chat\chat\hypomnema-chat.toml hypomnema-chat.toml
+notepad hypomnema-chat.toml
+```
+
+**Il fuso orario.** Il modello ha `fuso = "Europe/Rome"` come **esempio** (l'Italia): nel tuo
+`hypomnema-chat.toml` va il tuo fuso, con il nome della tabella dei fusi orari (per esempio
+`Europe/Zurich`). La macchina della chat può avere l'orologio in UTC, e con questa impostazione
+«oggi» (recap, promemoria, revisione) e le ore del registro sono quelle del tuo fuso, con l'ora
+legale. Sulla macchina della chat la tabella dei fusi c'è
+(verificato il 18/10/2026). Se il fuso non si trova (nome scritto male, o tabella dei fusi mancante,
+come di solito su Windows) il programma si ferma con un errore chiaro e non scrive niente: non torna
+mai in silenzio all'ora del computer. Nella configurazione di Claude Code non serve: lì vale l'ora
+del tuo computer.
+
+Il tuo `hypomnema.toml` (quello di Claude Code, con i testimoni accesi) resta com'è: la chat non lo
+usa. Le note salvate dalla chat sono marcate come sempre: «chat, no witness», oppure riscontrate
+sull'archivio della chat.
+
+**Python 3.10.** La macchina della chat ha Python 3.10. Hypomnema funziona dal 3.10: per leggere
+la configurazione usa `tomllib` di Python (dal 3.11) oppure, se manca, la sua copia di
+[tomli](https://github.com/hukkin/tomli) (licenza MIT, di Taneli Hukkinen) in
+[`hypomnema/_tomli`](hypomnema/_tomli/LEGGIMI.md). Niente da installare.
+
+**Se qualcosa non va** (la macchina non risponde, il programma manca o è vecchio, un errore),
+Claude te lo dice in una riga e usa la procedura con la copia descritta sopra.
+
+**Claude Code e la chat insieme.** Possono scrivere sullo stesso quaderno nello stesso momento.
+Per ogni passaggio lo sportello prende un **blocco** sul file vuoto `quaderno/.sportello.lock`
+(non cancellarlo: resta vuoto per sempre). Se il quaderno è occupato per più di 10 secondi lo
+sportello si ferma con un errore, senza scrivere, e basta riproporre.
+
+**Limite, provato il 18/10/2026:** il blocco funziona solo tra programmi sulla **stessa macchina**
+(due sessioni di Claude Code su Windows, due chat). **Tra Windows e la macchina della chat non passa:**
+con il blocco tenuto da Windows, una proposta dalla chat è entrata subito. Tra le due macchine restano
+queste difese, che non hanno bisogno di cancellare niente:
+- ogni nota si crea con apertura esclusiva: due proposte insieme non prendono mai lo stesso numero e
+  una nota non viene mai sovrascritta;
+- ogni riga del registro (e dei file dei testimoni e dell'archivio) si aggiunge con **una sola
+  scrittura in aggiunta**, decisa dal sistema (su Windows con il solo permesso di aggiungere): due
+  righe non si sovrappongono;
+- chi trova una nota appena creata e non ancora scritta la rilegge per un attimo invece di fermarsi;
+- in chat Claude lancia **`check` subito dopo ogni proposta** e ti dice se trova qualcosa che non va
+  (per esempio una nota senza la sua riga nel registro).
+
+Quello che resta scoperto: due passaggi insieme possono controllare le regole sullo stesso quaderno
+nello stesso istante. Per una nota nuova non succede niente di male; per due cambiamenti della stessa
+nota (per esempio due chiusure) il secondo trova il file della versione già scritto e viene rifiutato.
+Se lavori in Claude Code e in chat nello stesso momento, è meglio non salvare dalle due parti insieme.
+
+**Stessi byte da Windows e da Linux.** Tutti i file del quaderno si scrivono sempre in UTF-8 con
+l'a capo `\n`, scelti in modo esplicito, su ogni sistema: una nota scritta da Claude Code su
+Windows e una scritta dalla chat su Linux hanno la stessa forma, byte per byte.
 
 **Come aggiungere la skill.** La skill è la cartella
 [`skills/hypomnema`](skills/hypomnema/SKILL.md), già pronta nella release come
@@ -250,13 +330,13 @@ Claude Code lanci i testimoni. Dove provato, l'ho provato su Windows 11 con Clau
 | Claude Code nel terminale (PowerShell), aperto con l'avviabile | **Sì** | **Provato** con dati inventati e una sessione non interattiva (`claude -p`): il testimone ha registrato il messaggio, la skill era disponibile, la scrittura nel quaderno è stata bloccata. Il doppio clic con una sessione normale lo prova Angelo. |
 | Claude Code senza il plugin installato e senza l'avviabile | **No, resta spento** | **Provato**: nessuna skill, niente registrato. |
 | Claude Code in VS Code (pannello dell'estensione) | Probabilmente sì, con il plugin installato | **Non provato.** Il pannello usa le stesse impostazioni di Claude Code; i plugin installati dovrebbero valere anche lì. |
-| Chat di Claude nell'app desktop, collegata al computer | **Sì, in modalità chat**, senza testimone | **Non ancora provato**: i programmi sono provati dai test; gli strumenti dell'app no. Vedi «Usarlo nella chat di Claude». |
+| Chat di Claude nell'app desktop, collegata al computer | **Sì, in modalità chat**, senza testimone; dalla 0.6.1 direttamente sul quaderno, se c'è `programma-chat` | **Provato in parte** il 18/10/2026: la macchina Linux della chat vede la cartella Hypomnema e ha Python 3.10 (da qui nasce la 0.6.1). Il giro completo è provato dai test con Python 3.10; sulla macchina vera lo prova Angelo. Vedi «Usarlo nella chat di Claude». |
 | Chat di Claude sul sito o nell'app mobile | **Solo come prova**: il quaderno sparisce a fine chat | **Non ancora provato**, come sopra. |
 
 ## Installazione per provarlo o svilupparlo
 
-Serve **Python 3.12 o più recente** (da [python.org](https://www.python.org/downloads/)).
-Non servono altre librerie.
+Serve **Python 3.10 o più recente** (da [python.org](https://www.python.org/downloads/)).
+Non servono altre librerie (con Python 3.10 si usa la copia di tomli che è nel repository).
 
 1. Scarica il repository (pulsante *Code* → *Download ZIP*, oppure `git clone`).
 2. Apri un terminale nella cartella scaricata.

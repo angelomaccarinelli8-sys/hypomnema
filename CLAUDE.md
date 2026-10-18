@@ -63,8 +63,16 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
   toccarle. Il quaderno di prova `quaderno/` del repository è escluso da git.
 - **Impostazioni in `hypomnema.toml`**, mai valori fissi nel codice. I valori ammessi per
   autore/tipo/natura non sono impostazioni ma regole: stanno in `hypomnema/regole.py`.
-- Python 3.12 o superiore (compatibile con 3.14), solo libreria standard, funzionante su
-  Windows, macOS e Linux (percorsi con `pathlib`, file in UTF-8 con fine riga `\n`).
+- Python 3.10 o superiore (compatibile con 3.14), solo libreria standard, funzionante su
+  Windows, macOS e Linux (percorsi con `pathlib`, file in UTF-8 con fine riga `\n` scritti in modo
+  esplicito: stessi byte da ogni sistema). Unica eccezione: con Python 3.10, dove manca `tomllib`,
+  si usa la copia non modificata di tomli in `hypomnema/_tomli/` (MIT).
+- **Un passaggio alla volta** (0.6.1): sportello e `archive` tengono il blocco su
+  `quaderno/.sportello.lock` (file vuoto, mai cancellato, mai letto da nessun comando: su Windows il
+  blocco è obbligatorio); chi legge aspetta al massimo 10 secondi, poi legge lo stesso. **Il blocco non
+  passa tra due macchine** (Windows e la chat, provato il 18/10/2026): tra macchine diverse valgono
+  solo l'apertura esclusiva, le righe aggiunte con una sola scrittura (`aggiunta.py`), la rilettura
+  delle note appena create e `check` dopo ogni proposta in chat.
 
 ## Mappa del codice
 
@@ -96,10 +104,13 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `skills/hypomnema/SKILL.md` | La skill, in inglese (istruzioni per Claude); le frasi da dire all'utente restano in italiano. |
 | `windows/` | L'avviabile (`Hypomnema.cmd` → `avvia-hypomnema.ps1`), il modello della configurazione in uso (`hypomnema-uso.toml`) e l'aggiornamento della copia in uso (`aggiorna-hypomnema.cmd`). I `.cmd` sono ASCII con fine riga CRLF; il `.ps1` è UTF-8 con BOM. |
 | `.claude/settings.json` | Nella copia di sviluppo vieta a Claude di modificare `quaderno/`. Nessun aggancio. |
-| `hypomnema/configurazione.py` | Lettura di `hypomnema.toml`. |
+| `hypomnema/configurazione.py` | Lettura di `hypomnema.toml` (con `tomllib`, o con la copia di tomli in `_tomli/` su Python 3.10); il fuso orario facoltativo `fuso` di `[quaderno]` (0.6.1, `nel_fuso`): se non si trova, errore e niente scritto. Le prove tolgono la riga `fuso` dove manca la tabella dei fusi (`tests/esecutore.per_questo_computer`). |
+| `hypomnema/blocco.py` | Il blocco del quaderno (0.6.1): `fcntl.flock`/`msvcrt.locking` su `.sportello.lock`, attesa al massimo 10 secondi, si va avanti senza se il disco non permette i blocchi. |
+| `hypomnema/aggiunta.py` | Una riga in fondo a un file con una sola scrittura in aggiunta (0.6.1): `O_APPEND` su Linux e macOS, il solo permesso di aggiungere (`FILE_APPEND_DATA`) su Windows. La usano registro, testimoni e archivio. |
+| `hypomnema/_tomli/` | Copia non modificata di tomli 2.0.1 (MIT), solo per Python 3.10. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |
-| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`); `test_risposte.py` il testimone delle risposte, il filtro sul codice, `impronta`, il diario e `da_risposta`; `test_plugin.py` il plugin installabile (catalogo, agganci da una copia del plugin, prima volta, protezione, pausa); `test_archivio.py` l'archivio della chat e i tre livelli; `test_rifiniture.py` le rifiniture della 0.4.0 (correzioni, ordine, parole composte, promemoria, recap, segni dell'archivio, quaderno vecchio); `test_lingua_chiusure.py` la 0.5.0 (nomi inglesi e italiani, kind, chiusure, priorità, quaderno vecchio in italiano); `test_versioni.py` la 0.6.0 (versioni, permessi, riaperture, codici, note vecchie lette come versioni, quaderno misto, revisione). |
+| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`); `test_risposte.py` il testimone delle risposte, il filtro sul codice, `impronta`, il diario e `da_risposta`; `test_plugin.py` il plugin installabile (catalogo, agganci da una copia del plugin, prima volta, protezione, pausa); `test_archivio.py` l'archivio della chat e i tre livelli; `test_rifiniture.py` le rifiniture della 0.4.0 (correzioni, ordine, parole composte, promemoria, recap, segni dell'archivio, quaderno vecchio); `test_lingua_chiusure.py` la 0.5.0 (nomi inglesi e italiani, kind, chiusure, priorità, quaderno vecchio in italiano); `test_versioni.py` la 0.6.0 (versioni, permessi, riaperture, codici, note vecchie lette come versioni, quaderno misto, revisione); `test_chat_diretta.py` la 0.6.1 (tomli e tomllib, giro della chat collegata, due scrittori insieme, stessi byte da Windows e Linux). |
 
 ## Metodo di lavoro
 

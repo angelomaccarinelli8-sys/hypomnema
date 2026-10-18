@@ -14,8 +14,9 @@ from datetime import datetime
 from pathlib import Path
 
 from hypomnema import (
-    archivio as testimone_archivio, quaderno, registro, regole, risposte as testimone_risposte, testimone, versioni,
+    archivio as testimone_archivio, blocco, quaderno, registro, regole, risposte as testimone_risposte, testimone, versioni,
 )
+from hypomnema import configurazione
 from hypomnema.configurazione import Configurazione
 from hypomnema.nota import Cambio, Nota, numeri
 
@@ -74,8 +75,18 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
     """Esamina una proposta e restituisce l'esito. Annota sempre il passaggio nel registro.
 
     Se il registro è stato toccato a mano (non finisce con un a capo) non scrive niente e solleva
-    registro.RegistroToccato.
+    registro.RegistroToccato. Tiene il blocco del quaderno per tutto il passaggio (vedi ``blocco``);
+    se un altro passaggio lo tiene troppo a lungo solleva blocco.QuadernoOccupato senza scrivere.
     """
+    adesso = configurazione.nel_fuso(config, adesso)
+    # Prima del blocco, così un registro toccato a mano ferma tutto senza creare niente; poi di nuovo
+    # dentro il passaggio.
+    registro.controlla_fine(config)
+    with blocco.blocco(config.cartella_quaderno, crea=True):
+        return _ricevi(contenuto, origine, config, adesso)
+
+
+def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datetime) -> Esito:
     registro.controlla_fine(config)
     note_esistenti = quaderno.leggi_note(config)
     messaggi = testimone.leggi_messaggi(config) if config.testimone_attivo else None

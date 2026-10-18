@@ -10,6 +10,8 @@ Ogni cartella è un esempio:
 - `atteso/quaderno/`: come deve essere il quaderno alla fine (note, registro, testimone);
 - i percorsi della cartella temporanea in cui gira l'esempio compaiono come
   `<cartella di prova>/...` (per esempio nell'uscita di `stato`);
+- `hypomnema-chat.toml` (solo nell'esempio 59): una seconda configurazione sullo stesso quaderno;
+  le righe di `comandi.txt` che cominciano con `chat:` usano quella;
 - `quaderno-iniziale/` (solo in alcuni esempi): il quaderno da cui parte l'esempio, invece di
   un quaderno vuoto;
 - `hypomnema.toml` (solo in alcuni esempi): la configurazione usata, per esempio con il
@@ -81,6 +83,7 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `56-note-vecchie` | Lo stesso quaderno più quattro note vecchie: una correzione di un'idea, una decisione che conferma la correzione, un open chiuso da un todo. Poi una correzione nuova dell'idea. | Nota, correzione e chiusura sono una storia sola (`✓F0001.2 (nota 0003)`), assente dal recap. Il todo che chiudeva resta visibile da solo. Dopo la correzione nuova la decisione dice «conferma di: nota I0005.1 (nota 0008), versione vecchia: l'ultima è I0005.2». |
 | `57-revisione` | Lo stesso quaderno più: una nota che nomina la 0006, due correzioni vecchie della stessa nota (un ramo), un todo con «ricordamelo tra una settimana» senza data, una nota con una data e un numero di un fatto. Poi la data del promemoria al todo. | `review` segnala 5 cose (ramo, open fermo da 46 giorni, promemoria scaduto, T0006 nominata nella F0008, «ricordamelo» senza data), con il codice 1; dopo l'`updates` con `remind` le cose sono 4. Le date e i numeri dei fatti non si segnalano. |
 | `58-chat-versioni` | In chat: `snapshot`, una chiusura di due note, `changed`, `check`; poi una riapertura, `changed`, `compare` della versione riportata, `check`. | `changed` elenca le versioni create (`note/0004.1.md`, `note/0006.1.md`, poi `note/0006.2.md`) e il registro allungato; `check` conta note e versioni; `compare` dice `UGUALI`. |
+| `59-chat-collegata` | La cartella Hypomnema con due configurazioni sullo stesso quaderno: `hypomnema.toml` (Claude Code, testimone acceso) e `hypomnema-chat.toml` (la chat collegata al computer). Le righe con `chat:` usano la seconda. Una nota dalla chat, un messaggio e una decisione da Claude Code, una chiusura dalla chat, poi recap e check. | `status` dice «ACCESO» con la prima e «NON C'È (configurazione per la chat di Claude)» con la seconda. La nota della chat è «author not verified (chat, no witness)», la decisione di Claude Code «text found in the message of …». Il quaderno resta in ordine per tutte e due. |
 | `26-confronta` | `confronta` tra due file uguali, due diversi e un file che manca. | `UGUALI` (codice 0); `DIVERSI` con il primo byte diverso (codice 1); errore (codice 2). |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno

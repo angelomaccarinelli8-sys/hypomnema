@@ -33,6 +33,7 @@ import re
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 
+from hypomnema import aggiunta, blocco
 from hypomnema.configurazione import Configurazione
 from hypomnema.risposte import ometti_codice
 from hypomnema.testimone import ErroreTestimone, Messaggio
@@ -211,10 +212,19 @@ def _leggi_copia(contenuto: bytes):
 
 
 def copia(config: Configurazione, contenuto: bytes) -> Esito:
-    """Aggiunge ai file dell'archivio i messaggi nuovi. Non scrive niente se la copia non è valida."""
+    """Aggiunge ai file dell'archivio i messaggi nuovi. Non scrive niente se la copia non è valida.
+
+    La copia si controlla prima di prendere il blocco del quaderno (vedi ``blocco``); poi, con il
+    blocco, si leggono i messaggi già presenti e si aggiungono quelli nuovi.
+    """
     if config.file_archivio is None:
         raise ErroreArchivio("la configurazione non ha la sezione [archivio]: serve la configurazione per la chat.")
     chat, messaggi = _leggi_copia(contenuto)
+    with blocco.blocco(config.cartella_quaderno, crea=True):
+        return _aggiungi(config, chat, messaggi)
+
+
+def _aggiungi(config: Configurazione, chat, messaggi) -> Esito:
     file_per = {"utente": config.file_archivio, "claude": config.file_diario_chat}
     presenti = {
         "utente": {(m.chat, m.turno): m for m in leggi_messaggi(config)},
@@ -259,8 +269,7 @@ def copia(config: Configurazione, contenuto: bytes) -> Esito:
     config.cartella_quaderno.mkdir(parents=True, exist_ok=True)
     for chi in CHI:
         if righe[chi]:
-            with open(file_per[chi], "a", encoding="utf-8", newline="\n") as f:
-                f.writelines(righe[chi])
+            aggiunta.aggiungi(file_per[chi], "".join(righe[chi]))
     return conti
 
 

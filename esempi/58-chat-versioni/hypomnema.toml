@@ -1,6 +1,8 @@
 # Configurazione per la CHAT di Claude (claude.ai, app desktop e mobile).
-# Claude la usa nel computer di lavoro della chat, che sparisce a fine conversazione:
-# la copia accanto alla copia del quaderno (vedi la skill, "Modalità chat").
+# Due usi, con lo stesso file (vedi la skill, "Chat mode"):
+# - chat collegata al computer (dalla 0.6.1): copiata come hypomnema-chat.toml nella cartella
+#   Hypomnema, accanto a hypomnema.toml di Claude Code, che non si tocca. Stesso quaderno;
+# - altrimenti nel computer di lavoro della chat, accanto alla copia del quaderno.
 # I percorsi relativi partono dalla cartella che contiene il file copiato.
 
 [quaderno]
@@ -16,6 +18,15 @@ file_registro = "registro.md"
 
 # Quante cifre usare per il numero delle note (4 => 0001, 0002, ...).
 cifre_numero_nota = 4
+
+# Il fuso orario in cui si scrivono date e ore (dalla 0.6.1). La macchina della chat può avere
+# l'orologio in UTC: con questa impostazione «oggi» e le ore del registro sono quelli del tuo fuso,
+# con l'ora legale. Se il fuso non si trova (nome sbagliato o tabella dei fusi mancante) il programma
+# si ferma con un errore e non scrive niente. Senza questa riga vale l'ora del computer.
+# "Europe/Rome" è solo un ESEMPIO (l'Italia): scrivi il TUO fuso, con il nome della tabella dei fusi
+# orari, per esempio "Europe/Zurich" o "America/New_York". Quando la chat crea questo file, scrive
+# il fuso dell'utente (e se non lo conosce lo chiede).
+fuso = "Europe/Rome"
 
 [testimone]
 # Il testimone registra le parole esatte di ogni tuo messaggio a Claude, con data e ora,

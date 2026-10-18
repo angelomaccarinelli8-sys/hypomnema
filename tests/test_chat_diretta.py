@@ -1,0 +1,524 @@
+"""Test della versione 0.6.1: la chat collegata al computer scrive direttamente sul quaderno vero.
+
+Python 3.10 (la copia di tomli), il giro completo come lo fa la chat, due che scrivono insieme (il
+blocco), gli stessi byte da Windows e da Linux. Solo dati inventati.
+"""
+
+import builtins
+import io
+import json
+import os
+import re
+import shutil
+import subprocess
+import sys
+import tempfile
+import unittest
+from concurrent.futures import ThreadPoolExecutor
+from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from unittest import mock
+
+from hypomnema import _tomli, archivio, blocco, cambiamenti, configurazione, controllo, sportello
+from hypomnema.cli import main
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, fuso_disponibile, modello_chat, per_questo_computer
+
+
+def registro_intestazione() -> str:
+    from hypomnema.registro import INTESTAZIONE
+    return INTESTAZIONE
+
+ADESSO = datetime(2026, 1, 15, 10, 0, 0, tzinfo=timezone(timedelta(hours=1)))
+MODELLO_CHAT = RADICE / "chat" / "hypomnema-chat.toml"
+CONFIG_CODE = CONFIG_DI_PROVA.replace("attivo = false", "attivo = true")
+
+
+def proposta(**campi) -> bytes:
+    nota = {"date": "2026-01-15", "source": "chat del 15 gennaio 2026", "author": "claude",
+            "knowledge": "inferred", "kind": "idea", "text": "Una nota.", **campi}
+    return json.dumps(nota, ensure_ascii=False).encode("utf-8")
+
+
+class TestPython310(unittest.TestCase):
+    def test_tomli_legge_come_tomllib(self):
+        """La copia di tomli dà lo stesso risultato di tomllib su ogni file TOML del repository."""
+        try:
+            import tomllib
+        except ImportError:
+            self.assertIs(configurazione.tomllib, _tomli)  # Python 3.10: si usa la copia
+            return
+        file = sorted(RADICE.glob("*.toml")) + sorted(RADICE.glob("*/*.toml")) + sorted(RADICE.glob("esempi/*/*.toml"))
+        self.assertGreater(len(file), 10)
+        for percorso in file:
+            with self.subTest(file=percorso.relative_to(RADICE).as_posix()):
+                testo = percorso.read_text(encoding="utf-8")
+                self.assertEqual(_tomli.loads(testo), tomllib.loads(testo))
+        with self.assertRaises(_tomli.TOMLDecodeError):
+            _tomli.loads("[quaderno\ncartella = 1")
+
+    def test_copia_non_modificata_con_licenza(self):
+        cartella = RADICE / "hypomnema" / "_tomli"
+        self.assertIn("MIT License", (cartella / "LICENSE").read_text(encoding="utf-8"))
+        self.assertEqual(_tomli.__version__, "2.0.1")
+        self.assertIn("non modificata", (cartella / "LEGGIMI.md").read_text(encoding="utf-8"))
+
+    def test_requisito_3_10(self):
+        self.assertIn('requires-python = ">=3.10"', (RADICE / "pyproject.toml").read_text(encoding="utf-8"))
+
+
+class CartellaDellUtente(unittest.TestCase):
+    """La cartella Hypomnema dell'utente come la vede la chat: due configurazioni, un quaderno."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        # Registrata per prima, gira per ultima: dopo che ogni processo aperto da una prova è finito
+        # davvero e ha chiuso i suoi file (su Windows un file aperto non si può cancellare).
+        self.addCleanup(self._tmp.cleanup)
+        base = Path(self._tmp.name).resolve()
+        self.hypomnema = base / "mnt" / "Hypomnema"
+        self.casa = base / "casa"  # la cartella personale della macchina della chat
+        (self.hypomnema / "quaderno").mkdir(parents=True)
+        self.casa.mkdir()
+        (self.hypomnema / "hypomnema.toml").write_text(CONFIG_CODE, encoding="utf-8", newline="\n")
+        self.config_code = self.hypomnema / "hypomnema.toml"
+        self.config_chat = self.hypomnema / "hypomnema-chat.toml"
+
+
+    def copia_il_programma(self) -> Path:
+        """Come «git clone … programma-chat»: i file del programma, senza le cartelle __pycache__."""
+        programma = self.hypomnema / "programma-chat"
+        for parte in ("hypomnema", "chat"):
+            shutil.copytree(RADICE / parte, programma / parte, ignore=shutil.ignore_patterns("__pycache__"))
+        shutil.copyfile(RADICE / "programma.py", programma / "programma.py")
+        return programma
+
+    def lancia(self, programma: Path, *argomenti, config=None):
+        """Come la chat: python3 -B …/programma.py --config …/hypomnema-chat.toml …"""
+        ambiente = {k: v for k, v in os.environ.items() if k not in ("HYPOMNEMA_CONFIG", "PYTHONDONTWRITEBYTECODE")}
+        ambiente.update(HOME=str(self.casa), PYTHONIOENCODING="utf-8")
+        esito = subprocess.run(
+            [sys.executable, "-B", str(programma / "programma.py"), "--config", str(config or self.config_chat),
+             *argomenti],
+            capture_output=True, cwd=self.casa, env=ambiente, timeout=60,
+        )
+        # L'uscita a schermo ha sempre l'a capo «\n», anche su Windows (vedi cli.main).
+        self.assertNotIn(b"\r", esito.stdout)
+        return esito.returncode, esito.stdout.decode("utf-8")
+
+
+class TestGiroDellaChat(CartellaDellUtente):
+    def test_giro_completo(self):
+        programma = self.copia_il_programma()
+        config_code_prima = self.config_code.read_bytes()
+        # D2: la configurazione della chat nasce dal modello, senza sovrascrivere (cp -n).
+        self.assertFalse(self.config_chat.exists())
+        self.config_chat.write_text(per_questo_computer((programma / "chat" / "hypomnema-chat.toml").read_text(
+            encoding="utf-8")), encoding="utf-8", newline="\n")
+
+        codice, uscita = self.lancia(programma, "--version")
+        self.assertEqual((codice, uscita.strip()), (0, "hypomnema 0.6.1"))
+        # D3: status dice che è la configurazione della chat; check e recap sul quaderno vero.
+        codice, uscita = self.lancia(programma, "status")
+        self.assertIn("Testimone: NON C'È (configurazione per la chat di Claude)", uscita)
+        self.assertEqual(self.lancia(programma, "check"), (0, "Quaderno in ordine: nessuna nota.\n"))
+        self.assertEqual(self.lancia(programma, "recap")[0], 0)
+        # D4: la proposta sta in un file temporaneo fuori dalla cartella collegata.
+        temporanea = self.casa / "hypomnema-temp"
+        temporanea.mkdir()
+        (temporanea / "proposta.json").write_bytes(proposta(author="user", knowledge="stated", kind="fact",
+                                                            text="Il limone sta meglio vicino alla finestra."))
+        codice, uscita = self.lancia(programma, "propose", str(temporanea / "proposta.json"))
+        self.assertEqual(codice, 0, uscita)
+        self.assertTrue(uscita.startswith("ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md)."))
+        nota = (self.hypomnema / "quaderno" / "note" / "0001.md").read_text(encoding="utf-8")
+        self.assertIn("- verification: author not verified (chat, no witness)\n", nota)
+        self.assertEqual(self.lancia(programma, "check"),
+                         (0, "Quaderno in ordine: 1 nota, con la sua riga ACCETTATA nel registro.\n"))
+        # Niente toccato fuori dal quaderno, e nessuna cartella __pycache__ nella cartella collegata.
+        self.assertEqual(self.config_code.read_bytes(), config_code_prima)
+        self.assertEqual(list(self.hypomnema.rglob("__pycache__")), [])
+        self.assertEqual(sorted(p.name for p in (self.hypomnema / "quaderno").iterdir()),
+                         [".sportello.lock", "note", "registro.md"])
+        self.assertEqual((self.hypomnema / "quaderno" / ".sportello.lock").read_bytes(), b"")
+
+    def test_configurazione_sbagliata_si_vede_da_status(self):
+        programma = self.copia_il_programma()
+        _, uscita = self.lancia(programma, "status", config=self.config_code)
+        self.assertNotIn("NON C'È", uscita)
+        self.assertIn("Testimone: ACCESO", uscita)
+
+
+def _proponi_in_un_processo(argomenti):
+    """Una proposta in un processo a parte, come un'altra chat o un altro Claude Code."""
+    cartella, config, numero = argomenti
+    file = Path(cartella) / f"proposta-{numero}.json"
+    file.write_bytes(proposta(text=f"Idea numero {numero}."))
+    esito = subprocess.run([sys.executable, "-B", str(RADICE / "programma.py"), "--config", config, "propose", str(file)],
+                           capture_output=True, timeout=120)
+    return esito.returncode
+
+
+# Come lo sportello su un'altra macchina: il blocco c'è, ma non passa da una macchina all'altra
+# (verificato da Angelo il 18/10/2026 tra Windows e la chat). Qui il blocco si comporta come su un
+# disco che non permette i blocchi: ognuno va avanti senza aspettare gli altri.
+SENZA_BLOCCO = "\n".join((
+    "import errno, sys",
+    "sys.path.insert(0, sys.argv[1])",
+    "from hypomnema import blocco",
+    "def _prova(f):",
+    "    raise OSError(errno.ENOLCK, 'blocco che non passa tra due macchine')",
+    "blocco._prova = _prova",
+    "from hypomnema.cli import main",
+    "sys.exit(main(sys.argv[2:]))",
+))
+
+
+def _proponi_senza_blocco(argomenti):
+    cartella, config, numero = argomenti
+    file = Path(cartella) / f"proposta-{numero}.json"
+    file.write_bytes(proposta(text=f"Idea numero {numero}."))
+    esito = subprocess.run([sys.executable, "-B", "-c", SENZA_BLOCCO, str(RADICE), "--config", config, "propose",
+                            str(file)], capture_output=True, timeout=120)
+    return esito.returncode, esito.stdout.decode("utf-8")
+
+
+class TestDueCheScrivonoInsieme(CartellaDellUtente):
+    def setUp(self):
+        super().setUp()
+        modello_chat(self.hypomnema)
+        self.quaderno = self.hypomnema / "quaderno"
+
+    def test_quaranta_proposte_insieme_da_due_configurazioni(self):
+        lavori = [(str(self.casa), str(self.config_chat if i % 2 else self.config_code), i) for i in range(40)]
+        with ThreadPoolExecutor(max_workers=20) as gruppo:
+            codici = list(gruppo.map(_proponi_in_un_processo, lavori))
+        self.assertEqual(codici, [0] * 40)
+        note = sorted(p.name for p in (self.quaderno / "note").iterdir())
+        self.assertEqual(note, [f"{n:04d}.md" for n in range(1, 41)])
+        registro = (self.quaderno / "registro.md").read_text(encoding="utf-8")
+        self.assertEqual(registro.count("# Registro degli ingressi"), 1)
+        self.assertEqual(len(re.findall(r"\| ACCETTATA \| nota \d{4} \|", registro)), 40)
+        testi = sorted(p.read_text(encoding="utf-8").split("## Text\n\n")[1].strip()
+                       for p in (self.quaderno / "note").iterdir())
+        self.assertEqual(testi, sorted(f"Idea numero {i}." for i in range(40)))  # nessuna sovrascritta
+        self.assertTrue(controllo.controlla(configurazione.carica(str(self.config_code))).in_ordine)
+
+    def test_due_macchine_senza_blocco_comune(self):
+        """Il blocco non passa tra le due macchine: restano l'apertura esclusiva, l'aggiunta in una scrittura
+        sola e la rilettura delle note appena create. Quaranta proposte insieme, nessuna persa."""
+        lavori = [(str(self.casa), str(self.config_chat if i % 2 else self.config_code), i) for i in range(40)]
+        with ThreadPoolExecutor(max_workers=20) as gruppo:
+            esiti = list(gruppo.map(_proponi_senza_blocco, lavori))
+        self.assertEqual([codice for codice, _ in esiti], [0] * 40, [u for c, u in esiti if c])
+        self.assertEqual(sorted(p.name for p in (self.quaderno / "note").iterdir()),
+                         [f"{n:04d}.md" for n in range(1, 41)])
+        registro = (self.quaderno / "registro.md").read_text(encoding="utf-8")
+        self.assertTrue(registro.startswith(registro_intestazione()))
+        self.assertEqual(registro.count("# Registro degli ingressi"), 1)
+        self.assertEqual(len(re.findall(r"^- \S+ \| ACCETTATA \| nota \d{4} \| da: proposta-\d+\.json$", registro,
+                                        re.MULTILINE)), 40)
+        self.assertTrue(controllo.controlla(configurazione.carica(str(self.config_code))).in_ordine)
+
+    def test_dieci_chiusure_insieme_una_sola_entra(self):
+        config = configurazione.carica(str(self.config_chat))
+        sportello.ricevi(proposta(kind="todo", text="Rinvasare il limone."), "p.json", config, ADESSO)
+
+        def chiudi(_):
+            return sportello.ricevi(proposta(done="0001", kind=None, text="Rinvasato."), "c.json",
+                                    configurazione.carica(str(self.config_chat)), ADESSO).accettata
+        with ThreadPoolExecutor(max_workers=10) as gruppo:
+            esiti = list(gruppo.map(chiudi, range(10)))
+        self.assertEqual(esiti.count(True), 1)
+        registro = (self.quaderno / "registro.md").read_text(encoding="utf-8")
+        self.assertEqual(registro.count("already closed (✓T0001.1)"), 9)
+
+    def tieni_il_blocco(self):
+        """Un altro processo prende il blocco del quaderno e lo tiene (come un passaggio fermo a metà)."""
+        tieni = subprocess.Popen(
+            [sys.executable, "-c", "import sys, time; sys.path.insert(0, sys.argv[1]);"
+             "from pathlib import Path; from hypomnema import blocco;"
+             "c = blocco.blocco(Path(sys.argv[2]), crea=True); c.__enter__(); print('preso', flush=True);"
+             "time.sleep(30)", str(RADICE), str(self.quaderno)],
+            stdout=subprocess.PIPE,
+        )
+        self.addCleanup(self.ferma, tieni)
+        self.assertEqual(tieni.stdout.readline().strip(), b"preso")
+
+    @staticmethod
+    def ferma(processo):
+        """Ferma il processo che tiene il blocco e aspetta che sia finito davvero: solo allora il file
+        del blocco è chiuso e la cartella della prova si può cancellare (su Windows prima no)."""
+        processo.kill()
+        processo.wait(timeout=30)
+        processo.stdout.close()
+
+    def file_del_quaderno(self):
+        # Senza il file del blocco, come fanno snapshot e changed.
+        return {p.relative_to(self.quaderno).as_posix(): p.read_bytes() for p in self.quaderno.rglob("*")
+                if p.is_file() and p.name != blocco.NOME_FILE}
+
+    def test_quaderno_occupato(self):
+        """Con il blocco tenuto da un altro processo lo sportello aspetta, poi si ferma senza scrivere."""
+        sportello.ricevi(proposta(), "p.json", configurazione.carica(str(self.config_chat)), ADESSO)
+        prima = self.file_del_quaderno()
+        self.tieni_il_blocco()
+        file = self.casa / "proposta.json"
+        file.write_bytes(proposta(text="Arriva mentre il quaderno è occupato."))
+        with mock.patch.object(blocco, "ATTESA_BLOCCO", 0.3):
+            uscita = io.StringIO()
+            codice = main(["--config", str(self.config_chat), "propose", str(file)], adesso=ADESSO, uscita=uscita)
+        self.assertEqual(codice, 2)
+        self.assertTrue(uscita.getvalue().startswith("ERRORE: il quaderno è occupato da un altro passaggio"))
+        self.assertEqual(self.file_del_quaderno(), prima)
+
+    def test_chi_legge_va_avanti_anche_con_il_blocco_tenuto(self):
+        """Mentre un altro processo tiene il blocco, i comandi che leggono funzionano lo stesso."""
+        config = configurazione.carica(str(self.config_chat))
+        sportello.ricevi(proposta(kind="todo", text="Rinvasare il limone."), "p.json", config, ADESSO)
+        istantanea = self.casa / "prima.json"
+        istantanea.write_text(json.dumps(cambiamenti.istantanea(config)), encoding="utf-8")
+        self.tieni_il_blocco()
+        with mock.patch.object(blocco, "ATTESA_BLOCCO", 0.3):
+            for comando in (("snapshot",), ("check",), ("changed", str(istantanea)), ("recap",), ("search", "limone"),
+                            ("review",), ("reminders",), ("status",), ("diary", "limone")):
+                with self.subTest(comando=comando[0]):
+                    uscita = io.StringIO()
+                    codice = main(["--config", str(self.config_chat), *comando], adesso=ADESSO, uscita=uscita)
+                    self.assertEqual(codice, 0, uscita.getvalue())
+                    self.assertNotIn("ERRORE", uscita.getvalue())
+
+    def test_nessun_comando_legge_il_file_del_blocco(self):
+        """Su Windows chi legge la parte bloccata riceve un errore: nessun comando deve aprirlo per leggere.
+
+        Qui ogni apertura del file del blocco per leggerlo dà l'errore di Windows; può solo essere aperto
+        in aggiunta ("a+b"), come fa il blocco.
+        """
+        config = configurazione.carica(str(self.config_chat))
+        sportello.ricevi(proposta(kind="todo", text="Rinvasare il limone."), "p.json", config, ADESSO)
+        istantanea = self.casa / "prima.json"
+        istantanea.write_text(json.dumps(cambiamenti.istantanea(config)), encoding="utf-8")
+        copia = self.casa / "copia.json"
+        copia.write_text(json.dumps({"chat": "https://claude.ai/chat/esempio-inventato", "fuso": "UTC+01:00",
+                                     "messaggi": [{"turno": 1, "quando": "Thu 2026-01-15 10:00", "chi": "utente",
+                                                   "testo": "Ciao."}]}), encoding="utf-8")
+        nuova = self.casa / "proposta.json"
+        nuova.write_bytes(proposta(text="Una nota nuova."))
+        apri = builtins.open
+
+        def come_windows(file, mode="r", *args, **kwargs):
+            if Path(os.fspath(file)).name == blocco.NOME_FILE and "a" not in mode:
+                raise PermissionError(13, "Permission denied (simulato: file bloccato su Windows)", str(file))
+            return apri(file, mode, *args, **kwargs)
+
+        with mock.patch("builtins.open", come_windows), mock.patch("io.open", come_windows):
+            for comando in (("snapshot",), ("changed", str(istantanea)), ("check",), ("recap",), ("search", "limone"),
+                            ("search", "limone", "--all"), ("review",), ("reminders",), ("status",),
+                            ("diary", "limone"), ("archive", str(copia)), ("propose", str(nuova)),
+                            ("compare", str(nuova), str(nuova)), ("fingerprint", str(nuova))):
+                with self.subTest(comando=comando[0]):
+                    uscita = io.StringIO()
+                    codice = main(["--config", str(self.config_chat), *comando], adesso=ADESSO, uscita=uscita,
+                                  errori=uscita)
+                    self.assertEqual(codice, 0, uscita.getvalue())
+
+    def test_chi_legge_non_crea_il_blocco_e_cambiati_non_lo_riporta(self):
+        config = configurazione.carica(str(self.config_chat))
+        self.assertEqual(main(["--config", str(self.config_chat), "recap"], adesso=ADESSO, uscita=io.StringIO()), 0)
+        self.assertFalse((self.quaderno / ".sportello.lock").exists())
+        istantanea = json.dumps(cambiamenti.istantanea(config)).encode("utf-8")
+        sportello.ricevi(proposta(), "p.json", config, ADESSO)
+        self.assertEqual([c.percorso for c in cambiamenti.cambiati(config, cambiamenti.leggi_istantanea(istantanea))],
+                         ["note/0001.md", "registro.md"])
+        archivio.copia(config, json.dumps({"chat": "https://claude.ai/chat/esempio-inventato", "fuso": "UTC+01:00",
+                                           "messaggi": [{"turno": 1, "quando": "Thu 2026-01-15 10:00", "chi": "utente",
+                                                         "testo": "Ciao."}]}).encode("utf-8"))
+        self.assertEqual((self.quaderno / ".sportello.lock").read_bytes(), b"")
+
+
+class TestStessiByteDaWindowsELinux(unittest.TestCase):
+    """La stessa proposta scritta «come Windows» e «come Linux» dà file identici byte per byte."""
+
+    PROPOSTE = (
+        dict(author="user", knowledge="stated", kind="todo", text="Rinvasare il limone.\nPrima di sabato.",
+             context="Detto parlando del balcone, à è ò ù «virgolette»."),
+        dict(author="claude", knowledge="inferred", kind="idea", text="Vaso più grande: 30 cm ⏎ forse.",
+             quote="Rinvasare il limone."),
+        dict(author="user", knowledge="stated", updates="0001", kind=None, priority="high", text="È urgente."),
+        dict(author="user", knowledge="stated", done="0001", kind=None, text="Fatto: rinvasato.\nSabato."),
+    )
+
+    def scrivi_tutto(self, cartella: Path) -> dict[str, bytes]:
+        (cartella / "hypomnema.toml").write_text(per_questo_computer(MODELLO_CHAT.read_text(encoding="utf-8")),
+                                                 encoding="utf-8", newline="\n")
+        config = configurazione.carica(str(cartella / "hypomnema.toml"))
+        for i, campi in enumerate(self.PROPOSTE):
+            # kind=None diventa «"kind": null», cioè un campo che manca: in un cambiamento si può.
+            esito = sportello.ricevi(proposta(**campi), f"p{i}.json", config, ADESSO)
+            self.assertTrue(esito.accettata, esito.motivi)
+        archivio.copia(config, json.dumps({
+            "chat": "https://claude.ai/chat/esempio-inventato", "fuso": "UTC+01:00",
+            "messaggi": [{"turno": 1, "quando": "Thu 2026-01-15 10:00", "chi": "utente", "testo": "Ciao,\nà è."},
+                         {"turno": 2, "quando": "Thu 2026-01-15 10:00", "chi": "claude", "testo": "Ciao «sì»."}],
+        }, ensure_ascii=False).encode("utf-8"))
+        quaderno = cartella / "quaderno"
+        return {p.relative_to(quaderno).as_posix(): p.read_bytes() for p in sorted(quaderno.rglob("*")) if p.is_file()}
+
+    def test_stessi_byte(self):
+        apri = builtins.open
+
+        def come_windows(file, mode="r", buffering=-1, encoding=None, errors=None, newline=None, *args, **kwargs):
+            # Su Windows, senza scelte esplicite, Python scrive con la codifica del sistema e trasforma
+            # ogni a capo in CR LF.
+            if "b" not in mode:
+                encoding = encoding or "cp1252"
+                if newline is None and any(m in mode for m in "wax+"):
+                    newline = "\r\n"
+            return apri(file, mode, buffering, encoding, errors, newline, *args, **kwargs)
+
+        with tempfile.TemporaryDirectory() as linux, tempfile.TemporaryDirectory() as windows:
+            da_linux = self.scrivi_tutto(Path(linux))
+            with mock.patch("builtins.open", come_windows), mock.patch("io.open", come_windows), \
+                    mock.patch.object(os, "linesep", "\r\n"):
+                da_windows = self.scrivi_tutto(Path(windows))
+        self.assertEqual(sorted(da_linux), sorted(da_windows))
+        self.assertIn("note/0001.1.md", da_linux)
+        for nome in da_linux:
+            with self.subTest(file=nome):
+                self.assertEqual(da_windows[nome], da_linux[nome])
+                self.assertNotIn(b"\r", da_linux[nome])
+                da_linux[nome].decode("utf-8")  # sempre UTF-8
+
+    def test_ogni_scrittura_ha_codifica_e_a_capo_espliciti(self):
+        """Nel codice, ogni apertura di file in testo dice encoding="utf-8" e (in scrittura) newline="\\n"."""
+        for file in sorted((RADICE / "hypomnema").glob("*.py")):
+            testo = file.read_text(encoding="utf-8")
+            for chiamata in re.finditer(r"(?<![.\w])open\((?P<arg>[^)]*)\)|\.(?P<metodo>write_text|read_text)\((?P<arg2>[^)]*)\)",
+                                        testo):
+                arg = chiamata.group("arg") if chiamata.group("arg") is not None else chiamata.group("arg2")
+                with self.subTest(file=file.name, chiamata=chiamata.group(0)):
+                    if '"a+b"' in arg or '"rb"' in arg:
+                        continue
+                    self.assertIn('encoding="utf-8', arg)
+                    if re.search(r'"[wax]"', arg) or chiamata.group("metodo") == "write_text":
+                        self.assertIn('newline="\\n"', arg)
+
+
+class TestFuso(unittest.TestCase):
+    """Il fuso orario della configurazione (dalla 0.6.1): la macchina della chat può avere l'orologio in UTC."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.cartella = Path(self._tmp.name).resolve()
+        self.proposta = self.cartella / "proposta.json"
+        self.proposta.write_bytes(proposta(text="Una nota scritta di notte."))
+
+    def config(self, fuso: str | None) -> Path:
+        riga = f'fuso = "{fuso}"\n' if fuso is not None else ""
+        file = self.cartella / "hypomnema.toml"
+        file.write_text(CONFIG_DI_PROVA.replace("cifre_numero_nota = 4\n", "cifre_numero_nota = 4\n" + riga),
+                        encoding="utf-8", newline="\n")
+        return file
+
+    def lancia(self, config: Path, adesso: datetime, *comando):
+        uscita = io.StringIO()
+        codice = main(["--config", str(config), *comando], adesso=adesso, uscita=uscita, errori=uscita)
+        return codice, uscita.getvalue()
+
+    def registro(self) -> str:
+        return (self.cartella / "quaderno" / "registro.md").read_text(encoding="utf-8")
+
+    @unittest.skipUnless(fuso_disponibile(), "su questo computer manca la tabella dei fusi orari")
+    def test_macchina_in_utc_alle_00_30_italiane(self):
+        config = self.config("Europe/Rome")
+        for adesso, giorno, ora in (
+            (datetime(2026, 7, 14, 22, 30, tzinfo=timezone.utc), "2026-07-15", "2026-07-15T00:30:00+02:00"),  # ora legale
+            (datetime(2026, 1, 14, 23, 30, tzinfo=timezone.utc), "2026-01-15", "2026-01-15T00:30:00+01:00"),  # inverno
+        ):
+            with self.subTest(giorno=giorno):
+                self.assertEqual(self.lancia(config, adesso, "propose", str(self.proposta))[0], 0)
+                self.assertIn(f"- {ora} | ACCETTATA |", self.registro())
+                _, recap = self.lancia(config, adesso, "recap")
+                self.assertTrue(recap.startswith(f"Dove eravamo rimasti (recap del {giorno})."))
+
+    @unittest.skipUnless(fuso_disponibile(), "su questo computer manca la tabella dei fusi orari")
+    def test_il_modello_della_chat_ha_il_fuso_italiano(self):
+        config = configurazione.carica(str(MODELLO_CHAT))
+        self.assertEqual(config.nome_fuso, "Europe/Rome")
+        self.assertEqual(configurazione.nel_fuso(config, datetime(2026, 7, 14, 22, 30, tzinfo=timezone.utc)).isoformat(),
+                         "2026-07-15T00:30:00+02:00")
+
+    def test_senza_fuso_vale_l_ora_del_computer(self):
+        self.assertIsNone(configurazione.carica(str(RADICE / "hypomnema.toml")).fuso)  # come Claude Code
+        config = self.config(None)
+        self.assertEqual(self.lancia(config, datetime(2026, 1, 14, 23, 30, tzinfo=timezone.utc), "propose",
+                                     str(self.proposta))[0], 0)
+        self.assertIn("- 2026-01-14T23:30:00+00:00 | ACCETTATA |", self.registro())
+
+    def test_fuso_che_non_si_trova_ferma_tutto(self):
+        """Nome sbagliato o tabella mancante: errore chiaro e niente scritto, mai l'ora del computer in silenzio."""
+        import zoneinfo
+
+        def senza_tabella(nome):
+            raise zoneinfo.ZoneInfoNotFoundError(f"No time zone found with key {nome}")
+
+        for caso, fuso, sostituto in (("nome sbagliato", "Europa/Roma", None), ("tabella mancante", "Europe/Rome",
+                                                                              senza_tabella)):
+            with self.subTest(caso=caso):
+                config = self.config(fuso)
+                with mock.patch.object(zoneinfo, "ZoneInfo", sostituto or zoneinfo.ZoneInfo):
+                    codice, uscita = self.lancia(config, ADESSO, "propose", str(self.proposta))
+                    self.assertEqual(codice, 2)
+                    self.assertIn(f'c\'è fuso = "{fuso}", ma su questo computer il fuso non si trova', uscita)
+                    self.assertIn("Non ho scritto niente.", uscita)
+                    # Il testimone (un aggancio) non esce mai con 2, ma non registra niente.
+                    messaggio = self.cartella / "messaggio.json"
+                    messaggio.write_text(json.dumps({"prompt": "Ciao."}), encoding="utf-8")
+                    self.assertEqual(self.lancia(config, ADESSO, "witness", str(messaggio))[0], 1)
+                self.assertFalse((self.cartella / "quaderno").exists())
+        with self.assertRaisesRegex(configurazione.ErroreConfigurazione, "deve essere il nome di un fuso orario"):
+            configurazione.carica(str(self.config(" Europe/Rome")))
+
+
+class TestAggiunta(unittest.TestCase):
+    def test_una_sola_scrittura_in_aggiunta(self):
+        from hypomnema import aggiunta
+        with tempfile.TemporaryDirectory() as cartella:
+            file = Path(cartella) / "registro.md"
+            if os.name == "nt":
+                aggiunta.aggiungi(file, "- una riga à\n")
+            else:
+                vere = os.write
+                chiamate = []
+                with mock.patch.object(os, "write", lambda fd, dati: chiamate.append(dati) or vere(fd, dati)):
+                    aggiunta.aggiungi(file, "- una riga à\n")
+                self.assertEqual(chiamate, ["- una riga à\n".encode("utf-8")])
+            aggiunta.aggiungi(file, "- un'altra\n")
+            self.assertEqual(file.read_bytes(), "- una riga à\n- un'altra\n".encode("utf-8"))
+
+
+class TestDocumenti(unittest.TestCase):
+    def test_skill_readme_storia(self):
+        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        for frammento in ("### C0. Chat connected to the computer", "python3 -B <HY>/programma-chat/programma.py",
+                          "**you must never delete or overwrite files in the connected\nfolders**",
+                          "`H status` must say `Testimone: NON C'È (configurazione per la chat di Claude)`",
+                          "~/hypomnema-temp/proposta.json", "go on with C1-C5", "Python 3.10 or newer",
+                          "**Always, right after every `propose` (and every `archive`): `H check`.**",
+                          "it does **not** pass between Windows and the\nchat's machine",
+                          "**the user's time zone** in place of the model's example",
+                          "**If you do not know it, ask**"):
+            with self.subTest(frammento=frammento):
+                self.assertIn(frammento, skill)
+        readme = (RADICE / "README.md").read_text(encoding="utf-8")
+        self.assertIn("### Chat collegata al computer: scrive direttamente sul quaderno (dalla 0.6.1)", readme)
+        self.assertIn("programma-chat", readme)
+        self.assertIn("## 0.6.1 (prototipo) — la chat scrive direttamente sul quaderno",
+                      (RADICE / "STORIA.md").read_text(encoding="utf-8"))
+        self.assertIn("`.sportello.lock`", (RADICE / "FORMATO.md").read_text(encoding="utf-8"))
+        # Il modello è pubblico: Europe/Rome è solo un esempio, e la chat scrive il fuso dell'utente.
+        self.assertIn('"Europe/Rome" è solo un ESEMPIO', MODELLO_CHAT.read_text(encoding="utf-8"))
+
+
+if __name__ == "__main__":
+    unittest.main()

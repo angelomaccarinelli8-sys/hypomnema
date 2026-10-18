@@ -36,7 +36,7 @@ from pathlib import Path
 from typing import TextIO
 
 from hypomnema import (
-    __version__, archivio, avvio, cambiamenti, cercatore, configurazione, controllo, diario, promemoria, registro,
+    __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, promemoria, registro,
     revisione, risposte, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
@@ -54,6 +54,8 @@ INGLESE = {
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
+# I comandi che leggono il quaderno: aspettano che un passaggio dello sportello finisca (vedi blocco).
+LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -656,6 +658,7 @@ def _risposte(argomenti, adesso: datetime, errori: TextIO) -> int:
     # Come il testimone: niente a schermo e mai il codice 2 (costringerebbe Claude a continuare).
     try:
         config = configurazione.carica(argomenti.config)
+        adesso = configurazione.nel_fuso(config, adesso)
         if config.risposte_attive and _quaderno_nel_programma(config, errori, " delle risposte"):
             return 1
         if argomenti.file == "-":
@@ -738,6 +741,7 @@ def _testimone(argomenti, adesso: datetime, errori: TextIO) -> int:
     # Su successo non scrive niente: per Claude Code, ciò che esce qui finirebbe nella chat.
     try:
         config = configurazione.carica(argomenti.config)
+        adesso = configurazione.nel_fuso(config, adesso)
         if config.testimone_attivo and _quaderno_nel_programma(config, errori, ""):
             return 1
         if argomenti.file == "-":
@@ -761,14 +765,16 @@ def main(
     # Sempre UTF-8: chi legge l'uscita (Claude, Git Bash) si aspetta UTF-8, anche su Windows
     # dove Python userebbe altrimenti la vecchia codifica di sistema. Nella finestra della
     # console non cambia niente: lì Python scrive già correttamente.
+    # Anche l'a capo è sempre lo stesso, «\n»: su Windows Python scriverebbe «\r\n». Così l'uscita è
+    # identica byte per byte su ogni sistema.
     if uscita is None:
         uscita = sys.stdout
         if hasattr(uscita, "reconfigure"):
-            uscita.reconfigure(encoding="utf-8", errors="replace")
+            uscita.reconfigure(encoding="utf-8", errors="replace", newline="\n")
     if errori is None:
         errori = sys.stderr
         if hasattr(errori, "reconfigure"):
-            errori.reconfigure(encoding="utf-8", errors="replace")
+            errori.reconfigure(encoding="utf-8", errors="replace", newline="\n")
     try:
         argomenti = _parser().parse_args(argv)
     except SystemExit as uscita_argparse:
@@ -798,34 +804,43 @@ def main(
     except configurazione.ErroreConfigurazione as errore:
         print(f"ERRORE: {errore}", file=uscita)
         return 2
+    adesso = configurazione.nel_fuso(config, adesso)
     try:
-        if comando == "propose":
-            return _proponi(argomenti, config, adesso, uscita)
-        if comando == "status":
-            return _stato(argomenti, config, uscita)
-        if comando == "snapshot":
-            return _istantanea(config, uscita)
-        if comando == "changed":
-            return _cambiati(argomenti, config, uscita)
-        if comando == "check":
-            return _controlla(config, uscita)
-        if comando == "diary":
-            return _diario(argomenti, config, uscita)
-        if comando == "archive":
-            return _archivio(argomenti, config, uscita)
-        if comando == "reminders":
-            return _promemoria(config, adesso, uscita)
-        if comando == "recap":
-            return _recap(config, adesso, uscita)
-        if comando == "review":
-            return _revisione(config, adesso, uscita)
-        if comando == "claude-settings":
-            return _impostazioni_claude(argomenti, config, uscita)
-        return _cerca(argomenti, config, uscita)
+        if comando in LETTURA:
+            # Chi legge aspetta che un passaggio dello sportello finisca: non vede mai una nota a metà.
+            with blocco.blocco(config.cartella_quaderno, crea=False):
+                return _esegui(comando, argomenti, config, adesso, uscita)
+        return _esegui(comando, argomenti, config, adesso, uscita)
     except NotaIlleggibile as errore:
         print(f"ERRORE: il quaderno contiene un file non valido: {errore}. "
               "Controlla se è stato modificato a mano.", file=uscita)
         return 2
-    except (testimone.ErroreTestimone, registro.RegistroToccato) as errore:
+    except (testimone.ErroreTestimone, registro.RegistroToccato, blocco.QuadernoOccupato) as errore:
         print(f"ERRORE: {errore}", file=uscita)
         return 2
+
+
+def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int:
+    if comando == "propose":
+        return _proponi(argomenti, config, adesso, uscita)
+    if comando == "status":
+        return _stato(argomenti, config, uscita)
+    if comando == "snapshot":
+        return _istantanea(config, uscita)
+    if comando == "changed":
+        return _cambiati(argomenti, config, uscita)
+    if comando == "check":
+        return _controlla(config, uscita)
+    if comando == "diary":
+        return _diario(argomenti, config, uscita)
+    if comando == "archive":
+        return _archivio(argomenti, config, uscita)
+    if comando == "reminders":
+        return _promemoria(config, adesso, uscita)
+    if comando == "recap":
+        return _recap(config, adesso, uscita)
+    if comando == "review":
+        return _revisione(config, adesso, uscita)
+    if comando == "claude-settings":
+        return _impostazioni_claude(argomenti, config, uscita)
+    return _cerca(argomenti, config, uscita)

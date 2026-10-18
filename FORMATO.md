@@ -484,6 +484,18 @@ portati all'inglese (`utente` → `user`, `discorso aperto` → `open`, …), e 
 
 Il file si crea una volta sola: il programma non sovrascrive mai una nota esistente.
 
+## Date e ore: il fuso orario
+
+Le date e le ore che scrive il programma (righe del registro, data delle versioni, file dei testimoni)
+e il giorno di «oggi» (recap, promemoria, revisione) sono quelli del computer. Dalla 0.6.1 la sezione
+`[quaderno]` accetta l'impostazione facoltativa `fuso`, con il nome di un fuso orario (per esempio
+`fuso = "Europe/Rome"`): date e ore si scrivono in quel fuso, con l'ora legale, qualunque sia
+l'orologio del computer. Serve alla chat collegata al computer, la cui macchina può avere l'orologio
+in UTC: alle 00:30 italiane del 15 luglio «oggi» è già il 15 e la riga del registro dice
+`2026-07-15T00:30:00+02:00`. Se l'impostazione c'è ma il fuso non si trova (nome sbagliato, o manca la
+tabella dei fusi orari, come di solito su Windows) il programma si ferma con un errore e non scrive
+niente: non torna mai in silenzio all'ora del computer.
+
 ## Il registro degli ingressi
 
 Il file `registro.md` del quaderno riceve una riga per ogni passaggio dallo sportello,
@@ -504,6 +516,31 @@ Se il registro esiste e non finisce con un "a capo" (qualcuno l'ha toccato a man
 non scrive niente, né la nota né la riga, e risponde con un errore: la sua riga si attaccherebbe a
 quella scritta a mano. Non ripara il registro da solo. `check` mostra le righe che non hanno la
 forma di una riga dello sportello, con il loro numero.
+
+**Un passaggio alla volta (dalla 0.6.1).** Sullo stesso quaderno possono scrivere insieme Claude
+Code (con il plugin) e la chat collegata al computer. Per tutto il passaggio (lettura del quaderno,
+regole, nota, riga del registro) lo sportello tiene il blocco del sistema operativo sul file vuoto
+`.sportello.lock` nella cartella del quaderno; lo stesso fa il comando `archive`. I comandi che
+leggono aspettano che il passaggio finisca, al massimo 10 secondi, poi leggono lo stesso: un passaggio
+fermo a metà non ferma mai la lettura. Il file del blocco non lo legge nessun comando (su Windows il
+blocco è obbligatorio, e chi leggesse la parte bloccata riceverebbe un errore). Il file si crea vuoto alla prima scrittura e non si
+cancella mai; il blocco lo toglie il sistema alla fine del passaggio, anche se il programma si
+interrompe. Se il quaderno è occupato per più di 10 secondi lo sportello si ferma con «ERRORE: il
+quaderno è occupato da un altro passaggio…» senza scrivere niente. Se il disco non permette i
+blocchi si va avanti senza: la nota si crea comunque con apertura esclusiva (mai sovrascritta) e
+`check` segnala ogni nota senza la sua riga.
+
+**Tra due macchine il blocco non passa** (provato il 18/10/2026 tra Windows e la macchina Linux della
+chat). Restano l'apertura esclusiva delle note e delle versioni, la riga del registro aggiunta con una
+sola scrittura in aggiunta (anche quelle dei testimoni e dell'archivio; su Windows con il solo
+permesso di aggiungere, così è il sistema a scrivere in fondo), la rilettura per un attimo di una nota
+appena creata e non ancora scritta, e `check` dopo ogni proposta in chat. Un registro nuovo nasce con
+apertura esclusiva, così l'intestazione si scrive una volta sola. `snapshot` e `changed` non contano il file del blocco.
+
+**Sempre gli stessi byte.** Note, versioni, registro e file dei testimoni e dell'archivio si
+scrivono sempre in UTF-8 con l'a capo `\n`, scelti in modo esplicito: su Windows, su Linux e su
+macOS lo stesso passaggio dà lo stesso file, byte per byte. Lo stesso vale per l'uscita a schermo dei
+comandi.
 
 Ogni passaggio occupa sempre una sola riga: se il nome del file o un motivo contengono un
 "a capo" (per esempio un nome di campo inventato), al suo posto viene scritto il segno ⏎.

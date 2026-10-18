@@ -4,8 +4,10 @@ Il file si apre solo in aggiunta: nessuna riga viene mai modificata o tolta.
 """
 
 import re
+import time
 from datetime import datetime
 
+from hypomnema import aggiunta
 from hypomnema.configurazione import Configurazione
 
 INTESTAZIONE = (
@@ -68,8 +70,26 @@ def annota(
         riga = f"- {quando} | RIFIUTATA | da: {origine} | motivi: {' / '.join(motivi)}\n"
 
     config.cartella_quaderno.mkdir(parents=True, exist_ok=True)
-    nuovo = not config.file_registro.exists()
-    with open(config.file_registro, "a", encoding="utf-8", newline="\n") as f:
-        if nuovo:
+    _intestazione(config.file_registro)
+    # Una sola scrittura in aggiunta: anche se un'altra macchina scrive intanto (il blocco non passa
+    # da una macchina all'altra), le due righe non si sovrappongono mai.
+    aggiunta.aggiungi(config.file_registro, riga)
+
+
+# Quanto si aspetta che un altro passaggio finisca di scrivere l'intestazione di un registro nuovo.
+ATTESA_INTESTAZIONE = 2.0
+
+
+def _intestazione(file) -> None:
+    """Un registro nuovo nasce con la sua intestazione, una volta sola anche con due scrittori insieme."""
+    try:
+        # Apertura esclusiva: se due passaggi creano il registro insieme, uno solo scrive l'intestazione.
+        with open(file, "x", encoding="utf-8", newline="\n") as f:
             f.write(INTESTAZIONE)
-        f.write(riga)
+        return
+    except FileExistsError:
+        pass
+    # L'altro passaggio ha appena creato il file: si aspetta che l'intestazione ci sia, prima di aggiungere.
+    scadenza = time.monotonic() + ATTESA_INTESTAZIONE
+    while file.stat().st_size < len(INTESTAZIONE.encode("utf-8")) and time.monotonic() < scadenza:
+        time.sleep(0.02)
