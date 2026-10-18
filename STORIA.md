@@ -16,10 +16,11 @@ Hypomnema e come aggiornarsi.
   `tomllib`, usa la sua copia di tomli (licenza MIT). Niente da installare.
 - **Una configurazione per la chat accanto a quella di Claude Code**: `hypomnema-chat.toml`, stesso
   quaderno, testimone spento. Il tuo `hypomnema.toml` non si tocca.
-- **Due che scrivono insieme.** Claude Code e la chat possono scrivere sullo stesso quaderno nello
-  stesso momento: lo sportello tiene un blocco per ogni passaggio (il file vuoto
-  `quaderno/.sportello.lock`, che non va cancellato). Prima, con due scrittori insieme, il registro
-  poteva sporcarsi; ora no.
+- **Due che scrivono insieme.** Sulla stessa macchina lo sportello tiene un blocco per ogni passaggio
+  (il file vuoto `quaderno/.sportello.lock`, che non va cancellato). Tra Windows e la chat il blocco
+  non passa: lì valgono l'apertura esclusiva delle note, le righe del registro aggiunte con una sola
+  scrittura, la rilettura delle note appena create e il `check` che Claude fa dopo ogni proposta in
+  chat. Prima, con due scrittori insieme, il registro poteva sporcarsi; ora no.
 - **Stessi byte su Windows e su Linux**: sempre UTF-8 e a capo `\n`, provato da una prova apposta.
 
 **Una volta sola, su Windows** (PowerShell), per la chat collegata:

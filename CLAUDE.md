@@ -69,7 +69,10 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
   si usa la copia non modificata di tomli in `hypomnema/_tomli/` (MIT).
 - **Un passaggio alla volta** (0.6.1): sportello e `archive` tengono il blocco su
   `quaderno/.sportello.lock` (file vuoto, mai cancellato, mai letto da nessun comando: su Windows il
-  blocco è obbligatorio); chi legge aspetta al massimo 10 secondi, poi legge lo stesso.
+  blocco è obbligatorio); chi legge aspetta al massimo 10 secondi, poi legge lo stesso. **Il blocco non
+  passa tra due macchine** (Windows e la chat, provato il 18/10/2026): tra macchine diverse valgono
+  solo l'apertura esclusiva, le righe aggiunte con una sola scrittura (`aggiunta.py`), la rilettura
+  delle note appena create e `check` dopo ogni proposta in chat.
 
 ## Mappa del codice
 
@@ -103,6 +106,7 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `.claude/settings.json` | Nella copia di sviluppo vieta a Claude di modificare `quaderno/`. Nessun aggancio. |
 | `hypomnema/configurazione.py` | Lettura di `hypomnema.toml` (con `tomllib`, o con la copia di tomli in `_tomli/` su Python 3.10). |
 | `hypomnema/blocco.py` | Il blocco del quaderno (0.6.1): `fcntl.flock`/`msvcrt.locking` su `.sportello.lock`, attesa al massimo 10 secondi, si va avanti senza se il disco non permette i blocchi. |
+| `hypomnema/aggiunta.py` | Una riga in fondo a un file con una sola scrittura in aggiunta (0.6.1): `O_APPEND` su Linux e macOS, il solo permesso di aggiungere (`FILE_APPEND_DATA`) su Windows. La usano registro, testimoni e archivio. |
 | `hypomnema/_tomli/` | Copia non modificata di tomli 2.0.1 (MIT), solo per Python 3.10. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |

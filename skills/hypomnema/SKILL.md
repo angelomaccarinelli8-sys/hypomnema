@@ -525,16 +525,25 @@ python3 -B <HY>/programma-chat/programma.py --config <HY>/hypomnema-chat.toml
 2. Write the proposal in `~/hypomnema-temp/proposta.json` (same folder), with the rules of
    section 2; the user's words from the archive copy, never from memory.
 3. `H propose ~/hypomnema-temp/proposta.json`.
-4. Tell the user `ACCETTATA` or `RIFIUTATA` (section 4), and at which level («riscontrata
+4. **Always, right after every `propose` (and every `archive`): `H check`.** It must answer «Quaderno
+   in ordine». If it answers «ATTENZIONE», tell the user exactly what it lists (for example a note
+   without its line in the register, or a damaged line): **do not repair anything and do not propose
+   the same note again** until the user has looked.
+5. Tell the user `ACCETTATA` or `RIFIUTATA` (section 4), and at which level («riscontrata
    sull'archivio della chat» or «non verificata»).
 
 That is all: **no snapshot, no copy, no bringing back, no compare**. The temporary files stay
 where they are: they are outside the connected folders.
 
-**Two writers.** Claude Code (with the plugin) may write on the same notebook at the same moment:
-the desk holds a lock (the empty file `quaderno/.sportello.lock`, never to be deleted) for each
-pass. If `propose` answers «ERRORE: il quaderno è occupato da un altro passaggio», nothing was
-written: wait a few seconds and propose again.
+**Two writers: the limit.** Claude Code (with the plugin, on Windows) may write on the same notebook
+at the same moment. The desk's lock (the empty file `quaderno/.sportello.lock`, never to be deleted)
+works only between programs **on the same machine**: it does **not** pass between Windows and the
+chat's machine (tried on 18/10/2026). Between the two machines only these defences remain: a note is
+created with an exclusive open (two writers never get the same number and never overwrite a note),
+each register line is added with one single append, a note just being written is reread for a
+moment, and **your `H check` after every `propose`**. If `propose` answers «ERRORE: il quaderno è
+occupato da un altro passaggio», nothing was written: wait a few seconds and propose again. If the
+user is working in Claude Code at the same time, prefer saving when they are not.
 
 **D5. If something does not work** (the machine does not answer, Python older than 3.10,
 `programma-chat` missing or old, `status` not saying «NON C'È», an `ERRORE` of the program), tell

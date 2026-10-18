@@ -22,7 +22,7 @@ import json
 import re
 from datetime import datetime
 
-from hypomnema import testimone
+from hypomnema import aggiunta, testimone
 from hypomnema.configurazione import Configurazione
 from hypomnema.testimone import ErroreTestimone, Messaggio
 
@@ -119,8 +119,7 @@ def registra(config: Configurazione, adesso: datetime, contenuto: bytes) -> bool
         voce["prompt_id"] = prompt_id
 
     config.cartella_quaderno.mkdir(parents=True, exist_ok=True)
-    with open(config.file_risposte, "a", encoding="utf-8", newline="\n") as f:
-        f.write(json.dumps(voce, ensure_ascii=False) + "\n")
+    aggiunta.aggiungi(config.file_risposte, json.dumps(voce, ensure_ascii=False) + "\n")
     return True
 
 

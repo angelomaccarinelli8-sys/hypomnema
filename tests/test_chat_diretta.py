@@ -23,6 +23,11 @@ from hypomnema import _tomli, archivio, blocco, cambiamenti, configurazione, con
 from hypomnema.cli import main
 from tests.esecutore import CONFIG_DI_PROVA, RADICE
 
+
+def registro_intestazione() -> str:
+    from hypomnema.registro import INTESTAZIONE
+    return INTESTAZIONE
+
 ADESSO = datetime(2026, 1, 15, 10, 0, 0, tzinfo=timezone(timedelta(hours=1)))
 MODELLO_CHAT = RADICE / "chat" / "hypomnema-chat.toml"
 CONFIG_CODE = CONFIG_DI_PROVA.replace("attivo = false", "attivo = true")
@@ -151,6 +156,30 @@ def _proponi_in_un_processo(argomenti):
     return esito.returncode
 
 
+# Come lo sportello su un'altra macchina: il blocco c'è, ma non passa da una macchina all'altra
+# (verificato da Angelo il 18/10/2026 tra Windows e la chat). Qui il blocco si comporta come su un
+# disco che non permette i blocchi: ognuno va avanti senza aspettare gli altri.
+SENZA_BLOCCO = "\n".join((
+    "import errno, sys",
+    "sys.path.insert(0, sys.argv[1])",
+    "from hypomnema import blocco",
+    "def _prova(f):",
+    "    raise OSError(errno.ENOLCK, 'blocco che non passa tra due macchine')",
+    "blocco._prova = _prova",
+    "from hypomnema.cli import main",
+    "sys.exit(main(sys.argv[2:]))",
+))
+
+
+def _proponi_senza_blocco(argomenti):
+    cartella, config, numero = argomenti
+    file = Path(cartella) / f"proposta-{numero}.json"
+    file.write_bytes(proposta(text=f"Idea numero {numero}."))
+    esito = subprocess.run([sys.executable, "-B", "-c", SENZA_BLOCCO, str(RADICE), "--config", config, "propose",
+                            str(file)], capture_output=True, timeout=120)
+    return esito.returncode, esito.stdout.decode("utf-8")
+
+
 class TestDueCheScrivonoInsieme(CartellaDellUtente):
     def setUp(self):
         super().setUp()
@@ -170,6 +199,22 @@ class TestDueCheScrivonoInsieme(CartellaDellUtente):
         testi = sorted(p.read_text(encoding="utf-8").split("## Text\n\n")[1].strip()
                        for p in (self.quaderno / "note").iterdir())
         self.assertEqual(testi, sorted(f"Idea numero {i}." for i in range(40)))  # nessuna sovrascritta
+        self.assertTrue(controllo.controlla(configurazione.carica(str(self.config_code))).in_ordine)
+
+    def test_due_macchine_senza_blocco_comune(self):
+        """Il blocco non passa tra le due macchine: restano l'apertura esclusiva, l'aggiunta in una scrittura
+        sola e la rilettura delle note appena create. Quaranta proposte insieme, nessuna persa."""
+        lavori = [(str(self.casa), str(self.config_chat if i % 2 else self.config_code), i) for i in range(40)]
+        with ThreadPoolExecutor(max_workers=20) as gruppo:
+            esiti = list(gruppo.map(_proponi_senza_blocco, lavori))
+        self.assertEqual([codice for codice, _ in esiti], [0] * 40, [u for c, u in esiti if c])
+        self.assertEqual(sorted(p.name for p in (self.quaderno / "note").iterdir()),
+                         [f"{n:04d}.md" for n in range(1, 41)])
+        registro = (self.quaderno / "registro.md").read_text(encoding="utf-8")
+        self.assertTrue(registro.startswith(registro_intestazione()))
+        self.assertEqual(registro.count("# Registro degli ingressi"), 1)
+        self.assertEqual(len(re.findall(r"^- \S+ \| ACCETTATA \| nota \d{4} \| da: proposta-\d+\.json$", registro,
+                                        re.MULTILINE)), 40)
         self.assertTrue(controllo.controlla(configurazione.carica(str(self.config_code))).in_ordine)
 
     def test_dieci_chiusure_insieme_una_sola_entra(self):
@@ -339,7 +384,7 @@ class TestStessiByteDaWindowsELinux(unittest.TestCase):
         """Nel codice, ogni apertura di file in testo dice encoding="utf-8" e (in scrittura) newline="\\n"."""
         for file in sorted((RADICE / "hypomnema").glob("*.py")):
             testo = file.read_text(encoding="utf-8")
-            for chiamata in re.finditer(r"\bopen\((?P<arg>[^)]*)\)|\.(?P<metodo>write_text|read_text)\((?P<arg2>[^)]*)\)",
+            for chiamata in re.finditer(r"(?<![.\w])open\((?P<arg>[^)]*)\)|\.(?P<metodo>write_text|read_text)\((?P<arg2>[^)]*)\)",
                                         testo):
                 arg = chiamata.group("arg") if chiamata.group("arg") is not None else chiamata.group("arg2")
                 with self.subTest(file=file.name, chiamata=chiamata.group(0)):
@@ -350,13 +395,32 @@ class TestStessiByteDaWindowsELinux(unittest.TestCase):
                         self.assertIn('newline="\\n"', arg)
 
 
+class TestAggiunta(unittest.TestCase):
+    def test_una_sola_scrittura_in_aggiunta(self):
+        from hypomnema import aggiunta
+        with tempfile.TemporaryDirectory() as cartella:
+            file = Path(cartella) / "registro.md"
+            if os.name == "nt":
+                aggiunta.aggiungi(file, "- una riga à\n")
+            else:
+                vere = os.write
+                chiamate = []
+                with mock.patch.object(os, "write", lambda fd, dati: chiamate.append(dati) or vere(fd, dati)):
+                    aggiunta.aggiungi(file, "- una riga à\n")
+                self.assertEqual(chiamate, ["- una riga à\n".encode("utf-8")])
+            aggiunta.aggiungi(file, "- un'altra\n")
+            self.assertEqual(file.read_bytes(), "- una riga à\n- un'altra\n".encode("utf-8"))
+
+
 class TestDocumenti(unittest.TestCase):
     def test_skill_readme_storia(self):
         skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
         for frammento in ("### C0. Chat connected to the computer", "python3 -B <HY>/programma-chat/programma.py",
                           "**you must never delete or overwrite files in the connected\nfolders**",
                           "`H status` must say `Testimone: NON C'È (configurazione per la chat di Claude)`",
-                          "~/hypomnema-temp/proposta.json", "go on with C1-C5", "Python 3.10 or newer"):
+                          "~/hypomnema-temp/proposta.json", "go on with C1-C5", "Python 3.10 or newer",
+                          "**Always, right after every `propose` (and every `archive`): `H check`.**",
+                          "it does **not** pass between Windows and the\nchat's machine"):
             with self.subTest(frammento=frammento):
                 self.assertIn(frammento, skill)
         readme = (RADICE / "README.md").read_text(encoding="utf-8")

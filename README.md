@@ -265,12 +265,26 @@ Claude te lo dice in una riga e usa la procedura con la copia descritta sopra.
 
 **Claude Code e la chat insieme.** Possono scrivere sullo stesso quaderno nello stesso momento.
 Per ogni passaggio lo sportello prende un **blocco** sul file vuoto `quaderno/.sportello.lock`
-(non cancellarlo: resta vuoto per sempre). Con il blocco due proposte quasi contemporanee non danno
-mai due note con lo stesso numero, non perdono righe del registro e non sovrascrivono niente; se il
-quaderno è occupato per più di 10 secondi lo sportello si ferma con un errore, senza scrivere, e
-basta riproporre. **Limite:** tra Windows e la macchina della chat il blocco vale solo se la
-cartella condivisa passa i blocchi da una parte all'altra, e non è ancora provato. Anche senza il
-blocco, una nota non viene mai sovrascritta e `check` segnala ogni riga mancante o rovinata.
+(non cancellarlo: resta vuoto per sempre). Se il quaderno è occupato per più di 10 secondi lo
+sportello si ferma con un errore, senza scrivere, e basta riproporre.
+
+**Limite, provato il 18/10/2026:** il blocco funziona solo tra programmi sulla **stessa macchina**
+(due sessioni di Claude Code su Windows, due chat). **Tra Windows e la macchina della chat non passa:**
+con il blocco tenuto da Windows, una proposta dalla chat è entrata subito. Tra le due macchine restano
+queste difese, che non hanno bisogno di cancellare niente:
+- ogni nota si crea con apertura esclusiva: due proposte insieme non prendono mai lo stesso numero e
+  una nota non viene mai sovrascritta;
+- ogni riga del registro (e dei file dei testimoni e dell'archivio) si aggiunge con **una sola
+  scrittura in aggiunta**, decisa dal sistema (su Windows con il solo permesso di aggiungere): due
+  righe non si sovrappongono;
+- chi trova una nota appena creata e non ancora scritta la rilegge per un attimo invece di fermarsi;
+- in chat Claude lancia **`check` subito dopo ogni proposta** e ti dice se trova qualcosa che non va
+  (per esempio una nota senza la sua riga nel registro).
+
+Quello che resta scoperto: due passaggi insieme possono controllare le regole sullo stesso quaderno
+nello stesso istante. Per una nota nuova non succede niente di male; per due cambiamenti della stessa
+nota (per esempio due chiusure) il secondo trova il file della versione già scritto e viene rifiutato.
+Se lavori in Claude Code e in chat nello stesso momento, è meglio non salvare dalle due parti insieme.
 
 **Stessi byte da Windows e da Linux.** Tutti i file del quaderno si scrivono sempre in UTF-8 con
 l'a capo `\n`, scelti in modo esplicito, su ogni sistema: una nota scritta da Claude Code su

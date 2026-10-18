@@ -516,7 +516,14 @@ cancella mai; il blocco lo toglie il sistema alla fine del passaggio, anche se i
 interrompe. Se il quaderno è occupato per più di 10 secondi lo sportello si ferma con «ERRORE: il
 quaderno è occupato da un altro passaggio…» senza scrivere niente. Se il disco non permette i
 blocchi si va avanti senza: la nota si crea comunque con apertura esclusiva (mai sovrascritta) e
-`check` segnala ogni nota senza la sua riga. `snapshot` e `changed` non contano il file del blocco.
+`check` segnala ogni nota senza la sua riga.
+
+**Tra due macchine il blocco non passa** (provato il 18/10/2026 tra Windows e la macchina Linux della
+chat). Restano l'apertura esclusiva delle note e delle versioni, la riga del registro aggiunta con una
+sola scrittura in aggiunta (anche quelle dei testimoni e dell'archivio; su Windows con il solo
+permesso di aggiungere, così è il sistema a scrivere in fondo), la rilettura per un attimo di una nota
+appena creata e non ancora scritta, e `check` dopo ogni proposta in chat. Un registro nuovo nasce con
+apertura esclusiva, così l'intestazione si scrive una volta sola. `snapshot` e `changed` non contano il file del blocco.
 
 **Sempre gli stessi byte.** Note, versioni, registro e file dei testimoni e dell'archivio si
 scrivono sempre in UTF-8 con l'a capo `\n`, scelti in modo esplicito: su Windows, su Linux e su

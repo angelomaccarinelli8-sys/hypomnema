@@ -24,6 +24,7 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 from datetime import datetime
 
+from hypomnema import aggiunta
 from hypomnema.configurazione import Configurazione
 
 DICITURA_PRIVATO = "messaggio privato, non registrato"
@@ -127,8 +128,7 @@ def registra(config: Configurazione, adesso: datetime, contenuto: bytes) -> bool
         voce["prompt_id"] = dati["prompt_id"]
 
     config.cartella_quaderno.mkdir(parents=True, exist_ok=True)
-    with open(config.file_testimone, "a", encoding="utf-8", newline="\n") as f:
-        f.write(json.dumps(voce, ensure_ascii=False) + "\n")
+    aggiunta.aggiungi(config.file_testimone, json.dumps(voce, ensure_ascii=False) + "\n")
     return True
 
 

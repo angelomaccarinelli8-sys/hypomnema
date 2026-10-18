@@ -33,7 +33,7 @@ import re
 from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 
-from hypomnema import blocco
+from hypomnema import aggiunta, blocco
 from hypomnema.configurazione import Configurazione
 from hypomnema.risposte import ometti_codice
 from hypomnema.testimone import ErroreTestimone, Messaggio
@@ -269,8 +269,7 @@ def _aggiungi(config: Configurazione, chat, messaggi) -> Esito:
     config.cartella_quaderno.mkdir(parents=True, exist_ok=True)
     for chi in CHI:
         if righe[chi]:
-            with open(file_per[chi], "a", encoding="utf-8", newline="\n") as f:
-                f.writelines(righe[chi])
+            aggiunta.aggiungi(file_per[chi], "".join(righe[chi]))
     return conti
 
 
