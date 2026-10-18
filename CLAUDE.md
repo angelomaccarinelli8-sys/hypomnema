@@ -68,7 +68,8 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
   esplicito: stessi byte da ogni sistema). Unica eccezione: con Python 3.10, dove manca `tomllib`,
   si usa la copia non modificata di tomli in `hypomnema/_tomli/` (MIT).
 - **Un passaggio alla volta** (0.6.1): sportello e `archive` tengono il blocco su
-  `quaderno/.sportello.lock` (file vuoto, mai cancellato); chi legge aspetta.
+  `quaderno/.sportello.lock` (file vuoto, mai cancellato, mai letto da nessun comando: su Windows il
+  blocco è obbligatorio); chi legge aspetta al massimo 10 secondi, poi legge lo stesso.
 
 ## Mappa del codice
 

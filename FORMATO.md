@@ -508,8 +508,10 @@ forma di una riga dello sportello, con il loro numero.
 **Un passaggio alla volta (dalla 0.6.1).** Sullo stesso quaderno possono scrivere insieme Claude
 Code (con il plugin) e la chat collegata al computer. Per tutto il passaggio (lettura del quaderno,
 regole, nota, riga del registro) lo sportello tiene il blocco del sistema operativo sul file vuoto
-`.sportello.lock` nella cartella del quaderno; lo stesso fa il comando `archive`, e i comandi che
-leggono aspettano che il passaggio finisca. Il file si crea vuoto alla prima scrittura e non si
+`.sportello.lock` nella cartella del quaderno; lo stesso fa il comando `archive`. I comandi che
+leggono aspettano che il passaggio finisca, al massimo 10 secondi, poi leggono lo stesso: un passaggio
+fermo a metà non ferma mai la lettura. Il file del blocco non lo legge nessun comando (su Windows il
+blocco è obbligatorio, e chi leggesse la parte bloccata riceverebbe un errore). Il file si crea vuoto alla prima scrittura e non si
 cancella mai; il blocco lo toglie il sistema alla fine del passaggio, anche se il programma si
 interrompe. Se il quaderno è occupato per più di 10 secondi lo sportello si ferma con «ERRORE: il
 quaderno è occupato da un altro passaggio…» senza scrivere niente. Se il disco non permette i
@@ -518,7 +520,8 @@ blocchi si va avanti senza: la nota si crea comunque con apertura esclusiva (mai
 
 **Sempre gli stessi byte.** Note, versioni, registro e file dei testimoni e dell'archivio si
 scrivono sempre in UTF-8 con l'a capo `\n`, scelti in modo esplicito: su Windows, su Linux e su
-macOS lo stesso passaggio dà lo stesso file, byte per byte.
+macOS lo stesso passaggio dà lo stesso file, byte per byte. Lo stesso vale per l'uscita a schermo dei
+comandi.
 
 Ogni passaggio occupa sempre una sola riga: se il nome del file o un motivo contengono un
 "a capo" (per esempio un nome di campo inventato), al suo posto viene scritto il segno ⏎.

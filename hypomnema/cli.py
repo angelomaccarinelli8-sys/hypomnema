@@ -763,14 +763,16 @@ def main(
     # Sempre UTF-8: chi legge l'uscita (Claude, Git Bash) si aspetta UTF-8, anche su Windows
     # dove Python userebbe altrimenti la vecchia codifica di sistema. Nella finestra della
     # console non cambia niente: lì Python scrive già correttamente.
+    # Anche l'a capo è sempre lo stesso, «\n»: su Windows Python scriverebbe «\r\n». Così l'uscita è
+    # identica byte per byte su ogni sistema.
     if uscita is None:
         uscita = sys.stdout
         if hasattr(uscita, "reconfigure"):
-            uscita.reconfigure(encoding="utf-8", errors="replace")
+            uscita.reconfigure(encoding="utf-8", errors="replace", newline="\n")
     if errori is None:
         errori = sys.stderr
         if hasattr(errori, "reconfigure"):
-            errori.reconfigure(encoding="utf-8", errors="replace")
+            errori.reconfigure(encoding="utf-8", errors="replace", newline="\n")
     try:
         argomenti = _parser().parse_args(argv)
     except SystemExit as uscita_argparse:

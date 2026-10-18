@@ -15,8 +15,12 @@ da togliere a mano.
   lettura del quaderno, regole, file nuovi e righe in fondo.
 - I comandi che leggono soltanto lo prendono solo se il file c'è già, così un quaderno vuoto resta
   vuoto.
-- Se il quaderno è occupato si aspetta al massimo ``ATTESA_BLOCCO`` secondi, poi ci si ferma senza
-  aver scritto niente (``QuadernoOccupato``).
+- Se il quaderno è occupato si aspetta al massimo ``ATTESA_BLOCCO`` secondi. Poi chi scrive si
+  ferma senza aver scritto niente (``QuadernoOccupato``); chi legge soltanto va avanti senza blocco,
+  così un passaggio fermo a metà non ferma mai la lettura.
+- Il file del blocco non si legge mai: su Windows il blocco è obbligatorio (chi legge la parte
+  bloccata riceve un errore), per questo si blocca un byte lontanissimo dalla fine del file, che
+  resta vuoto. Nessun comando lo legge: ``snapshot`` e ``changed`` lo saltano.
 - Se il disco non permette i blocchi (alcune cartelle condivise) si va avanti senza: restano
   l'apertura esclusiva delle note, che non sovrascrive mai, e ``check``.
 """
@@ -41,15 +45,19 @@ class QuadernoOccupato(Exception):
     """Un altro passaggio tiene il quaderno da più di ATTESA_BLOCCO secondi."""
 
 
+# Su Windows si blocca un solo byte, molto oltre la fine del file vuoto: Windows lo permette, e chi
+# legge il file (vuoto) non tocca mai la parte bloccata.
+POSIZIONE_WINDOWS = 1 << 30
+
 if os.name == "nt":
     import msvcrt
 
     def _prova(f) -> None:
-        f.seek(0)
+        f.seek(POSIZIONE_WINDOWS)
         msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
 
     def _lascia(f) -> None:
-        f.seek(0)
+        f.seek(POSIZIONE_WINDOWS)
         msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
 else:
     import fcntl
@@ -104,7 +112,12 @@ def blocco(cartella_quaderno: Path, crea: bool, attesa: float | None = None):
         yield
         return
     try:
-        preso = _prendi(f, attesa)
+        try:
+            preso = _prendi(f, attesa)
+        except QuadernoOccupato:
+            if crea:
+                raise
+            preso = False  # chi legge soltanto non si ferma: legge senza blocco
         try:
             yield
         finally:

@@ -95,6 +95,8 @@ class CartellaDellUtente(unittest.TestCase):
              *argomenti],
             capture_output=True, cwd=self.casa, env=ambiente, timeout=60,
         )
+        # L'uscita a schermo ha sempre l'a capo «\n», anche su Windows (vedi cli.main).
+        self.assertNotIn(b"\r", esito.stdout)
         return esito.returncode, esito.stdout.decode("utf-8")
 
 
@@ -183,10 +185,8 @@ class TestDueCheScrivonoInsieme(CartellaDellUtente):
         registro = (self.quaderno / "registro.md").read_text(encoding="utf-8")
         self.assertEqual(registro.count("already closed (✓T0001.1)"), 9)
 
-    def test_quaderno_occupato(self):
-        """Con il blocco tenuto da un altro processo lo sportello aspetta, poi si ferma senza scrivere."""
-        sportello.ricevi(proposta(), "p.json", configurazione.carica(str(self.config_chat)), ADESSO)
-        prima = {p.name: p.read_bytes() for p in self.quaderno.rglob("*") if p.is_file()}
+    def tieni_il_blocco(self):
+        """Un altro processo prende il blocco del quaderno e lo tiene (come un passaggio fermo a metà)."""
         tieni = subprocess.Popen(
             [sys.executable, "-c", "import sys, time; sys.path.insert(0, sys.argv[1]);"
              "from pathlib import Path; from hypomnema import blocco;"
@@ -194,20 +194,79 @@ class TestDueCheScrivonoInsieme(CartellaDellUtente):
              "time.sleep(30)", str(RADICE), str(self.quaderno)],
             stdout=subprocess.PIPE,
         )
-        try:
-            self.assertEqual(tieni.stdout.readline().strip(), b"preso")
-            with mock.patch.object(blocco, "ATTESA_BLOCCO", 0.3):
-                uscita = io.StringIO()
-                file = self.casa / "proposta.json"
-                file.write_bytes(proposta(text="Arriva mentre il quaderno è occupato."))
-                codice = main(["--config", str(self.config_chat), "propose", str(file)], adesso=ADESSO, uscita=uscita)
-            self.assertEqual(codice, 2)
-            self.assertTrue(uscita.getvalue().startswith("ERRORE: il quaderno è occupato da un altro passaggio"))
-            dopo = {p.name: p.read_bytes() for p in self.quaderno.rglob("*") if p.is_file()}
-            self.assertEqual(dopo, prima)
-        finally:
-            tieni.kill()
-            tieni.wait()
+        self.addCleanup(tieni.wait)
+        self.addCleanup(tieni.kill)
+        self.assertEqual(tieni.stdout.readline().strip(), b"preso")
+        self.addCleanup(tieni.stdout.close)
+
+    def file_del_quaderno(self):
+        # Senza il file del blocco, come fanno snapshot e changed.
+        return {p.relative_to(self.quaderno).as_posix(): p.read_bytes() for p in self.quaderno.rglob("*")
+                if p.is_file() and p.name != blocco.NOME_FILE}
+
+    def test_quaderno_occupato(self):
+        """Con il blocco tenuto da un altro processo lo sportello aspetta, poi si ferma senza scrivere."""
+        sportello.ricevi(proposta(), "p.json", configurazione.carica(str(self.config_chat)), ADESSO)
+        prima = self.file_del_quaderno()
+        self.tieni_il_blocco()
+        file = self.casa / "proposta.json"
+        file.write_bytes(proposta(text="Arriva mentre il quaderno è occupato."))
+        with mock.patch.object(blocco, "ATTESA_BLOCCO", 0.3):
+            uscita = io.StringIO()
+            codice = main(["--config", str(self.config_chat), "propose", str(file)], adesso=ADESSO, uscita=uscita)
+        self.assertEqual(codice, 2)
+        self.assertTrue(uscita.getvalue().startswith("ERRORE: il quaderno è occupato da un altro passaggio"))
+        self.assertEqual(self.file_del_quaderno(), prima)
+
+    def test_chi_legge_va_avanti_anche_con_il_blocco_tenuto(self):
+        """Mentre un altro processo tiene il blocco, i comandi che leggono funzionano lo stesso."""
+        config = configurazione.carica(str(self.config_chat))
+        sportello.ricevi(proposta(kind="todo", text="Rinvasare il limone."), "p.json", config, ADESSO)
+        istantanea = self.casa / "prima.json"
+        istantanea.write_text(json.dumps(cambiamenti.istantanea(config)), encoding="utf-8")
+        self.tieni_il_blocco()
+        with mock.patch.object(blocco, "ATTESA_BLOCCO", 0.3):
+            for comando in (("snapshot",), ("check",), ("changed", str(istantanea)), ("recap",), ("search", "limone"),
+                            ("review",), ("reminders",), ("status",), ("diary", "limone")):
+                with self.subTest(comando=comando[0]):
+                    uscita = io.StringIO()
+                    codice = main(["--config", str(self.config_chat), *comando], adesso=ADESSO, uscita=uscita)
+                    self.assertEqual(codice, 0, uscita.getvalue())
+                    self.assertNotIn("ERRORE", uscita.getvalue())
+
+    def test_nessun_comando_legge_il_file_del_blocco(self):
+        """Su Windows chi legge la parte bloccata riceve un errore: nessun comando deve aprirlo per leggere.
+
+        Qui ogni apertura del file del blocco per leggerlo dà l'errore di Windows; può solo essere aperto
+        in aggiunta ("a+b"), come fa il blocco.
+        """
+        config = configurazione.carica(str(self.config_chat))
+        sportello.ricevi(proposta(kind="todo", text="Rinvasare il limone."), "p.json", config, ADESSO)
+        istantanea = self.casa / "prima.json"
+        istantanea.write_text(json.dumps(cambiamenti.istantanea(config)), encoding="utf-8")
+        copia = self.casa / "copia.json"
+        copia.write_text(json.dumps({"chat": "https://claude.ai/chat/esempio-inventato", "fuso": "UTC+01:00",
+                                     "messaggi": [{"turno": 1, "quando": "Thu 2026-01-15 10:00", "chi": "utente",
+                                                   "testo": "Ciao."}]}), encoding="utf-8")
+        nuova = self.casa / "proposta.json"
+        nuova.write_bytes(proposta(text="Una nota nuova."))
+        apri = builtins.open
+
+        def come_windows(file, mode="r", *args, **kwargs):
+            if Path(os.fspath(file)).name == blocco.NOME_FILE and "a" not in mode:
+                raise PermissionError(13, "Permission denied (simulato: file bloccato su Windows)", str(file))
+            return apri(file, mode, *args, **kwargs)
+
+        with mock.patch("builtins.open", come_windows), mock.patch("io.open", come_windows):
+            for comando in (("snapshot",), ("changed", str(istantanea)), ("check",), ("recap",), ("search", "limone"),
+                            ("search", "limone", "--all"), ("review",), ("reminders",), ("status",),
+                            ("diary", "limone"), ("archive", str(copia)), ("propose", str(nuova)),
+                            ("compare", str(nuova), str(nuova)), ("fingerprint", str(nuova))):
+                with self.subTest(comando=comando[0]):
+                    uscita = io.StringIO()
+                    codice = main(["--config", str(self.config_chat), *comando], adesso=ADESSO, uscita=uscita,
+                                  errori=uscita)
+                    self.assertEqual(codice, 0, uscita.getvalue())
 
     def test_chi_legge_non_crea_il_blocco_e_cambiati_non_lo_riporta(self):
         config = configurazione.carica(str(self.config_chat))
