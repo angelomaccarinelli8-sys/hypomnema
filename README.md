@@ -245,15 +245,19 @@ dell'avviabile) non si tocca.
 **La configurazione della chat** è un file a parte, `hypomnema-chat.toml`, accanto al tuo
 `hypomnema.toml`: stesso quaderno, testimone spento (`modalita = "chat"`), archivio della chat. La
 prima volta lo crea Claude dal modello (`programma-chat/chat/hypomnema-chat.toml`), senza
-sovrascrivere niente; puoi anche copiarlo tu:
+sovrascrivere niente, con il **tuo** fuso orario (se non lo sa, te lo chiede); puoi anche copiarlo
+tu, e poi correggere la riga `fuso` con il tuo fuso:
 
 ```powershell
 Copy-Item programma-chat\chat\hypomnema-chat.toml hypomnema-chat.toml
+notepad hypomnema-chat.toml
 ```
 
-**Il fuso orario.** Il modello ha `fuso = "Europe/Rome"`: la macchina della chat può avere
-l'orologio in UTC, e con questa impostazione «oggi» (recap, promemoria, revisione) e le ore del
-registro sono quelle italiane, con l'ora legale. Sulla macchina della chat la tabella dei fusi c'è
+**Il fuso orario.** Il modello ha `fuso = "Europe/Rome"` come **esempio** (l'Italia): nel tuo
+`hypomnema-chat.toml` va il tuo fuso, con il nome della tabella dei fusi orari (per esempio
+`Europe/Zurich`). La macchina della chat può avere l'orologio in UTC, e con questa impostazione
+«oggi» (recap, promemoria, revisione) e le ore del registro sono quelle del tuo fuso, con l'ora
+legale. Sulla macchina della chat la tabella dei fusi c'è
 (verificato il 18/10/2026). Se il fuso non si trova (nome scritto male, o tabella dei fusi mancante,
 come di solito su Windows) il programma si ferma con un errore chiaro e non scrive niente: non torna
 mai in silenzio all'ora del computer. Nella configurazione di Claude Code non serve: lì vale l'ora

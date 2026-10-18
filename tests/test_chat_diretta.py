@@ -505,7 +505,9 @@ class TestDocumenti(unittest.TestCase):
                           "`H status` must say `Testimone: NON C'È (configurazione per la chat di Claude)`",
                           "~/hypomnema-temp/proposta.json", "go on with C1-C5", "Python 3.10 or newer",
                           "**Always, right after every `propose` (and every `archive`): `H check`.**",
-                          "it does **not** pass between Windows and the\nchat's machine"):
+                          "it does **not** pass between Windows and the\nchat's machine",
+                          "**the user's time zone** in place of the model's example",
+                          "**If you do not know it, ask**"):
             with self.subTest(frammento=frammento):
                 self.assertIn(frammento, skill)
         readme = (RADICE / "README.md").read_text(encoding="utf-8")
@@ -514,6 +516,8 @@ class TestDocumenti(unittest.TestCase):
         self.assertIn("## 0.6.1 (prototipo) — la chat scrive direttamente sul quaderno",
                       (RADICE / "STORIA.md").read_text(encoding="utf-8"))
         self.assertIn("`.sportello.lock`", (RADICE / "FORMATO.md").read_text(encoding="utf-8"))
+        # Il modello è pubblico: Europe/Rome è solo un esempio, e la chat scrive il fuso dell'utente.
+        self.assertIn('"Europe/Rome" è solo un ESEMPIO', MODELLO_CHAT.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

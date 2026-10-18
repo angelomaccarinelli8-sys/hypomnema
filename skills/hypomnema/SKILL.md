@@ -497,13 +497,25 @@ python3 -B <HY>/programma-chat/programma.py --version   # hypomnema 0.6.1 or new
 
 **D2. The chat configuration.** The chat uses its own file, `<HY>/hypomnema-chat.toml`, next to
 `hypomnema.toml` (Claude Code's, with the witnesses on), **which you never use and never touch**.
-If `hypomnema-chat.toml` is missing, create it from the model, without overwriting anything, and
-tell the user («Ho creato hypomnema-chat.toml, la configurazione della chat, accanto a quella di
-Claude Code: stesso quaderno.»):
+If `hypomnema-chat.toml` is missing, create it from the model, without overwriting anything, with
+**the user's time zone** in place of the model's example (`fuso = "Europe/Rome"` is only an example):
+
+1. Find the user's time zone, as a name of the time zone table (for example `Europe/Rome`,
+   `Europe/Zurich`, `America/New_York`): from what you know from the conversation (where the user
+   lives or is now). **If you do not know it, ask** («In che fuso orario sei? Per esempio: Italia,
+   Svizzera…») and never guess from the language.
+2. Check that the name exists on that machine, before writing anything:
+   `python3 -c "import zoneinfo; zoneinfo.ZoneInfo('<FUSO>')"` (no output = it exists).
+3. Create the file, with that time zone (`<FUSO>` is the name, for example `Europe/Zurich`):
 
 ```
-[ -e <HY>/hypomnema-chat.toml ] || cp <HY>/programma-chat/chat/hypomnema-chat.toml <HY>/hypomnema-chat.toml
+[ -e <HY>/hypomnema-chat.toml ] || sed 's|^fuso = .*|fuso = "<FUSO>"|' <HY>/programma-chat/chat/hypomnema-chat.toml > <HY>/hypomnema-chat.toml
+grep '^fuso = ' <HY>/hypomnema-chat.toml
 ```
+
+4. Tell the user («Ho creato hypomnema-chat.toml, la configurazione della chat, accanto a quella di
+   Claude Code: stesso quaderno, fuso orario <FUSO>.»). If the file already exists, never change it:
+   if its time zone looks wrong, tell the user, who changes it.
 
 From here on `H` means exactly:
 
