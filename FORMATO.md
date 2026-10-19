@@ -33,15 +33,17 @@ Una proposta è **una sola nota** scritta in JSON, salvata in UTF-8.
 | `knowledge` | sì | `stated`, `observed`, `inferred` | Come si sa: detta esplicitamente, vista, oppure ricavata ragionando. |
 | `kind` | sì (no in un cambiamento) | `fact`, `idea`, `decision`, `open`, `todo` | Che cosa è: un fatto, un'idea, una decisione, una questione aperta, una cosa da fare. In un cambiamento (`corrects`, `updates`, `done`, `reopens`) dice che cosa diventa la nota; se manca, la natura non cambia. |
 | `text` | sì | testo, anche su più righe | Con `author: user`: **le parole esatte dell'utente**, copiate da un suo messaggio. Con `author: claude`: le parole di Claude. In un cambiamento è ciò che è stato detto adesso: il testo nuovo con `corrects`, il motivo con `updates`, `done` e `reopens`. |
-| `context` | no; **solo** con `author: user` | testo, anche su più righe | Ciò che Claude aggiunge alle parole dell'utente (spiegazioni, di cosa si parlava). Mostrato come "Context written by Claude". |
+| `context` | no; **solo** con `author: user` | testo, anche su più righe | Ciò che Claude aggiunge alle parole dell'utente (spiegazioni, di cosa si parlava). Mostrato come "Context written by Claude". Dalla 0.7.0 anche nei cambiamenti dell'utente (`updates`, `done`, `reopens`), accanto al motivo: va nel blocco del cambiamento. |
 | `quote` | no; **solo** con `author: claude` | testo, anche su più righe | Le parole esatte dell'utente su cui Claude basa la sua nota. |
 | `confirms` | no | numero di una nota esistente, per esempio `"0001"` | Solo per una decisione che conferma un'idea già nel quaderno. |
 | `corrects` | no | numero di una nota esistente, per esempio `"0007"` | Corregge il **testo** della nota: crea la sua versione successiva, con il `text` della proposta come testo nuovo. Insieme si possono cambiare `kind`, `priority` e `remind`. |
-| `updates` | no | numero di una nota esistente | Cambia natura (`kind`), priorità (`priority`) o promemoria (`remind`) senza toccare il testo: crea la versione successiva; il `text` è il motivo. |
+| `updates` | no | numero di una nota esistente | Cambia natura (`kind`), priorità (`priority`), promemoria (`remind`) o etichette (`who`, `about`) senza toccare il testo: crea la versione successiva; il `text` è il motivo. |
 | `reopens` | no | numero di una nota chiusa | Riapre la nota: crea una versione non chiusa; il `text` è il motivo. Se `kind` manca, torna la natura che la nota aveva prima della chiusura. |
 | `remind` | no | solo il giorno: `AAAA-MM-GG` | Promemoria: il giorno in cui riprendere la nota. Il comando `reminders` elenca quelli arrivati o passati. |
 | `done` | no | uno o più numeri di note esistenti, separati da virgole: `"0012"` oppure `"0012, 0015"` | Chiude le note indicate: questioni aperte (`open`), cose da fare (`todo`) o promemoria (con `remind`). Crea una versione chiusa per ciascuna, con lo stesso motivo (il `text`). Vedi «Chiudere e riaprire». |
 | `priority` | no; **solo** con `author: user` | `high`, `normal`, `low` | La priorità; senza, vale `normal`. Si cambia con `updates`. |
+| `who` | no (dalla 0.7.0) | una o due etichette CHI, separate da virgola: `"Anna"`, `"Anna, Marco"` | Le persone di cui parla la nota, dalla lista `chi` di `etichette.toml`. Vedi «Le etichette». |
+| `about` | no (dalla 0.7.0) | una o due etichette COSA, separate da virgola | I progetti o gli argomenti, dalla lista `cosa` di `etichette.toml`. |
 | `from_reply` | no; **solo** con `author: claude`, mai insieme a `quote` | `"yes"` | Il `text` è un pezzo di una risposta di Claude («Salva questa risposta di Claude»). Con il testimone delle risposte acceso, lo sportello lo cerca nelle risposte registrate. |
 
 `corrects`, `updates`, `done` e `reopens` sono i **cambiamenti**: una proposta ne usa uno solo e non
@@ -60,7 +62,7 @@ I valori vanno scritti esattamente così, in minuscolo. Gli spazi all'inizio e a
 `fonte`, `autore` (`utente`), `tipo` (`dichiarata`, `osservata`, `dedotta`), `natura` (`fatto`,
 `idea`, `decisione`, `discorso aperto`), `testo`, `contesto`, `citazione`, `conferma_di`,
 `corregge`, `aggiorna` (per `updates`), `riapre` (per `reopens`), `riprendere_il`, `da_risposta` (`sì`),
-`priorità` (`alta`, `normale`, `bassa`).
+`priorità` (`alta`, `normale`, `bassa`), e dalla 0.7.0 `chi` (per `who`) e `cosa` (per `about`).
 Lo sportello li porta all'inglese e la nota nuova si scrive in inglese. Lo stesso campo non può
 comparire due volte, nemmeno con i due nomi (per esempio `data` e `date`).
 
@@ -272,12 +274,15 @@ Il basilico è urgente, sta finendo la stagione buona.
 ```
 
 - `change` elenca che cosa cambia, separato da `; `: `text corrected`, `kind todo → decision`,
-  `priority normal → high`, `remind 2026-01-20` (oppure `remind 2026-01-20 → 2026-01-25`), `closed`,
-  `reopened`.
+  `priority normal → high`, `remind 2026-01-20` (oppure `remind 2026-01-20 → 2026-01-25`),
+  `who → Anna` (oppure `who Anna → Anna, Marco`), `about → orto`, `closed`, `reopened`.
 - `### Reason` è il motivo: il `text` della proposta, cioè le parole di chi ha chiesto il cambiamento
   (verificate dal testimone come ogni nota dell'utente). In una correzione del testo non c'è: le
   parole nuove sono il testo stesso, e l'intestazione (data, fonte, autore, knowledge, verifica)
   diventa quella della correzione.
+- Dalla 0.7.0, in un `updates`, `done` o `reopens` dell'utente, dopo `### Reason` può esserci
+  `### Context written by Claude`: la spiegazione di Claude, tenuta a parte dalle parole dell'utente.
+  Il testo e il contesto di una proposta non possono contenere quella riga.
 - Una nota di Claude può avere nel blocco anche `quote`, le parole dell'utente su cui si basa.
 - Si cambia sempre l'**ultima** versione; un rimando a una versione vecchia è rifiutato.
 - Il numero delle note nuove è il primo numero intero dopo il più alto: le versioni non contano e
@@ -407,14 +412,48 @@ in «Ultime decisioni», con `✓`).
 4. le ultime decisioni;
 5. le ultime voci del diario, nell'ordine in cui sono state dette, con la prima riga del testo.
 
-Nei blocchi 1-4 vengono prima le note a priorità alta, poi le normali, poi le basse; a parità di
-priorità, i promemoria dal più vecchio e il resto dal più recente (per numero di nota). In fondo c'è
-la legenda dei codici.
+Nei blocchi 1-4 vengono prima le note a priorità alta, poi le normali, poi le basse. A parità di
+priorità, i promemoria dal più vecchio (per data del promemoria, poi per numero). Il resto, dalla
+0.7.0, dal **giorno dell'ultima versione** più recente, senza contare le versioni che cambiano solo le
+etichette, e a parità di giorno dal numero di nota più alto (prima della 0.7.0: solo per numero di
+nota). La data sulla riga è quella dello stesso giorno. In fondo c'è la legenda dei codici.
 
 Quante voci mostrare per i blocchi 2, 3, 4 e 5 si regola nella sezione facoltativa `[recap]`
-(`discorsi_aperti`, `todo`, `decisioni`, `voci_diario`, numeri interi maggiori di zero). Se la
-sezione o un'impostazione mancano valgono 5, 5, 5 e 10. Se le voci sono di più, il recap dice quante
-non ha mostrato.
+(`discorsi_aperti`, `todo`, `decisioni`, numeri interi maggiori di zero; `voci_diario`, zero o più:
+con 0, dalla 0.7.0, il blocco del diario non compare). Se la sezione o un'impostazione mancano
+valgono 5, 5, 5 e 10. Se le voci sono di più, il recap dice quante non ha mostrato.
+
+Con un filtro per etichette (`--who`/`--chi`, `--about`/`--cosa`, vedi «Le etichette») i blocchi 1-4
+hanno solo le note con tutte quelle etichette, la prima riga lo dice, e al posto del diario c'è
+«Ultime voci del diario: non mostrate (il diario non ha etichette).». Ogni riga di una nota con
+etichette finisce con ` · chi: … · cosa: …`.
+
+## Le etichette
+
+Dalla 0.7.0 una nota può avere fino a due etichette CHI (`who`: persone) e fino a due COSA (`about`:
+progetti o argomenti). L'intestazione le mostra dopo la priorità: `- who: Anna, Marco`, `- about: orto`.
+
+- **La lista** è il file `etichette.toml` nella cartella del quaderno, scritto dall'utente (Claude non
+  lo scrive mai; un modello commentato è `esempi/etichette.toml`):
+  `chi = ["Anna", "Marco"]` e `cosa = ["orto", "bilancio"]`, liste di testi su una riga, senza virgole,
+  senza spazi all'inizio o alla fine, senza doppioni. Lo leggono tutte le configurazioni dello stesso
+  quaderno. Si legge solo quando serve (una proposta con etichette, un filtro, `labels`); se è scritto
+  male il comando si ferma con un errore e non scrive niente, nemmeno nel registro. `check` lo ignora.
+- **Senza il file**, nessuna nota può avere etichette: «there are no labels in this notebook…».
+- **Regole dello sportello:** ogni etichetta dev'essere nella lista, uguale lettera per lettera; al
+  massimo due per campo; nessuna ripetuta, nessuna vuota. Le etichette si cambiano solo con `updates`
+  (non con `corrects`, `done`, `reopens`); le versioni le copiano.
+- **Chi le cambia:** l'utente sempre; Claude sulle sue note sempre; Claude su una nota dell'utente solo
+  se non ha ancora etichette («only the user can change the labels of one of the user's notes once they
+  are set»).
+- **Una versione che cambia solo le etichette** non conta per l'ordine del recap e per i giorni della
+  revisione.
+- **Filtri:** `search` e `recap` accettano `--who` (`--chi`) e `--about` (`--cosa`), anche più volte:
+  devono valere tutti, sull'ultima versione. Con un filtro `search` può fare a meno della parola.
+  Un'etichetta che non è nella lista e che nessuna nota usa è un errore (codice 2).
+- **`labels`** (`etichette`): per ogni etichetta della lista quante note la hanno (ultima versione) e
+  quante sono aperte (open, todo e promemoria non chiusi); poi le etichette usate in qualche nota ma
+  non più nella lista.
 
 ## La revisione
 
@@ -474,7 +513,7 @@ Conferma dell'idea 0001: annaffiare la mattina presto invece che la sera.
 
 La sezione "Context written by Claude" compare solo se la nota ha un `context`. I campi
 d'intestazione hanno quest'ordine: `date`, `source`, `author`, `knowledge`, `kind`, `status`, `priority`,
-`confirms`, `corrects`, `done`, `remind`, `quote`, `from_reply`, `verification`; quelli facoltativi
+`who`, `about`, `confirms`, `corrects`, `done`, `remind`, `quote`, `from_reply`, `verification`; quelli facoltativi
 compaiono solo se presenti.
 
 Le note salvate prima della 0.5.0 hanno il formato italiano (`# Nota 0002`, `- data:`, `- fonte:`,
@@ -492,9 +531,20 @@ e il giorno di «oggi» (recap, promemoria, revisione) sono quelli del computer.
 `fuso = "Europe/Rome"`): date e ore si scrivono in quel fuso, con l'ora legale, qualunque sia
 l'orologio del computer. Serve alla chat collegata al computer, la cui macchina può avere l'orologio
 in UTC: alle 00:30 italiane del 15 luglio «oggi» è già il 15 e la riga del registro dice
-`2026-07-15T00:30:00+02:00`. Se l'impostazione c'è ma il fuso non si trova (nome sbagliato, o manca la
-tabella dei fusi orari, come di solito su Windows) il programma si ferma con un errore e non scrive
-niente: non torna mai in silenzio all'ora del computer.
+`2026-07-15T00:30:00+02:00`.
+
+Dalla 0.7.0, se sul computer manca la tabella dei fusi orari (come di solito su Windows), per un elenco
+fisso di fusi europei vale la regola europea dell'ora legale scritta nel programma: ora solare +0
+(`Europe/London`, `Europe/Dublin`, `Europe/Lisbon` e le isole atlantiche), +1 (`Europe/Rome`,
+`Europe/Zurich`, `Europe/Paris`, `Europe/Berlin`, `Europe/Madrid`, `Europe/Vienna` e gli altri
+dell'Europa centrale) o +2 (`Europe/Athens`, `Europe/Helsinki`, `Europe/Bucharest` e gli altri
+dell'Europa orientale); un'ora in più dall'ultima domenica di marzo all'ultima domenica di ottobre,
+sempre alle 01:00 di ora universale. Se la tabella c'è si usa sempre quella. `status` lo dice in una
+riga: «Fuso orario: Europe/Rome (funziona, con la tabella dei fusi del computer).», «(funziona, con la
+regola europea dell'ora legale scritta nel programma: su questo computer manca la tabella dei fusi).»
+oppure «Fuso orario: quello del computer.». Se l'impostazione c'è ma il fuso non si trova lo stesso
+(nome sbagliato, o un fuso fuori dall'elenco senza tabella) il programma si ferma con un errore e non
+scrive niente: non torna mai in silenzio all'ora del computer.
 
 ## Il registro degli ingressi
 
@@ -519,8 +569,12 @@ forma di una riga dello sportello, con il loro numero.
 
 **Un passaggio alla volta (dalla 0.6.1).** Sullo stesso quaderno possono scrivere insieme Claude
 Code (con il plugin) e la chat collegata al computer. Per tutto il passaggio (lettura del quaderno,
-regole, nota, riga del registro) lo sportello tiene il blocco del sistema operativo sul file vuoto
-`.sportello.lock` nella cartella del quaderno; lo stesso fa il comando `archive`. I comandi che
+regole, nota, riga del registro) lo sportello tiene il blocco del sistema operativo su un file vuoto;
+lo stesso fa il comando `archive`. Dalla 0.7.0 il file sta nella cartella temporanea del computer,
+`<cartella temporanea>/hypomnema-blocchi/<impronta del percorso del quaderno>.lock`, e non più nel
+quaderno; il `.sportello.lock` lasciato nel quaderno dalla 0.6.1 non si usa più, il programma non lo
+tocca e `snapshot` e `changed` continuano a saltarlo (si può cancellare a mano o mettere nel
+`.gitignore`). I comandi che
 leggono aspettano che il passaggio finisca, al massimo 10 secondi, poi leggono lo stesso: un passaggio
 fermo a metà non ferma mai la lettura. Il file del blocco non lo legge nessun comando (su Windows il
 blocco è obbligatorio, e chi leggesse la parte bloccata riceverebbe un errore). Il file si crea vuoto alla prima scrittura e non si
@@ -771,3 +825,17 @@ Claude, e la revisione (`review`) ne controlla solo la parte che ha un segno fis
 - **Effetto:** chi rilegge il quaderno sa da quando vale la regola nuova.
 - ✔ «Da questa nota in poi le spese dell'orto vanno nelle note con la parola "spesa".» → `decision`.
 - ✘ Cambiare abitudine senza dirlo: le note vecchie e le nuove non si capiscono più.
+
+### 25. Le etichette vengono dalla lista dell'utente (dalla 0.7.0)
+
+- **Dice:** CHI e COSA si scelgono solo dalla lista di `etichette.toml`, che scrive l'utente; al
+  massimo due per campo. Claude sceglie le etichette delle sue note e propone quelle delle note
+  dell'utente, dicendole all'utente. Una volta messe, le etichette di una nota dell'utente le cambia
+  solo l'utente.
+- **Chi:** lo sportello controlla lista, numero e permessi; Claude sceglie bene (questo il programma
+  non lo può controllare).
+- **Effetto:** si legge il quaderno per persona o per progetto (`search --about`, `recap --cosa`,
+  `labels`).
+- ✔ `"about": "orto"` per «sabato semino il basilico», con `orto` nella lista.
+- ✘ Scrivere `etichette.toml` al posto dell'utente; `"about": "Orto"` se la lista dice `orto`; usare
+  un'etichetta per dire da quale chat viene la nota (quello è `source`).

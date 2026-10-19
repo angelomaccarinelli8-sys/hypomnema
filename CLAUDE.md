@@ -67,9 +67,10 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
   Windows, macOS e Linux (percorsi con `pathlib`, file in UTF-8 con fine riga `\n` scritti in modo
   esplicito: stessi byte da ogni sistema). Unica eccezione: con Python 3.10, dove manca `tomllib`,
   si usa la copia non modificata di tomli in `hypomnema/_tomli/` (MIT).
-- **Un passaggio alla volta** (0.6.1): sportello e `archive` tengono il blocco su
-  `quaderno/.sportello.lock` (file vuoto, mai cancellato, mai letto da nessun comando: su Windows il
-  blocco è obbligatorio); chi legge aspetta al massimo 10 secondi, poi legge lo stesso. **Il blocco non
+- **Un passaggio alla volta** (0.6.1): sportello e `archive` tengono il blocco su un file vuoto nella
+  cartella temporanea del computer (dalla 0.7.0 `<temp>/hypomnema-blocchi/<impronta>.lock`; nella 0.6.1
+  era `quaderno/.sportello.lock`, che ora non si usa e non si tocca; mai letto da nessun comando: su
+  Windows il blocco è obbligatorio); chi legge aspetta al massimo 10 secondi, poi legge lo stesso. **Il blocco non
   passa tra due macchine** (Windows e la chat, provato il 18/10/2026): tra macchine diverse valgono
   solo l'apertura esclusiva, le righe aggiunte con una sola scrittura (`aggiunta.py`), la rilettura
   delle note appena create e `check` dopo ogni proposta in chat.
@@ -78,7 +79,7 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 
 | File | Ruolo |
 |---|---|
-| `hypomnema/cli.py` | Riga di comando, messaggi a schermo (in italiano). Dalla 0.5.0 i comandi hanno il nome inglese e quello italiano come sinonimo per sempre (`INGLESE`): `propose`/`proponi`, `search`/`cerca` (`--all`/`--tutte`), `reminders`/`promemoria`, `recap`, `witness`/`testimone`, `status`/`stato`, `snapshot`/`istantanea`, `changed`/`cambiati`, `check`/`controlla`, `compare`/`confronta`, `replies`/`risposte`, `fingerprint`/`impronta`, `diary`/`diario` (`--last`/`--ultimi`, `--around`/`--intorno`), `archive`/`archivio`, `start`/`avvio`, `protect`/`protezione`, `claude-settings`/`impostazioni-claude`, `review`/`revisione` (0.6.0). `confronta` (due file identici byte per byte?) non usa la configurazione. |
+| `hypomnema/cli.py` | Riga di comando, messaggi a schermo (in italiano). Dalla 0.5.0 i comandi hanno il nome inglese e quello italiano come sinonimo per sempre (`INGLESE`): `propose`/`proponi`, `search`/`cerca` (`--all`/`--tutte`), `reminders`/`promemoria`, `recap`, `witness`/`testimone`, `status`/`stato`, `snapshot`/`istantanea`, `changed`/`cambiati`, `check`/`controlla`, `compare`/`confronta`, `replies`/`risposte`, `fingerprint`/`impronta`, `diary`/`diario` (`--last`/`--ultimi`, `--around`/`--intorno`), `archive`/`archivio`, `start`/`avvio`, `protect`/`protezione`, `claude-settings`/`impostazioni-claude`, `review`/`revisione` (0.6.0), `labels`/`etichette` (0.7.0; `search` e `recap` hanno `--who`/`--chi` e `--about`/`--cosa`). `confronta` (due file identici byte per byte?) non usa la configurazione. |
 | `hypomnema/cambiamenti.py` | `istantanea` e `cambiati` (solo lettura): i file del quaderno da riportare dopo una proposta, con il controllo che sia successo solo ciò che fa lo sportello. |
 | `chat/hypomnema-chat.toml` | Modello della configurazione per la chat: testimone spento e `modalita = "chat"` (note dell'utente marcate «chat, senza testimone»). |
 | `hypomnema/controllo.py` | `controlla` (solo lettura): ogni nota ha la sua riga ACCETTATA nel registro, e viceversa; righe del registro estranee (con il numero) e registro senza a capo finale. Segnala, non ripara. |
@@ -101,16 +102,18 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `hooks/hooks.json` | Gli agganci: SessionStart (`avvio`: prima volta e avvisi), UserPromptSubmit (`testimone`), Stop (`risposte`), PreToolUse (`protezione`: blocca Edit/Write sul quaderno). |
 | `commands/` | `/hypomnema:pause` e `/hypomnema:resume` (con i sinonimi `/hypomnema:pausa` e `/hypomnema:riprendi`), che Claude non può lanciare (`disable-model-invocation`). La pausa la riconosce il testimone nel messaggio dell'utente. `/hypomnema:recap` lancia il recap, `/hypomnema:review` (e `/hypomnema:revisione`) la revisione. Istruzioni per Claude in inglese. |
 | `STORIA.md` | La storia delle versioni e le note di rilascio. |
-| `skills/hypomnema/SKILL.md` | La skill, in inglese (istruzioni per Claude); le frasi da dire all'utente restano in italiano. |
+| `skills/hypomnema/` | La skill, in inglese (istruzioni per Claude); le frasi da dire all'utente restano in italiano. Dalla 0.7.0 `SKILL.md` (le regole di sempre, sotto le 500 righe) e accanto `chat-mode.md`, `labels.md`, `replies.md`, `diary.md`, letti solo quando servono. Le prove leggono tutti i file (`tests/esecutore.testo_della_skill`). |
 | `windows/` | L'avviabile (`Hypomnema.cmd` → `avvia-hypomnema.ps1`), il modello della configurazione in uso (`hypomnema-uso.toml`) e l'aggiornamento della copia in uso (`aggiorna-hypomnema.cmd`). I `.cmd` sono ASCII con fine riga CRLF; il `.ps1` è UTF-8 con BOM. |
 | `.claude/settings.json` | Nella copia di sviluppo vieta a Claude di modificare `quaderno/`. Nessun aggancio. |
-| `hypomnema/configurazione.py` | Lettura di `hypomnema.toml` (con `tomllib`, o con la copia di tomli in `_tomli/` su Python 3.10); il fuso orario facoltativo `fuso` di `[quaderno]` (0.6.1, `nel_fuso`): se non si trova, errore e niente scritto. Le prove tolgono la riga `fuso` dove manca la tabella dei fusi (`tests/esecutore.per_questo_computer`). |
-| `hypomnema/blocco.py` | Il blocco del quaderno (0.6.1): `fcntl.flock`/`msvcrt.locking` su `.sportello.lock`, attesa al massimo 10 secondi, si va avanti senza se il disco non permette i blocchi. |
+| `hypomnema/configurazione.py` | Lettura di `hypomnema.toml` (con `tomllib`, o con la copia di tomli in `_tomli/` su Python 3.10); il fuso orario facoltativo `fuso` di `[quaderno]` (0.6.1, `nel_fuso`): tabella dei fusi, oppure (0.7.0) regola europea per i fusi europei; se non si trova, errore e niente scritto. Negli esempi la riga di `status` sul fuso si scrive sempre «con la tabella» (`tests/esecutore.fuso_come_con_la_tabella`). |
+| `hypomnema/blocco.py` | Il blocco del quaderno (0.6.1): `fcntl.flock`/`msvcrt.locking` su un file della cartella temporanea (dalla 0.7.0; prima `.sportello.lock` nel quaderno), attesa al massimo 10 secondi, si va avanti senza se il disco non permette i blocchi. |
+| `hypomnema/etichette.py` | Le etichette CHI e COSA (0.7.0): la lista `etichette.toml` nella cartella del quaderno, scritta dall'utente e letta solo quando serve; errore chiaro se è scritta male. |
+| `hypomnema/fuso_europeo.py` | La regola europea dell'ora legale (0.7.0) per un elenco fisso di fusi, usata solo se manca la tabella dei fusi. |
 | `hypomnema/aggiunta.py` | Una riga in fondo a un file con una sola scrittura in aggiunta (0.6.1): `O_APPEND` su Linux e macOS, il solo permesso di aggiungere (`FILE_APPEND_DATA`) su Windows. La usano registro, testimoni e archivio. |
 | `hypomnema/_tomli/` | Copia non modificata di tomli 2.0.1 (MIT), solo per Python 3.10. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
 | `esempi/` | Casi con dati inventati e risultati attesi (approvati da Angelo). |
-| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`); `test_risposte.py` il testimone delle risposte, il filtro sul codice, `impronta`, il diario e `da_risposta`; `test_plugin.py` il plugin installabile (catalogo, agganci da una copia del plugin, prima volta, protezione, pausa); `test_archivio.py` l'archivio della chat e i tre livelli; `test_rifiniture.py` le rifiniture della 0.4.0 (correzioni, ordine, parole composte, promemoria, recap, segni dell'archivio, quaderno vecchio); `test_lingua_chiusure.py` la 0.5.0 (nomi inglesi e italiani, kind, chiusure, priorità, quaderno vecchio in italiano); `test_versioni.py` la 0.6.0 (versioni, permessi, riaperture, codici, note vecchie lette come versioni, quaderno misto, revisione); `test_chat_diretta.py` la 0.6.1 (tomli e tomllib, giro della chat collegata, due scrittori insieme, stessi byte da Windows e Linux). |
+| `tests/` | `test_esempi.py` confronta gli esempi con gli attesi; `test_regole.py` le singole regole; `test_testimone.py` il testimone e la regola della citazione; `test_avvio.py` `stato`, le regole per l'avviabile, il plugin e l'avviabile vero (solo su Windows); `test_chat.py` la modalità chat (configurazione, marcatura, `istantanea`, `cambiati` e `controlla`); `test_risposte.py` il testimone delle risposte, il filtro sul codice, `impronta`, il diario e `da_risposta`; `test_plugin.py` il plugin installabile (catalogo, agganci da una copia del plugin, prima volta, protezione, pausa); `test_archivio.py` l'archivio della chat e i tre livelli; `test_rifiniture.py` le rifiniture della 0.4.0 (correzioni, ordine, parole composte, promemoria, recap, segni dell'archivio, quaderno vecchio); `test_lingua_chiusure.py` la 0.5.0 (nomi inglesi e italiani, kind, chiusure, priorità, quaderno vecchio in italiano); `test_versioni.py` la 0.6.0 (versioni, permessi, riaperture, codici, note vecchie lette come versioni, quaderno misto, revisione); `test_chat_diretta.py` la 0.6.1 (tomli e tomllib, giro della chat collegata, due scrittori insieme, stessi byte da Windows e Linux); `test_etichette.py` la 0.7.0 (etichette, permessi, filtri, `labels`, recap per data, contesto nelle chiusure, skill divisa, quaderno della 0.6.1); `test_difetti.py` i difetti della 0.7.0 (fuso senza tabella, `voci_diario = 0`, blocco fuori dal quaderno). |
 
 ## Metodo di lavoro
 
@@ -165,5 +168,9 @@ Prossimo passo proposto:
 - **Fuori perimetro del compito 9** (11/10/2026): la verifica a posteriori sull'esportazione
   ufficiale delle chat di Claude (potrà promuovere le note «riscontrate sull'archivio della chat» a
   «verificate»); il vocabolario (compito 10); un'interfaccia propria.
+- **Etichette** (0.7.0): la lista sta in `quaderno/etichette.toml` (decisione di Angelo, 19/10/2026), mai
+  in `hypomnema.toml` né nei modelli di configurazione; il modello commentato è `esempi/etichette.toml`.
+  Claude non scrive mai il file: nei taccuini dove scrive solo Claude propone la lista nel messaggio e
+  l'utente la salva. Non c'è ancora un modo di **togliere** tutte le etichette di una nota.
 - **Il quaderno in valigia** (idea parcheggiata l'11/10/2026 sera): portare il quaderno con sé
   tra computer diversi. Non si fa per ora; da riprendere più avanti.

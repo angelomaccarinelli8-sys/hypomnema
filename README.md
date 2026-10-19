@@ -61,7 +61,8 @@ Per saperne di più su Sophia: [articolo su LinkedIn](LINK_ARTICOLO_LINKEDIN)
 | **Revisione** (`review`, o `revisione`) | Che cosa conviene guardare: questioni ferme da tanto, promemoria scaduti, cose da fare nominate in una nota successiva, «ricordamelo» senza data, rami e catene vecchie non permesse oggi. Dice cosa si può fare, non lo fa. Solo lettura. |
 | **Testimone** (`testimone`) | Se lo accendi, registra le parole esatte dei tuoi messaggi, così lo sportello può controllare che una nota "dell'utente" riporti parole che hai detto davvero. |
 | **Stato** (`status`, o `stato`) | Dice se il testimone è acceso, dov'è il quaderno e quale messaggio ha registrato per ultimo. Solo lettura. |
-| **Skill** (`skills/hypomnema/SKILL.md`) | Le istruzioni per Claude: quando leggere, come controllare il testimone, come preparare le note, come confermare una decisione. |
+| **Skill** (`skills/hypomnema/`) | Le istruzioni per Claude: quando leggere, come controllare il testimone, come preparare le note, come confermare una decisione. Dalla 0.7.0 `SKILL.md` ha le regole di sempre, e quattro file accanto, letti solo quando servono: `chat-mode.md` (la chat), `labels.md` (le etichette), `replies.md` (salvare le risposte di Claude), `diary.md` (quaderno e diario). |
+| **Etichette** (`labels`, o `etichette`; dalla 0.7.0) | Le etichette CHI e COSA della lista che scrivi tu in `etichette.toml`, con quante note ha ognuna. `search` e `recap` filtrano per etichette. Vedi «Le etichette CHI e COSA». |
 | **Plugin** (`.claude-plugin/`, `hooks/`, `commands/`, `programma.py`) | Il repository stesso è un plugin di Claude Code: la skill, i programmi, gli agganci dei testimoni e i comandi `/hypomnema:pause`, `/hypomnema:resume` e `/hypomnema:recap` (valgono anche `/hypomnema:pausa` e `/hypomnema:riprendi`). Vedi «Installa il plugin in Claude Code». |
 | **Modalità chat** (`chat/`, `istantanea`, `cambiati`) | La configurazione per la chat di Claude e i due comandi, in sola lettura, che dicono quali file del quaderno riportare sul tuo computer dopo una proposta. Vedi «Usarlo nella chat di Claude». |
 | **Avviabile** (`windows/Hypomnema.cmd`) | Alternativa al plugin installato, solo Windows: un doppio clic per aprire Claude Code con Hypomnema acceso. Vedi «Alternativa: l'avviabile di Windows». |
@@ -258,10 +259,16 @@ notepad hypomnema-chat.toml
 `Europe/Zurich`). La macchina della chat può avere l'orologio in UTC, e con questa impostazione
 «oggi» (recap, promemoria, revisione) e le ore del registro sono quelle del tuo fuso, con l'ora
 legale. Sulla macchina della chat la tabella dei fusi c'è
-(verificato il 18/10/2026). Se il fuso non si trova (nome scritto male, o tabella dei fusi mancante,
-come di solito su Windows) il programma si ferma con un errore chiaro e non scrive niente: non torna
-mai in silenzio all'ora del computer. Nella configurazione di Claude Code non serve: lì vale l'ora
-del tuo computer.
+(verificato il 18/10/2026). Dalla 0.7.0, se la tabella manca (come di solito su Windows), per i fusi
+europei il programma usa **la regola europea dell'ora legale scritta dentro di sé** (dall'ultima
+domenica di marzo all'ultima di ottobre, alle 01:00 di ora universale) per un elenco fisso di fusi:
+Londra, Dublino e Lisbona; Roma, Zurigo, Parigi, Berlino, Madrid, Vienna e gli altri dell'Europa
+centrale; Atene, Helsinki, Bucarest e gli altri dell'Europa orientale. `status` dice sempre come va:
+«Fuso orario: Europe/Rome (funziona, con la tabella dei fusi del computer).» oppure «(funziona, con la
+regola europea dell'ora legale scritta nel programma: su questo computer manca la tabella dei fusi).»
+Se il fuso non si trova lo stesso (nome scritto male, o un fuso fuori dall'Europa senza tabella) il
+programma si ferma con un errore chiaro e non scrive niente: non torna mai in silenzio all'ora del
+computer. Nella configurazione di Claude Code non serve: lì vale l'ora del tuo computer.
 
 Il tuo `hypomnema.toml` (quello di Claude Code, con i testimoni accesi) resta com'è: la chat non lo
 usa. Le note salvate dalla chat sono marcate come sempre: «chat, no witness», oppure riscontrate
@@ -276,9 +283,13 @@ la configurazione usa `tomllib` di Python (dal 3.11) oppure, se manca, la sua co
 Claude te lo dice in una riga e usa la procedura con la copia descritta sopra.
 
 **Claude Code e la chat insieme.** Possono scrivere sullo stesso quaderno nello stesso momento.
-Per ogni passaggio lo sportello prende un **blocco** sul file vuoto `quaderno/.sportello.lock`
-(non cancellarlo: resta vuoto per sempre). Se il quaderno è occupato per più di 10 secondi lo
-sportello si ferma con un errore, senza scrivere, e basta riproporre.
+Per ogni passaggio lo sportello prende un **blocco** su un file vuoto. Dalla 0.7.0 il file sta nella
+**cartella temporanea del computer** (`hypomnema-blocchi`, con un nome calcolato dal percorso del
+quaderno), non più nel quaderno: così nel quaderno non nasce niente che possa finire, per esempio, in
+git. Il file `quaderno/.sportello.lock` lasciato dalla 0.6.1 non serve più e il programma non lo tocca:
+puoi cancellarlo a mano, oppure, se il quaderno sta in git, aggiungere `.sportello.lock` al
+`.gitignore`. Se il quaderno è occupato per più di 10 secondi lo sportello si ferma con un errore,
+senza scrivere, e basta riproporre.
 
 **Limite, provato il 18/10/2026:** il blocco funziona solo tra programmi sulla **stessa macchina**
 (due sessioni di Claude Code su Windows, due chat). **Tra Windows e la macchina della chat non passa:**
@@ -303,7 +314,8 @@ l'a capo `\n`, scelti in modo esplicito, su ogni sistema: una nota scritta da Cl
 Windows e una scritta dalla chat su Linux hanno la stessa forma, byte per byte.
 
 **Come aggiungere la skill.** La skill è la cartella
-[`skills/hypomnema`](skills/hypomnema/SKILL.md), già pronta nella release come
+[`skills/hypomnema`](skills/hypomnema/SKILL.md) (dalla 0.7.0 con cinque file: `SKILL.md` e i quattro
+che Claude legge solo quando servono), già pronta nella release come
 [`hypomnema-skill.zip`](https://github.com/angelomaccarinelli8-sys/hypomnema/releases/latest/download/hypomnema-skill.zip).
 Nella chat di Claude le skill
 personali si aggiungono dalle impostazioni, caricando la cartella compressa in un file `.zip`: il
@@ -581,8 +593,12 @@ il `remind` nuovo. Una correzione del testo lo lascia tra gli scaduti.
 **Dove eravamo rimasti.** Il comando `recap` (nel plugin anche `/hypomnema:recap`) mostra in poche
 righe, con regole fisse: i promemoria scaduti, gli ultimi 5 discorsi aperti, le ultime 5 cose da
 fare, le ultime 5 decisioni e le ultime 10 righe del diario, senza le note chiuse e con le priorità
-alte per prime. Claude lo lancia a inizio chat, così non deve scegliere da solo le parole da
-cercare. I numeri si regolano nella sezione facoltativa `[recap]` di `hypomnema.toml`:
+alte per prime. Dalla 0.7.0, dopo la priorità, ogni blocco va **dal giorno dell'ultima versione più
+recente** (una nota vecchia corretta oggi sale in cima; una versione che mette solo le etichette non
+conta), e a parità di giorno dal numero più alto; i promemoria scaduti restano in ordine di scadenza.
+Claude lo lancia a inizio chat, così non deve scegliere da solo le parole da
+cercare. I numeri si regolano nella sezione facoltativa `[recap]` di `hypomnema.toml` (con
+`voci_diario = 0`, dalla 0.7.0, il blocco del diario non compare):
 
 ```toml
 [recap]
@@ -591,6 +607,45 @@ todo = 5
 decisioni = 5
 voci_diario = 10
 ```
+
+### Le etichette CHI e COSA (dalla 0.7.0)
+
+Una nota può avere delle **etichette**: CHI (le persone, `who`) e COSA (i progetti o gli argomenti,
+`about`), al massimo due per tipo. Servono a leggere il quaderno per persona o per progetto.
+
+**La lista la scrivi tu**, nel file `etichette.toml` dentro la cartella del quaderno (accanto a
+`registro.md`): così la leggono tutte e due le configurazioni dello stesso quaderno (Claude Code e la
+chat) e la lista è una sola. Un modello commentato, con etichette inventate, è
+[`esempi/etichette.toml`](esempi/etichette.toml): copialo nel quaderno e scrivi le tue.
+
+```toml
+chi = ["Anna", "Marco"]
+cosa = ["orto", "bilancio", "gioco"]
+```
+
+- Se il file manca, nessuna nota può avere etichette. Se è scritto male, il comando si ferma con un
+  errore chiaro e non scrive niente.
+- Il confronto è esatto: «Orto» non è «orto». Un'etichetta fuori dalla lista viene rifiutata, con
+  l'elenco di quelle ammesse.
+- Claude non scrive mai il file. In un quaderno dove scrive solo Claude (per esempio il diario di
+  cantiere di Claude Code su un progetto) Claude ti propone la lista nel suo messaggio, e tu la salvi
+  nel file.
+- Le etichette le sceglie chi propone la nota: nelle note di Claude, Claude; nelle tue, Claude te le
+  propone e tu puoi cambiarle.
+- Le note vecchie non si toccano: le etichette si aggiungono con una versione nuova (`updates`).
+  Claude può etichettare una tua nota solo se non ne ha ancora; poi le cambi solo tu. Una versione
+  che cambia solo le etichette non sposta la nota nel recap e non riazzera i giorni della revisione.
+- `source` resta la chat da cui viene la nota: non è un'etichetta.
+
+```
+search --about orto                     # tutte le note su orto (la parola si può omettere)
+search basilico --who Anna --about orto # con la parola e tutte e due le etichette
+recap --cosa orto                       # il recap delle sole note su orto (senza il diario)
+labels                                  # le etichette, con quante note ha ognuna
+```
+
+Si possono ripetere i filtri, e devono valere tutti. I nomi italiani sono `--chi`, `--cosa` ed
+`etichette`.
 
 ### Le tue parole e quelle di Claude restano separate
 
@@ -613,6 +668,11 @@ prima della 0.5.0: "Contesto scritto da Claude"):
 
 Le note scritte da Claude (`author: claude`) sono tutte parole sue: lì il `context` non serve.
 Se si basano su qualcosa che hai detto, Claude può riportare le tue parole nel campo `quote`.
+
+Dalla 0.7.0 il `context` si può mettere anche nei **tuoi cambiamenti** (`done`, `updates`,
+`reopens`): il motivo resta con le tue parole («Fatto ieri sera.»), e la spiegazione di Claude («Riferito
+al rinvaso del limone.») va a parte, nel blocco del cambiamento, sotto «Context written by Claude». La
+ricerca la mostra nella storia: «chiusa il …, perché «Fatto ieri sera.» (contesto: «…»)».
 
 ### Testo incollato: va bene così
 

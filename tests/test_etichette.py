@@ -170,6 +170,10 @@ class TestDueConfigurazioni(ConEtichette):
         lista = etichette.leggi(cartella)
         self.assertTrue(lista.chi and lista.cosa)
 
+    def test_claude_non_puo_scrivere_la_lista(self):
+        from hypomnema import avvio
+        self.assertTrue(avvio.protetto(self.file_config, str(self.config.cartella_quaderno / "etichette.toml")))
+
     def test_check_ignora_la_lista(self):
         self.accettata(kind="fact", about="orto", text="x")
         self.assertTrue(controllo.controlla(self.config).in_ordine)

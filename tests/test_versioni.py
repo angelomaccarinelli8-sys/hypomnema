@@ -477,7 +477,7 @@ class TestDocumenti(unittest.TestCase):
         formato = (RADICE / "FORMATO.md").read_text(encoding="utf-8")
         regole = formato[formato.index("## Le regole del quaderno"):]
         titoli = [r for r in regole.splitlines() if r.startswith("### ")]
-        self.assertEqual(len(titoli), 24)
+        self.assertEqual(len(titoli), 25)  # dalla 0.7.0 anche «Le etichette vengono dalla lista dell'utente»
         for titolo in titoli:
             blocco = regole[regole.index(titolo):].split("\n### ")[0]
             with self.subTest(regola=titolo):
