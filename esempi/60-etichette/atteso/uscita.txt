@@ -1,0 +1,173 @@
+$ hypomnema propose 1-todo-con-etichette.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-fatto-senza-etichette.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 3-etichetta-non-in-lista.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- the label «giardino» is not in the list of «about» labels: the allowed ones are orto, bilancio, gioco. Only the user adds labels, in the file etichette.toml.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 4-tre-etichette-chi.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- a note can have at most 2 «who» labels: «Anna, Marco, Code» has 3.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 5-etichetta-ripetuta.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- the label «orto» is repeated in «about»: write it once.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 6-claude-etichetta-nota-vecchia.json
+ACCETTATA: la versione 0002.1 della nota 0002 è stata salvata nel quaderno (note/0002.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 7-claude-cambia-di-nuovo.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- only the user can change the labels of one of the user's notes once they are set (note «0002» has them already): Claude can suggest the change to the user.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema chat: proponi 8-nomi-italiani-dalla-chat.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema chat: propose 9-maiuscola-dalla-chat.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- the label «Bilancio» is not in the list of «about» labels: the allowed ones are orto, bilancio, gioco. Only the user adds labels, in the file etichette.toml.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema search --about orto
+Trovate 3 note con le etichette cosa: orto (dalla più recente).
+
+--- Nota I0003 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: idea
+chi: Marco
+cosa: bilancio, orto
+verifica: author not verified (chat, no witness)
+testo:
+  Tenere i conti delle sementi in un foglio a parte, il basilico compreso.
+
+--- Nota F0002.1 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: fact
+cosa: orto
+verifica: author not verified (witness off)
+testo:
+  Il basilico vuole il sole pieno.
+storia (dalla più vecchia):
+  F0002   2026-01-15 · user: creata
+  F0002.1 2026-01-15 · claude: cosa → orto. Motivo: «Etichetta messa dopo: la nota parla dell'orto.»
+
+--- Nota T0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: todo
+chi: Anna
+cosa: orto
+verifica: author not verified (witness off)
+testo:
+  Seminare il basilico con Anna sabato.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema search basilico --who Anna --about orto
+Trovata 1 nota con «basilico» e le etichette chi: Anna e cosa: orto.
+
+--- Nota T0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: todo
+chi: Anna
+cosa: orto
+verifica: author not verified (witness off)
+testo:
+  Seminare il basilico con Anna sabato.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema cerca --cosa bilancio --cosa orto
+Trovata 1 nota con le etichette cosa: bilancio e cosa: orto.
+
+--- Nota I0003 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: idea
+chi: Marco
+cosa: bilancio, orto
+verifica: author not verified (chat, no witness)
+testo:
+  Tenere i conti delle sementi in un foglio a parte, il basilico compreso.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema recap --about orto
+Dove eravamo rimasti (recap del 2026-01-15, solo le note con le etichette cosa: orto).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [T0001] 2026-01-15: Seminare il basilico con Anna sabato. · chi: Anna · cosa: orto
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: non mostrate (il diario non ha etichette).
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema labels
+Etichette CHI:
+- Anna: 1 nota (1 aperta)
+- Marco: 1 nota (0 aperte)
+- Code: 0 note
+Etichette COSA:
+- orto: 3 note (1 aperta)
+- bilancio: 1 nota (0 aperte)
+- gioco: 0 note
+Etichette usate in qualche nota ma non nella lista: nessuna.
+(Si contano le note per la loro ultima versione; «aperte»: open, todo e promemoria non chiusi.)
+[codice di uscita: 0]
+
+$ hypomnema search --cosa giardino
+ERRORE: l'etichetta COSA «giardino» non è nella lista (le etichette COSA sono: orto, bilancio, gioco) e nessuna nota la usa. Il confronto è esatto: maiuscole e minuscole contano.
+[codice di uscita: 2]
+
+$ hypomnema check
+Quaderno in ordine: 3 note e 1 versione, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

@@ -1,0 +1,34 @@
+$ hypomnema status
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Fuso orario: Europe/Rome, dal sistema operativo (prova: sistema operativo con Europe/Rome). Nella configurazione c'è fuso = "Europe/Zurich", diverso dal sistema: su questo computer vale il sistema.
+Testimone: SPENTO (nella configurazione attivo = false): i messaggi non vengono registrati e le note con autore «user» saranno marcate «author not verified (witness off)».
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 0
+Ultimo messaggio registrato: nessuno.
+[codice di uscita: 0]
+
+$ hypomnema propose 1-nota.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-nota.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema status
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Fuso orario: Europe/Rome, dal sistema operativo (prova: sistema operativo con Europe/Rome). Nella configurazione c'è fuso = "Europe/Zurich", diverso dal sistema: su questo computer vale il sistema.
+Testimone: SPENTO (nella configurazione attivo = false): i messaggi non vengono registrati e le note con autore «user» saranno marcate «author not verified (witness off)».
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 0
+Ultimo messaggio registrato: nessuno.
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 2 note, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

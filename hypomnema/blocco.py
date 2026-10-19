@@ -6,10 +6,19 @@ due passaggi quasi contemporanei possono leggere una nota appena creata ma non a
 scrivere due volte l'intestazione del registro, o controllare la stessa chiusura due volte.
 
 Il blocco è il blocco del sistema operativo (``fcntl.flock`` su Linux e macOS, ``msvcrt.locking``
-su Windows) sul file ``.sportello.lock`` nella cartella del quaderno. Il file si crea vuoto la
-prima volta e non si cancella mai, e nessuno ci scrive dentro: il blocco lo toglie il sistema
-quando il passaggio finisce, anche se il programma si interrompe, quindi non resta mai un blocco
-da togliere a mano.
+su Windows) su un file vuoto nella cartella temporanea del computer (dalla 0.7.0):
+``<cartella temporanea>/hypomnema-blocchi/<impronta del percorso del quaderno>.lock``. Così nel
+quaderno non nasce niente che possa finire, per esempio, in git. La 0.6.1 lo teneva nel quaderno
+(``.sportello.lock``): quel file non si usa più e non si tocca (``snapshot`` e ``changed`` lo
+saltano ancora). Il file si crea vuoto la prima volta e non si cancella mai, e nessuno ci scrive
+dentro: il blocco lo toglie il sistema quando il passaggio finisce, anche se il programma si
+interrompe, quindi non resta mai un blocco da togliere a mano.
+
+Il blocco vale tra i programmi della stessa macchina; tra due macchine non passa (vedi ``aggiunta``).
+Lo stesso quaderno raggiunto da due percorsi diversi (per esempio un collegamento che il sistema non
+risolve) darebbe due blocchi diversi: il percorso si rende uniforme prima dell'impronta (percorso
+completo, collegamenti risolti, e su Windows lettere tutte minuscole), ma non tutti i casi si possono
+riconoscere.
 
 - Lo sportello e il comando ``archive`` (che scrivono) prendono il blocco per tutto il passaggio:
   lettura del quaderno, regole, file nuovi e righe in fondo.
@@ -20,18 +29,22 @@ da togliere a mano.
   così un passaggio fermo a metà non ferma mai la lettura.
 - Il file del blocco non si legge mai: su Windows il blocco è obbligatorio (chi legge la parte
   bloccata riceve un errore), per questo si blocca un byte lontanissimo dalla fine del file, che
-  resta vuoto. Nessun comando lo legge: ``snapshot`` e ``changed`` lo saltano.
+  resta vuoto. Nessun comando lo legge.
 - Se il disco non permette i blocchi (alcune cartelle condivise) si va avanti senza: restano
   l'apertura esclusiva delle note, che non sovrascrive mai, e ``check``.
 """
 
 import errno
+import hashlib
 import os
+import tempfile
 import time
 from contextlib import contextmanager
 from pathlib import Path
 
+# Il file del blocco della 0.6.1, nel quaderno: non si usa più, e snapshot e changed lo saltano.
 NOME_FILE = ".sportello.lock"
+CARTELLA_BLOCCHI = "hypomnema-blocchi"
 # Quanto si aspetta un altro passaggio: una regola, non un'impostazione (un passaggio dura
 # una frazione di secondo).
 ATTESA_BLOCCO = 10.0
@@ -69,8 +82,16 @@ else:
         fcntl.flock(f.fileno(), fcntl.LOCK_UN)
 
 
-def file_del_blocco(cartella_quaderno: Path) -> Path:
+def file_vecchio(cartella_quaderno: Path) -> Path:
+    """Il file del blocco della 0.6.1, dentro il quaderno."""
     return cartella_quaderno / NOME_FILE
+
+
+def file_del_blocco(cartella_quaderno: Path) -> Path:
+    """Il file del blocco del quaderno, nella cartella temporanea del computer."""
+    percorso = os.path.normcase(str(Path(cartella_quaderno).resolve()))
+    impronta = hashlib.sha256(percorso.encode("utf-8")).hexdigest()[:32]
+    return Path(tempfile.gettempdir()) / CARTELLA_BLOCCHI / f"{impronta}.lock"
 
 
 def _prendi(f, attesa: float) -> bool:
@@ -102,13 +123,16 @@ def blocco(cartella_quaderno: Path, crea: bool, attesa: float | None = None):
         return
     if crea:
         cartella_quaderno.mkdir(parents=True, exist_ok=True)
-    # Modo "a": se il file c'è non lo tocca, se manca lo crea vuoto. Non ci si scrive mai.
     try:
+        if crea:
+            file.parent.mkdir(parents=True, exist_ok=True)
+        # Modo "a": se il file c'è non lo tocca, se manca lo crea vuoto. Non ci si scrive mai.
         f = open(file, "a+b")
     except OSError:
-        if crea:
-            raise
-        # Chi legge soltanto, in una cartella dove non si può aprire il file, legge senza blocco.
+        # Una cartella temporanea dove non si può creare il file: come un disco senza blocchi, si va
+        # avanti senza (restano l'apertura esclusiva delle note e check).
+        f = None
+    if f is None:
         yield
         return
     try:

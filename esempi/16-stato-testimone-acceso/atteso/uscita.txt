@@ -1,6 +1,7 @@
 $ hypomnema stato
 Configurazione: <cartella di prova>/hypomnema.toml
 Quaderno: <cartella di prova>/quaderno
+Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, che nasce la prima volta che usi Hypomnema sul tuo computer.
 Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 0
@@ -13,6 +14,7 @@ $ hypomnema testimone 1-messaggio.json
 $ hypomnema stato
 Configurazione: <cartella di prova>/hypomnema.toml
 Quaderno: <cartella di prova>/quaderno
+Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, che nasce la prima volta che usi Hypomnema sul tuo computer.
 Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 1
@@ -28,6 +30,7 @@ $ hypomnema testimone 2-privato.json
 $ hypomnema stato
 Configurazione: <cartella di prova>/hypomnema.toml
 Quaderno: <cartella di prova>/quaderno
+Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, che nasce la prima volta che usi Hypomnema sul tuo computer.
 Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 2

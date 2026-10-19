@@ -1,0 +1,10 @@
+propose 1-todo.json
+propose 2-open.json
+propose 3-todo-di-claude.json
+propose 4-fatto-con-contesto.json
+propose 5-claude-chiude-con-contesto.json
+propose 6-chiusura-da-risposta.json
+propose 7-priorita-con-contesto.json
+search limone --all
+search ferie
+recap

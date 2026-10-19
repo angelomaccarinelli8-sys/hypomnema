@@ -18,5 +18,5 @@ Ogni riga è un passaggio dallo sportello. Questo file si allunga soltanto.
 - 2026-01-15T10:09:00+01:00 | RIFIUTATA | da: 1g-chiusura-doppia.json | motivi: note «0006» is already closed (✓F0006.2): to reopen it use «reopens».
 - 2026-01-15T10:10:00+01:00 | RIFIUTATA | da: 1h-decisione-di-claude.json | motivi: a decision must be stated by the user: it cannot be «inferred». / only the user can make a note a decision: Claude can suggest it to the user.
 - 2026-01-15T10:11:00+01:00 | ACCETTATA | nota 0008 | da: 1i-nota-nuova.json
-- 2026-01-15T10:12:00+01:00 | RIFIUTATA | da: 1l-niente-cambia.json | motivi: «updates» on note «0004» changes nothing: write in «kind», «priority» or «remind» the new value.
+- 2026-01-15T10:12:00+01:00 | RIFIUTATA | da: 1l-niente-cambia.json | motivi: «updates» on note «0004» changes nothing: write in «kind», «priority», «remind», «who» or «about» the new value.
 - 2026-01-15T10:13:00+01:00 | RIFIUTATA | da: 1m-due-cambiamenti.json | motivi: a proposal can make only one change: use only one of «corrects», «updates», «done» and «reopens».

@@ -8,8 +8,8 @@ Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
 - [O0004] 2025-11-30: Dove mettere la compostiera?
 
 Cose da fare: 2 di 2 (prima la priorità alta, poi dal più recente)
-- [T0011] 2025-12-04: Chiamare l'idraulico di via dei Tigli.
 - [T0006] 2025-12-27: Seminare il basilico.
+- [T0011] 2025-12-04: Chiamare l'idraulico di via dei Tigli.
 
 Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
 - [D0009] 2025-12-02: Sì, sotto il fico.
@@ -156,8 +156,8 @@ Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
 - [O0004] 2025-11-30: Dove mettere la compostiera?
 
 Cose da fare: 2 di 2 (prima la priorità alta, poi dal più recente)
-- [T0011] 2025-12-04: Chiamare l'idraulico di via dei Tigli.
 - [T0006] 2025-12-27: Seminare il basilico.
+- [T0011] 2025-12-04: Chiamare l'idraulico di via dei Tigli.
 
 Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
 - [D0009] 2025-12-02: Sì, sotto il fico.

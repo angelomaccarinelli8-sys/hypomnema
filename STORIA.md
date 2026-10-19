@@ -3,6 +3,54 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.7.0 (prototipo) — etichette, recap per data, difetti trovati da Code
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **Etichette CHI e COSA.** Una nota può avere fino a due etichette CHI (le persone: `who`) e fino a
+  due COSA (i progetti o gli argomenti: `about`). La lista la scrivi tu, nel file `etichette.toml`
+  dentro la cartella del quaderno: la leggono Claude Code e la chat, quindi è una sola. Un modello
+  commentato è `esempi/etichette.toml`. Senza il file nessuna nota può avere etichette; un'etichetta
+  fuori dalla lista viene rifiutata, con l'elenco di quelle ammesse. Claude non scrive mai il file:
+  in un quaderno dove scrive solo lui te la propone nel messaggio, e tu la salvi.
+- **Filtri e conteggi.** `search --about orto` (anche senza parola), `search basilico --who Anna
+  --about orto`, `recap --cosa orto` (senza il diario, che non ha etichette) e il comando nuovo
+  `labels` (`etichette`): ogni etichetta con quante note ha, e quante sono ancora aperte.
+- **Le note vecchie non si toccano:** le etichette si aggiungono con una versione nuova (`updates`).
+  Claude può etichettare una tua nota solo se non ne ha ancora; poi le cambi solo tu.
+- **Il recap per data.** In ogni blocco, dopo la priorità, prima le note con l'ultima versione più
+  recente: una nota vecchia corretta oggi sale in cima. Le versioni che mettono solo le etichette non
+  contano. I promemoria scaduti restano in ordine di scadenza.
+- **Il contesto nelle chiusure.** Nei tuoi `done`, `updates` e `reopens` Claude può aggiungere la sua
+  spiegazione (`context`) accanto al tuo motivo, tenuta a parte come sempre.
+- **Il fuso orario viene dal sistema operativo.** Sul tuo computer vale sempre l'ora del sistema, anche
+  su Windows senza la tabella dei fusi e anche se la configurazione ha una riga `fuso` (`status` segnala
+  se è diversa). Hypomnema scrive il nome del fuso del sistema nel file `fuso-del-sistema.jsonl` del
+  quaderno quando cambia (su Windows con la tabella ufficiale CLDR, per avere `Europe/Rome`); la chat e
+  le sessioni in cloud, che hanno l'orologio in UTC, lo leggono da lì. Il modello della chat non ha più
+  la riga `fuso`. `status` dice sempre quale fuso vale e perché.
+- **`voci_diario = 0`** nella sezione `[recap]` toglie il blocco del diario dal recap.
+- **Il file del blocco non sta più nel quaderno** ma nella cartella temporanea del computer: niente
+  più `.sportello.lock` che finisce in git. Quello lasciato dalla 0.6.1 non serve più: puoi
+  cancellarlo a mano o metterlo nel `.gitignore`.
+- **Una skill più corta:** `SKILL.md` ha le regole di sempre (meno di 450 righe); la chat, le
+  etichette, le risposte di Claude e il diario stanno in quattro file accanto, che Claude legge solo
+  quando servono.
+
+I quaderni della 0.6.1 si leggono come prima e `check` resta pulito: niente da convertire.
+
+**Aggiornare il plugin in Claude Code:**
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+**Chat collegata al computer:** `git -C programma-chat pull` su Windows, nella cartella Hypomnema.
+
+**Nella chat di claude.ai:** scarica il nuovo `hypomnema-skill.zip` (ora con cinque file) e caricalo
+tra le skill nelle impostazioni di Claude, sostituendo quello vecchio.
+
 ## 0.6.1 (prototipo) — la chat scrive direttamente sul quaderno
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*

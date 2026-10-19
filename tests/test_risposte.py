@@ -14,7 +14,7 @@ from pathlib import Path
 
 from hypomnema import configurazione, diario, risposte, sportello, testimone
 from hypomnema.cli import main
-from tests.esecutore import CONFIG_DI_PROVA, RADICE, modello_chat
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, modello_chat, testo_della_skill
 from tests.test_chat import CONFIG_CHAT
 from tests.test_regole import ADESSO, NOTA_BUONA
 from tests.test_testimone import CONFIG_ACCESO
@@ -455,7 +455,7 @@ class TestNoteDaRisposta(ConQuaderno):
 
 class TestSkillDiario(unittest.TestCase):
     def test_skill(self):
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = testo_della_skill()
         self.assertIn("## 6. What we said: notebook and diary (Claude Code)", skill)
         self.assertIn("`P diary <word>`", skill)
         self.assertIn('`from_reply: "yes"`', skill)

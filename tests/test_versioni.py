@@ -14,7 +14,7 @@ from hypomnema import cambiamenti, configurazione, controllo, quaderno, sportell
 from hypomnema.cli import main
 from hypomnema.nota import da_markdown
 from hypomnema.revisione import rivedi
-from tests.esecutore import CONFIG_DI_PROVA, RADICE
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, testo_della_skill
 
 ADESSO = datetime(2026, 1, 15, 10, 0, 0, tzinfo=timezone(timedelta(hours=1)))
 QUADERNO_DI_PROVA = RADICE / "esempi" / "53-versioni" / "quaderno-iniziale"
@@ -110,7 +110,9 @@ class TestFileDelleVersioni(ConQuaderno):
         self.accettata(kind="todo", text="Uno.")
         self.assertIn("only one change", self.motivi(updates="0001", done="0001", text="x"))
         self.assertIn("«confirms» makes a new decision note", self.motivi(confirms="0001", done="0001", text="x"))
-        self.assertIn("the field «context» belongs to the text", self.motivi(done="0001", text="x", context="c"))
+        # Dalla 0.7.0 il contesto si può mettere in un cambiamento dell'utente (test_etichette); from_reply no.
+        self.assertIn("the field «from_reply» belongs to the text",
+                      self.motivi(author="claude", knowledge="inferred", done="0001", text="x", from_reply="yes"))
         self.assertIn("to change «priority» use «updates»", self.motivi(done="0001", text="x", priority="high"))
         self.assertIn("names only one note", self.motivi(updates="0001, 0002", priority="high", text="x"))
         self.assertIn("the field «kind» is missing", self.motivi(text="Senza natura."))
@@ -475,7 +477,7 @@ class TestDocumenti(unittest.TestCase):
         formato = (RADICE / "FORMATO.md").read_text(encoding="utf-8")
         regole = formato[formato.index("## Le regole del quaderno"):]
         titoli = [r for r in regole.splitlines() if r.startswith("### ")]
-        self.assertEqual(len(titoli), 24)
+        self.assertEqual(len(titoli), 25)  # dalla 0.7.0 anche «Le etichette vengono dalla lista dell'utente»
         for titolo in titoli:
             blocco = regole[regole.index(titolo):].split("\n### ")[0]
             with self.subTest(regola=titolo):
@@ -486,7 +488,7 @@ class TestDocumenti(unittest.TestCase):
             self.assertIn(frammento, formato)
 
     def test_skill_readme_storia_comandi(self):
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = testo_della_skill()
         for frammento in ("Then run `P review`", "### Changing a note: versions", "**A correction does not close**",
                           "### The rules of the notebook, in short", "`note/0049.1.md`", "Then run\n   `H review`"):
             with self.subTest(frammento=frammento):

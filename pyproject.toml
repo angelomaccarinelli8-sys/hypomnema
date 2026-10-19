@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "hypomnema"
-version = "0.6.1"
+version = "0.7.0"
 description = "Memoria permanente per Claude in file Markdown: Claude propone le note, i programmi decidono se entrano."
 readme = "README.md"
 requires-python = ">=3.10"
@@ -16,4 +16,7 @@ dependencies = []
 hypomnema = "hypomnema.cli:main"
 
 [tool.setuptools]
-packages = ["hypomnema"]
+packages = ["hypomnema", "hypomnema._tomli"]
+
+[tool.setuptools.package-data]
+hypomnema = ["_cldr/*"]

@@ -10,7 +10,7 @@ Ogni cartella è un esempio:
 - `atteso/quaderno/`: come deve essere il quaderno alla fine (note, registro, testimone);
 - i percorsi della cartella temporanea in cui gira l'esempio compaiono come
   `<cartella di prova>/...` (per esempio nell'uscita di `stato`);
-- `hypomnema-chat.toml` (solo nell'esempio 59): una seconda configurazione sullo stesso quaderno;
+- `hypomnema-chat.toml` (solo negli esempi 59 e 60): una seconda configurazione sullo stesso quaderno;
   le righe di `comandi.txt` che cominciano con `chat:` usano quella;
 - `quaderno-iniziale/` (solo in alcuni esempi): il quaderno da cui parte l'esempio, invece di
   un quaderno vuoto;
@@ -18,6 +18,13 @@ Ogni cartella è un esempio:
   testimone acceso. Se manca, l'esempio usa una configurazione con il testimone **spento**;
 - `messaggio*.json` / `1-privato.json` ecc.: un messaggio inventato dell'utente, come Claude Code
   lo passa al testimone. Il comando `testimone FILE` simula l'arrivo di quel messaggio.
+
+Un file `sistema-operativo.txt` (solo nell'esempio 63) contiene il nome di un fuso: l'esempio gira come
+sul computer dell'utente con quel fuso del sistema operativo; senza, ogni esempio gira come una macchina
+in UTC.
+
+Il file `etichette.toml` di questa cartella non è un esempio da eseguire: è il **modello commentato**
+della lista delle etichette (dalla 0.7.0), da copiare nella cartella del quaderno.
 
 Ogni esempio parte da un quaderno vuoto. Per avere risultati sempre uguali, nei test l'ora del
 primo comando è fissata al 15 gennaio 2026 alle 10:00 (ora italiana) e ogni comando successivo
@@ -84,6 +91,10 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `57-revisione` | Lo stesso quaderno più: una nota che nomina la 0006, due correzioni vecchie della stessa nota (un ramo), un todo con «ricordamelo tra una settimana» senza data, una nota con una data e un numero di un fatto. Poi la data del promemoria al todo. | `review` segnala 5 cose (ramo, open fermo da 46 giorni, promemoria scaduto, T0006 nominata nella F0008, «ricordamelo» senza data), con il codice 1; dopo l'`updates` con `remind` le cose sono 4. Le date e i numeri dei fatti non si segnalano. |
 | `58-chat-versioni` | In chat: `snapshot`, una chiusura di due note, `changed`, `check`; poi una riapertura, `changed`, `compare` della versione riportata, `check`. | `changed` elenca le versioni create (`note/0004.1.md`, `note/0006.1.md`, poi `note/0006.2.md`) e il registro allungato; `check` conta note e versioni; `compare` dice `UGUALI`. |
 | `59-chat-collegata` | La cartella Hypomnema con due configurazioni sullo stesso quaderno: `hypomnema.toml` (Claude Code, testimone acceso) e `hypomnema-chat.toml` (la chat collegata al computer). Le righe con `chat:` usano la seconda. Una nota dalla chat, un messaggio e una decisione da Claude Code, una chiusura dalla chat, poi recap e check. | `status` dice «ACCESO» con la prima e «NON C'È (configurazione per la chat di Claude)» con la seconda. La nota della chat è «author not verified (chat, no witness)», la decisione di Claude Code «text found in the message of …». Il quaderno resta in ordine per tutte e due. |
+| `60-etichette` | Un quaderno con `etichette.toml` (CHI: Anna, Marco, Code; COSA: orto, bilancio, gioco) e due configurazioni, come nel 59. Un todo con `who` e `about`; un fatto senza etichette; tre proposte sbagliate (etichetta fuori lista, tre CHI, etichetta ripetuta); Claude etichetta il fatto dell'utente e poi prova a cambiare le etichette; dalla chat una nota con i nomi italiani `chi` e `cosa` e una con «Bilancio» maiuscolo. Poi `search` con i filtri, `recap --about orto`, `labels`, un filtro con un'etichetta che non c'è, `check`. | Accettate le note con etichette giuste (`- who: Anna`, `- about: orto` nell'intestazione) e la versione `F0002.1` («cosa → orto»); rifiutate le altre, ognuna con il suo motivo («not in the list… the allowed ones are orto, bilancio, gioco», «at most 2», «repeated», «only the user can change the labels…»); la chat legge la stessa lista. I filtri valgono tutti insieme; il recap filtrato non mostra il diario; `labels` conta le note (e le aperte); l'etichetta che non c'è dà errore (codice 2). |
+| `61-recap-per-data` | Configurazione con `voci_diario = 0`. Tre todo con date non in ordine di numero (2, 10 e 5 gennaio), un open, una decisione; recap. Poi una correzione di oggi del todo più vecchio, una versione di Claude che mette solo un'etichetta, la chiusura dell'open come decisione il 14; recap. | Il primo recap mette i todo per data dell'ultima versione (T0002, T0003, T0001). Nel secondo il todo corretto oggi sale in cima (`T0001.1 2026-01-15`), quello con la sola etichetta resta al suo posto con la sua data (`T0003.1 2026-01-05 … · cosa: orto`), e la questione chiusa come decisione il 14 viene prima della decisione del 12. Il blocco del diario non c'è. |
+| `62-contesto-nelle-chiusure` | Un todo, un open, un todo di Claude. L'utente chiude il todo con un motivo e un contesto di Claude; Claude chiude il suo todo con un contesto; una chiusura con `from_reply`; l'utente alza la priorità dell'open con un contesto. Poi `search` (anche di una parola che è solo nel contesto) e recap. | La versione `✓T0001.1` ha `### Reason` e poi `### Context written by Claude`; la ricerca mostra «chiusa il …, perché «Fatto ieri sera.» (contesto: «…»)». Il contesto nella chiusura di Claude e `from_reply` sono rifiutati come prima. «ferie», solo nel contesto della priorità, trova l'open. |
+| `63-fuso-del-sistema` | Il computer dell'utente (il file `sistema-operativo.txt` fa girare l'esempio con il sistema operativo su `Europe/Rome`), con `fuso = "Europe/Zurich"` nella configurazione. `status`, due proposte, `status`, `check`. | `status` dice «Fuso orario: Europe/Rome, dal sistema operativo» e segnala che la riga della configurazione è diversa, senza bloccare. Il file `fuso-del-sistema.jsonl` nasce con una riga sola (la seconda proposta non la ripete); `check` è in ordine. |
 | `26-confronta` | `confronta` tra due file uguali, due diversi e un file che manca. | `UGUALI` (codice 0); `DIVERSI` con il primo byte diverso (codice 1); errore (codice 2). |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
@@ -123,3 +134,15 @@ Dopo la prima prova sul quaderno vero (richiesta di unione #15) il recap legge o
 ogni nota le righe della storia vanno dalla più recente alla più vecchia e la chiusura dice il suo
 motivo («chiusa il …, perché «…»», esempi 50, 53-56); le catene vecchie che oggi non sarebbero
 permesse restano nella storia ma non valgono (esempio 52: il discorso aperto 0004 resta aperto).
+
+Dalla versione 0.7.0 cambiano i risultati attesi di questi esempi già approvati:
+- 16, 17, 18, 27, 31, 32 e 59: `status` ha una riga nuova, «Fuso orario: …». Gli esempi girano come
+  una macchina in UTC senza il file del fuso, quindi la riga dice «UTC, quello di questa macchina: il
+  quaderno non ha ancora il file fuso-del-sistema.jsonl…» (le ore degli esempi restano quelle fisse);
+- 18, 19, 58, 59 e 60: la configurazione della chat (copia del modello) non ha più la riga `fuso`;
+- 15 e 53: i motivi di rifiuto elencano anche i campi nuovi (`who`, `about`) e i valori che `updates`
+  può cambiare («write in «kind», «priority», «remind», «who» or «about» the new value»);
+- 55 e 56: nel recap le cose da fare vanno per giorno dell'ultima versione (55: `T0001.3`, cambiata il
+  15 gennaio, prima di `T0006`; 56: `T0006` del 27 dicembre prima di `T0011` del 4 dicembre);
+- 59: nel quaderno atteso non c'è più il file vuoto `.sportello.lock` (il blocco sta nella cartella
+  temporanea).

@@ -105,7 +105,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema propose 1l-niente-cambia.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- «updates» on note «0004» changes nothing: write in «kind», «priority» or «remind» the new value.
+- «updates» on note «0004» changes nothing: write in «kind», «priority», «remind», «who» or «about» the new value.
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 

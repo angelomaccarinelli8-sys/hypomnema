@@ -19,6 +19,8 @@
     python -m hypomnema avvio                   # inizio sessione (lo lancia Claude Code): prima volta e avvisi
     python -m hypomnema archivio copia.json     # chat: aggiunge la copia dell'archivio della chat (solo aggiunta)
     python -m hypomnema protezione              # ferma gli strumenti di Claude sul quaderno (lo lancia Claude Code)
+    python -m hypomnema etichette               # le etichette CHI e COSA, con quante note ha ognuna
+    python -m hypomnema cerca --cosa orto       # anche search e recap filtrano per etichette (--chi, --cosa)
 
 Anche il comando "risposte", come "testimone", non esce mai con 2: per Claude Code, alla fine
 di una risposta, il codice 2 vorrebbe dire costringere Claude a continuare.
@@ -36,8 +38,8 @@ from pathlib import Path
 from typing import TextIO
 
 from hypomnema import (
-    __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, promemoria, registro,
-    revisione, risposte, sportello, testimone,
+    __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
+    fuso_del_sistema, promemoria, registro, revisione, risposte, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
 from hypomnema.versioni import LEGENDA, Quaderno, Storia
@@ -50,12 +52,20 @@ INGLESE = {
     "stato": "status", "istantanea": "snapshot", "cambiati": "changed", "controlla": "check",
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
-    "revisione": "review",
+    "revisione": "review", "etichette": "labels",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
 # I comandi che leggono il quaderno: aspettano che un passaggio dello sportello finisca (vedi blocco).
-LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary")
+LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary", "labels")
+
+
+def _filtri(comando: argparse.ArgumentParser) -> None:
+    """I filtri per etichette (dalla 0.7.0): si possono ripetere e devono valere tutti."""
+    comando.add_argument("--who", "--chi", dest="chi", action="append", default=[], metavar="ETICHETTA",
+                         help="solo le note con questa etichetta CHI (si può ripetere: devono valere tutte)")
+    comando.add_argument("--about", "--cosa", dest="cosa", action="append", default=[], metavar="ETICHETTA",
+                         help="solo le note con questa etichetta COSA (si può ripetere: devono valere tutte)")
 
 
 def _parser() -> argparse.ArgumentParser:
@@ -74,14 +84,20 @@ def _parser() -> argparse.ArgumentParser:
     proponi.add_argument("file", help="file JSON con la nota proposta, oppure - per leggerla dall'ingresso standard")
 
     cerca = comandi.add_parser("search", aliases=["cerca"], help="cerca le note che contengono una parola")
-    cerca.add_argument("parola", help="la parola (o le parole) da cercare, così come sono")
+    cerca.add_argument("parola", nargs="?",
+                       help="la parola (o le parole) da cercare, così come sono (con un filtro si può omettere)")
     cerca.add_argument("--all", "--tutte", dest="tutte", action="store_true",
                        help="mostra anche le note chiuse, con la loro storia")
+    _filtri(cerca)
     comandi.add_parser(
         "reminders", aliases=["promemoria"], help="elenca le note con «riprendere_il» arrivato o già passato, dal più vecchio"
     )
-    comandi.add_parser(
+    recap = comandi.add_parser(
         "recap", help="dove eravamo rimasti: promemoria scaduti, discorsi aperti, ultime decisioni, ultimo diario"
+    )
+    _filtri(recap)
+    comandi.add_parser(
+        "labels", aliases=["etichette"], help="le etichette CHI e COSA della lista, con quante note ha ognuna"
     )
     comandi.add_parser(
         "review", aliases=["revisione"],
@@ -168,6 +184,10 @@ def _descrivi(storia: Storia, quaderno: Quaderno, segno: str, conferme, titolo: 
         righe.append(f"stato: chiusa ({ultima.data})")
     if nota.priorita is not None:
         righe.append(f"priorità: {nota.priorita}")
+    if nota.chi is not None:
+        righe.append(f"chi: {', '.join(nota.chi)}")
+    if nota.cosa is not None:
+        righe.append(f"cosa: {', '.join(nota.cosa)}")
     if nota.conferma_di is not None:
         righe.append(f"conferma di: {cercatore.rimando(quaderno, nota.conferma_di, segno)}")
     if nota.corregge is not None:
@@ -244,21 +264,70 @@ def _mostra_con_collegate(storia: Storia, quaderno: Quaderno, segno: str, confer
         gia_mostrate.add(collegata.base)
 
 
+def _descrivi_filtro(argomenti) -> str:
+    """«chi: Anna e cosa: orto»."""
+    parti = [f"chi: {e}" for e in argomenti.chi] + [f"cosa: {e}" for e in argomenti.cosa]
+    return ", ".join(parti[:-1]) + " e " + parti[-1] if len(parti) > 1 else parti[0]
+
+
+def _controlla_filtro(argomenti, config, quaderno: Quaderno, uscita: TextIO) -> bool:
+    """Un'etichetta del filtro deve essere nella lista, o almeno in una nota (tolta poi dalla lista)."""
+    if not (argomenti.chi or argomenti.cosa):
+        return True
+    lista = etichette.leggi(config.cartella_quaderno)
+    usate = _etichette_usate(quaderno)
+    for campo, nome, scelte in (("who", "CHI", argomenti.chi), ("about", "COSA", argomenti.cosa)):
+        ammesse = lista.ammesse(campo) if lista is not None else ()
+        for scelta in scelte:
+            if scelta in ammesse or scelta in usate[campo]:
+                continue
+            if lista is None:
+                print(f"ERRORE: in questo quaderno non ci sono etichette (manca il file {etichette.NOME_FILE} nella "
+                      f"cartella «{config.cartella_quaderno}»), e nessuna nota ha l'etichetta {nome} «{scelta}».", file=uscita)
+            else:
+                elenco = ", ".join(ammesse) if ammesse else "nessuna"
+                print(f"ERRORE: l'etichetta {nome} «{scelta}» non è nella lista (le etichette {nome} sono: {elenco}) "
+                      "e nessuna nota la usa. Il confronto è esatto: maiuscole e minuscole contano.", file=uscita)
+            return False
+    return True
+
+
+def _etichette_usate(quaderno: Quaderno) -> dict[str, set[str]]:
+    usate = {"who": set(), "about": set()}
+    for storia in quaderno.elenco():
+        usate["who"].update(storia.ultima.contenuto.chi or ())
+        usate["about"].update(storia.ultima.contenuto.cosa or ())
+    return usate
+
+
 def _cerca(argomenti, config, uscita: TextIO) -> int:
-    parola = argomenti.parola.strip()
-    if not parola:
-        print("ERRORE: serve una parola da cercare.", file=uscita)
+    parola = (argomenti.parola or "").strip()
+    filtro = bool(argomenti.chi or argomenti.cosa)
+    if not parola and not filtro:
+        print("ERRORE: serve una parola da cercare (oppure un filtro: --chi, --cosa).", file=uscita)
         return 2
     archivio_note = cercatore.leggi(config)
-    trovate = cercatore.cerca(archivio_note, parola, tutte=argomenti.tutte)
-    nascoste = 0 if argomenti.tutte else len(cercatore.cerca(archivio_note, parola, tutte=True)) - len(trovate)
+    if not _controlla_filtro(argomenti, config, archivio_note, uscita):
+        return 2
+    trovate = cercatore.cerca(archivio_note, parola, argomenti.tutte, argomenti.chi, argomenti.cosa)
+    nascoste = 0 if argomenti.tutte else len(
+        cercatore.cerca(archivio_note, parola, True, argomenti.chi, argomenti.cosa)) - len(trovate)
+    if not filtro:
+        cosa = f"con «{parola}»"
+    elif parola:
+        cosa = f"con «{parola}» e le etichette {_descrivi_filtro(argomenti)}"
+    else:
+        cosa = f"con le etichette {_descrivi_filtro(argomenti)}"
     if not trovate:
         aperta = " aperta" if nascoste else ""
-        print(f"Nessuna nota{aperta} contiene «{parola}».", file=uscita)
+        if filtro:
+            print(f"Nessuna nota{aperta} {cosa}.", file=uscita)
+        else:
+            print(f"Nessuna nota{aperta} contiene «{parola}».", file=uscita)
     elif len(trovate) == 1:
-        print(f"Trovata 1 nota con «{parola}».", file=uscita)
+        print(f"Trovata 1 nota {cosa}.", file=uscita)
     else:
-        print(f"Trovate {len(trovate)} note con «{parola}» (dalla più recente).", file=uscita)
+        print(f"Trovate {len(trovate)} note {cosa} (dalla più recente).", file=uscita)
     if nascoste:
         quante = ("1 nota chiusa non mostrata: aggiungi --all per vederla" if nascoste == 1
                   else f"{nascoste} note chiuse non mostrate: aggiungi --all per vederle")
@@ -306,10 +375,22 @@ def _prima_riga(testo: str | None, dicitura: str | None = None) -> str:
 ETICHETTA_PRIORITA = {"high": "[alta] ", "normal": "", "low": "[bassa] "}
 
 
+def _etichette_in_riga(storia: Storia) -> str:
+    """« · chi: Anna · cosa: orto», solo se la nota ha etichette (dalla 0.7.0)."""
+    nota = storia.ultima.contenuto
+    parti = []
+    if nota.chi:
+        parti.append(f"chi: {', '.join(nota.chi)}")
+    if nota.cosa:
+        parti.append(f"cosa: {', '.join(nota.cosa)}")
+    return "".join(f" · {parte}" for parte in parti)
+
+
 def _riga_recap(storia: Storia, inizio: str, quaderno: Quaderno, segno: str, conferme) -> list[str]:
     ultima = storia.ultima
     priorita = ETICHETTA_PRIORITA[cercatore.priorita_in_vigore(storia)]
-    righe = [f"- [{ultima.etichetta(segno)}] {priorita}{inizio}: {_prima_riga(ultima.contenuto.testo)}"]
+    righe = [f"- [{ultima.etichetta(segno)}] {priorita}{inizio}: {_prima_riga(ultima.contenuto.testo)}"
+             f"{_etichette_in_riga(storia)}"]
     # La storia dalla versione più recente alla più vecchia, come il quaderno.
     for versione in reversed(storia.versioni[1:]):
         righe.append(f"    ↳ {versione.etichetta(segno)} {versione.data} · {versione.autore}: "
@@ -323,15 +404,21 @@ def _riga_recap(storia: Storia, inizio: str, quaderno: Quaderno, segno: str, con
     return righe
 
 
-def _recap(config, adesso: datetime, uscita: TextIO) -> int:
+def _recap(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura, con regole fisse: dove eravamo rimasti, in poche righe.
 
-    In ogni blocco vengono prima le note a priorità alta, poi normale, poi bassa; a parità di
-    priorità, i promemoria dal più vecchio e il resto dal più recente (per numero di nota). Vale
-    l'ultima versione di ogni nota, per quello che è adesso: le chiuse non ci sono, tranne le decisioni
-    (una questione chiusa come decisione compare tra le decisioni, con il suo ✓).
+    In ogni blocco vengono prima le note a priorità alta, poi normale, poi bassa. A parità di
+    priorità, i promemoria dal più vecchio (per data del promemoria); il resto (dalla 0.7.0) dal giorno
+    dell'ultima versione più recente, senza contare le versioni che cambiano solo le etichette, e a parità
+    di giorno dal numero più alto. Vale l'ultima versione di ogni nota, per quello che è adesso: le chiuse
+    non ci sono, tranne le decisioni (una questione chiusa come decisione compare tra le decisioni, con il
+    suo ✓). Con un filtro per etichette (--chi, --cosa) restano solo le note che le hanno tutte, e il diario,
+    che non ha etichette, non si mostra.
     """
     archivio_note = cercatore.leggi(config)
+    if not _controlla_filtro(argomenti, config, archivio_note, uscita):
+        return 2
+    filtro = bool(argomenti.chi or argomenti.cosa)
     conferme = cercatore.confermata_da(archivio_note)
     segno = config.segno_chiusa
     oggi = adesso.date()
@@ -340,9 +427,16 @@ def _recap(config, adesso: datetime, uscita: TextIO) -> int:
         # sorted è stabile: a parità di priorità resta l'ordine di partenza.
         return sorted(elenco, key=lambda s: cercatore.ORDINE_PRIORITA[cercatore.priorita_in_vigore(s)])
 
-    righe = [f"Dove eravamo rimasti (recap del {oggi.isoformat()}).", ""]
+    def filtrate(elenco: list[Storia]) -> list[Storia]:
+        return cercatore.filtra(elenco, argomenti.chi, argomenti.cosa)
+
+    solo = f", solo le note con le etichette {_descrivi_filtro(argomenti)}" if filtro else ""
+    righe = [f"Dove eravamo rimasti (recap del {oggi.isoformat()}{solo}).", ""]
 
     scaduti = promemoria.scaduti(archivio_note, oggi)
+    if filtro:
+        tenute = set(id(s) for s in filtrate([v.storia for v in scaduti]))
+        scaduti = [v for v in scaduti if id(v.storia) in tenute]
     scaduti = sorted(scaduti, key=lambda voce: cercatore.ORDINE_PRIORITA[cercatore.priorita_in_vigore(voce.storia)])
     if scaduti:
         righe.append(f"Promemoria scaduti: {len(scaduti)} (prima la priorità alta, poi dal più vecchio)")
@@ -359,8 +453,8 @@ def _recap(config, adesso: datetime, uscita: TextIO) -> int:
         ("Ultime decisioni", "decision", config.recap_decisioni, "nessuna",
          "1 decisione più vecchia non mostrata", "{} decisioni più vecchie non mostrate"),
     ):
-        scelte = per_priorita(cercatore.dal_piu_recente(
-            [s for s in archivio_note.elenco() if s.ultima.contenuto.natura == natura and not s.nascosta]))
+        scelte = per_priorita(cercatore.per_data(filtrate(
+            [s for s in archivio_note.elenco() if s.ultima.contenuto.natura == natura and not s.nascosta])))
         righe.append("")
         if not scelte:
             righe.append(f"{titolo}: {nessuno}.")
@@ -368,23 +462,67 @@ def _recap(config, adesso: datetime, uscita: TextIO) -> int:
         mostrate = scelte[:quanti]
         righe.append(f"{titolo}: {len(mostrate)} di {len(scelte)} (prima la priorità alta, poi dal più recente)")
         for storia in mostrate:
-            righe += _riga_recap(storia, storia.ultima.data, archivio_note, segno, conferme)
+            righe += _riga_recap(storia, storia.data_del_contenuto, archivio_note, segno, conferme)
         resto = len(scelte) - len(mostrate)
         if resto:
             righe.append(f"({uno_in_piu if resto == 1 else tanti_in_piu.format(resto)})")
 
-    voci = diario.voci(config)
-    righe.append("")
-    if not voci:
-        righe.append("Ultime voci del diario: nessuna.")
-    else:
-        mostrate = voci[-config.recap_voci_diario:]
-        righe.append(f"Ultime voci del diario: {len(mostrate)} di {len(voci)} (la conversazione registrata, non le note)")
-        for voce in mostrate:
-            righe.append(f"- {voce.quando} · {voce.chi}: {_prima_riga(voce.testo, voce.dicitura)}")
-        righe.append(f"(per leggerle intere: diary --last {len(mostrate)})")
+    # Il blocco del diario: non c'è con voci_diario = 0 (dalla 0.7.0), e con un filtro si dice perché manca.
+    if filtro:
+        righe += ["", "Ultime voci del diario: non mostrate (il diario non ha etichette)."]
+    elif config.recap_voci_diario:
+        voci = diario.voci(config)
+        righe.append("")
+        if not voci:
+            righe.append("Ultime voci del diario: nessuna.")
+        else:
+            mostrate = voci[-config.recap_voci_diario:]
+            righe.append(f"Ultime voci del diario: {len(mostrate)} di {len(voci)} (la conversazione registrata, "
+                         "non le note)")
+            for voce in mostrate:
+                righe.append(f"- {voce.quando} · {voce.chi}: {_prima_riga(voce.testo, voce.dicitura)}")
+            righe.append(f"(per leggerle intere: diary --last {len(mostrate)})")
     righe += ["", f"Legenda: {LEGENDA.format(segno=segno)}"]
 
+    for riga in righe:
+        print(riga, file=uscita)
+    return 0
+
+
+def _etichette(config, uscita: TextIO) -> int:
+    """Solo lettura: le etichette della lista, con quante note (ultima versione) ha ognuna."""
+    lista = etichette.leggi(config.cartella_quaderno)
+    archivio_note = cercatore.leggi(config)
+    storie = archivio_note.elenco()
+
+    def aperta(storia: Storia) -> bool:
+        nota = storia.ultima.contenuto
+        return not storia.chiusa and (nota.natura in ("open", "todo") or nota.riprendere_il is not None)
+
+    righe = []
+    if lista is None:
+        righe.append(f"Nessuna etichetta: nella cartella del quaderno non c'è il file {etichette.NOME_FILE}, quindi "
+                     "nessuna nota può averne. Lo scrive l'utente (un modello commentato è esempi/etichette.toml).")
+    for campo, attributo, nome in (("who", "chi", "CHI"), ("about", "cosa", "COSA")):
+        if lista is None:
+            continue
+        righe.append(f"Etichette {nome}:" if lista.ammesse(campo) else f"Etichette {nome}: nessuna nella lista.")
+        for etichetta in lista.ammesse(campo):
+            con = [s for s in storie if etichetta in (getattr(s.ultima.contenuto, attributo) or ())]
+            aperte = sum(1 for s in con if aperta(s))
+            quante = "1 nota" if len(con) == 1 else f"{len(con)} note"
+            if con:
+                quante += " (1 aperta)" if aperte == 1 else f" ({aperte} aperte)"
+            righe.append(f"- {etichetta}: {quante}")
+    usate = _etichette_usate(archivio_note)
+    fuori = [(nome, e) for campo, nome in (("who", "CHI"), ("about", "COSA"))
+             for e in sorted(usate[campo]) if lista is None or e not in lista.ammesse(campo)]
+    if fuori:
+        righe.append("Etichette usate in qualche nota ma non nella lista: "
+                     + ", ".join(f"{nome} «{e}»" for nome, e in fuori) + ".")
+    elif lista is not None:
+        righe.append("Etichette usate in qualche nota ma non nella lista: nessuna.")
+    righe.append("(Si contano le note per la loro ultima versione; «aperte»: open, todo e promemoria non chiusi.)")
     for riga in righe:
         print(riga, file=uscita)
     return 0
@@ -411,11 +549,12 @@ def _rientrato(testo: str) -> list[str]:
     return [f"  {riga}" if riga else "" for riga in testo.split("\n")]
 
 
-def _stato(argomenti, config, uscita: TextIO) -> int:
+def _stato(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: non crea e non modifica niente."""
     righe = [
         f"Configurazione: {configurazione.trova(argomenti.config).resolve()}",
         f"Quaderno: {config.cartella_quaderno}",
+        fuso_del_sistema.scegli(config, adesso).descrizione,
     ]
     pausa = testimone.in_pausa(testimone.leggi_messaggi(config)) if config.testimone_attivo else None
     if pausa is not None:
@@ -815,7 +954,8 @@ def main(
         print(f"ERRORE: il quaderno contiene un file non valido: {errore}. "
               "Controlla se è stato modificato a mano.", file=uscita)
         return 2
-    except (testimone.ErroreTestimone, registro.RegistroToccato, blocco.QuadernoOccupato) as errore:
+    except (testimone.ErroreTestimone, registro.RegistroToccato, blocco.QuadernoOccupato,
+            etichette.ErroreEtichette) as errore:
         print(f"ERRORE: {errore}", file=uscita)
         return 2
 
@@ -824,7 +964,7 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
     if comando == "propose":
         return _proponi(argomenti, config, adesso, uscita)
     if comando == "status":
-        return _stato(argomenti, config, uscita)
+        return _stato(argomenti, config, adesso, uscita)
     if comando == "snapshot":
         return _istantanea(config, uscita)
     if comando == "changed":
@@ -838,7 +978,9 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
     if comando == "reminders":
         return _promemoria(config, adesso, uscita)
     if comando == "recap":
-        return _recap(config, adesso, uscita)
+        return _recap(argomenti, config, adesso, uscita)
+    if comando == "labels":
+        return _etichette(config, uscita)
     if comando == "review":
         return _revisione(config, adesso, uscita)
     if comando == "claude-settings":

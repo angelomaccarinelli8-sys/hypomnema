@@ -13,7 +13,7 @@ from pathlib import Path
 from hypomnema import __version__, archivio, cercatore, configurazione, promemoria, quaderno, sportello
 from hypomnema.cli import main
 from hypomnema.nota import da_markdown
-from tests.esecutore import CONFIG_DI_PROVA, RADICE
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, testo_della_skill
 from tests.test_archivio import CONFIG_ARCHIVIO, copia_json
 from tests.test_testimone import CONFIG_ACCESO, messaggio
 
@@ -329,8 +329,8 @@ class TestQuadernoVecchio(unittest.TestCase):
 
 class TestVersioneEDocumenti(unittest.TestCase):
     def test_versione(self):
-        self.assertEqual(__version__, "0.6.1")
-        self.assertIn('version = "0.6.1"', (RADICE / "pyproject.toml").read_text(encoding="utf-8"))
+        self.assertEqual(__version__, "0.7.0")
+        self.assertIn('version = "0.7.0"', (RADICE / "pyproject.toml").read_text(encoding="utf-8"))
 
     def test_comando_recap_del_plugin(self):
         testo = (RADICE / "commands" / "recap.md").read_text(encoding="utf-8")
@@ -338,7 +338,7 @@ class TestVersioneEDocumenti(unittest.TestCase):
         self.assertIn('programma.py" recap', testo)
 
     def test_skill(self):
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = testo_della_skill()
         self.assertIn("P recap", skill)
         self.assertIn("H recap", skill)
         self.assertIn("riporto-<AAAAMMGG>-<hhmm>-<lettera>", skill)

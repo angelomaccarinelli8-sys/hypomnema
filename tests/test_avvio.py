@@ -16,7 +16,7 @@ from pathlib import Path, PurePosixPath, PureWindowsPath
 
 from hypomnema import avvio, configurazione, testimone
 from hypomnema.cli import main
-from tests.esecutore import CONFIG_DI_PROVA, RADICE
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, testo_della_skill
 from tests.test_regole import ADESSO
 from tests.test_testimone import CONFIG_ACCESO, messaggio
 
@@ -50,6 +50,8 @@ class TestStato(ConCartella):
         self.assertEqual(uscita.splitlines(), [
             f"Configurazione: {self.file_config}",
             f"Quaderno: {self.cartella / 'quaderno'}",
+            "Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, "
+            "che nasce la prima volta che usi Hypomnema sul tuo computer.",
             "Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).",
             f"File del testimone: {self.cartella / 'quaderno' / 'testimone.jsonl'}",
             "Messaggi registrati: 0",
@@ -148,7 +150,7 @@ class TestPluginEModello(unittest.TestCase):
     def test_plugin(self):
         manifesto = json.loads((RADICE / ".claude-plugin" / "plugin.json").read_text(encoding="utf-8"))
         self.assertEqual(manifesto["name"], "hypomnema")
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = testo_della_skill()
         self.assertTrue(skill.startswith("---\nname: hypomnema\n"))
         self.assertIn('py "${CLAUDE_PLUGIN_ROOT}/programma.py" status', skill)
         self.assertIn("Il testimone non è attivo: le note che salvi ora saranno marcate come non\n"

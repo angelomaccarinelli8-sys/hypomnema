@@ -7,8 +7,7 @@ Ordine di ricerca del file:
 """
 
 import os
-import zoneinfo
-from datetime import datetime, tzinfo
+from datetime import datetime
 
 try:
     import tomllib
@@ -16,6 +15,8 @@ except ImportError:  # Python 3.10: la copia di tomli, da cui è nato tomllib (v
     from hypomnema import _tomli as tomllib
 from dataclasses import dataclass
 from pathlib import Path, PurePosixPath, PureWindowsPath
+
+from hypomnema import fuso_del_sistema
 
 NOME_FILE = "hypomnema.toml"
 VARIABILE_AMBIENTE = "HYPOMNEMA_CONFIG"
@@ -79,34 +80,26 @@ class Configurazione:
     recap_voci_diario: int = RECAP_DI_BASE["voci_diario"]
     giorni_revisione: int = GIORNI_REVISIONE_DI_BASE
     segno_chiusa: str = SEGNO_CHIUSA_DI_BASE
-    # Il fuso orario dell'impostazione facoltativa «fuso» di [quaderno] (dalla 0.6.1), per esempio
-    # "Europe/Rome": date e ore si scrivono in quel fuso, qualunque sia l'orologio del computer.
-    # None: l'ora del computer, come prima.
-    fuso: tzinfo | None = None
+    # Il nome del fuso orario dell'impostazione facoltativa «fuso» di [quaderno] (dalla 0.6.1), per
+    # esempio "Europe/Rome". Dalla 0.7.0 vale solo sulle macchine in UTC (chat, cloud): sul computer
+    # dell'utente vale sempre il sistema operativo (vedi fuso_del_sistema).
     nome_fuso: str | None = None
 
 
 def nel_fuso(config: "Configurazione", adesso: datetime) -> datetime:
-    """L'ora nel fuso della configurazione, se c'è; altrimenti com'è."""
-    return adesso.astimezone(config.fuso) if config.fuso is not None else adesso
+    """L'ora da scrivere: vedi ``fuso_del_sistema``."""
+    return fuso_del_sistema.nel_fuso(config, adesso)
 
 
-def _fuso(file: Path, valore) -> tzinfo:
-    """Il fuso dell'impostazione «fuso». Se non si trova, errore: mai l'ora del computer in silenzio."""
+def _fuso(file: Path, valore) -> str:
+    """Il nome dell'impostazione «fuso». Si controlla solo la forma: se il fuso non si trova, non ferma
+    niente (dalla 0.7.0, vedi fuso_del_sistema)."""
     if not isinstance(valore, str) or not valore.strip() or valore != valore.strip():
         raise ErroreConfigurazione(
             f"nel file «{file}» l'impostazione «fuso» deve essere il nome di un fuso orario tra virgolette, "
-            'per esempio fuso = "Europe/Rome". Se non serve, toglila: vale l\'ora del computer.'
+            'per esempio fuso = "Europe/Rome". Se non serve, toglila: vale l\'ora del sistema operativo.'
         )
-    try:
-        return zoneinfo.ZoneInfo(valore)
-    except (zoneinfo.ZoneInfoNotFoundError, ValueError, OSError):
-        raise ErroreConfigurazione(
-            f"nel file «{file}» c'è fuso = \"{valore}\", ma su questo computer il fuso non si trova: o il nome "
-            'è scritto male (si scrive come "Europe/Rome"), o manca la tabella dei fusi orari (su Windows di '
-            "solito non c'è). Non ho scritto niente. Correggi il nome, oppure togli l'impostazione «fuso» per "
-            "usare l'ora del computer."
-        )
+    return valore
 
 
 def trova(percorso: str | None = None) -> Path:
@@ -278,10 +271,13 @@ def carica(percorso: str | None = None) -> Configurazione:
                 + ", ".join(RECAP_DI_BASE) + "."
             )
         valore = recap[chiave]
-        if not isinstance(valore, int) or isinstance(valore, bool) or valore < 1:
+        # Il diario si può togliere dal recap (dalla 0.7.0): voci_diario = 0. Gli altri blocchi no.
+        minimo = 0 if chiave == "voci_diario" else 1
+        if not isinstance(valore, int) or isinstance(valore, bool) or valore < minimo:
             raise ErroreConfigurazione(
                 f"nel file «{file}» l'impostazione «{chiave}» della sezione [recap] deve essere un numero "
-                "intero maggiore di zero (quante voci mostrare)."
+                + ("intero, zero o più (quante voci mostrare; con 0 il blocco del diario non compare)."
+                   if minimo == 0 else "intero maggiore di zero (quante voci mostrare).")
             )
     quanti_recap = {**RECAP_DI_BASE, **recap}
 
@@ -314,7 +310,7 @@ def carica(percorso: str | None = None) -> Configurazione:
             'virgolette, senza spazi né cifre (per esempio "✓" oppure "x").'
         )
 
-    fuso = _fuso(file, sezione["fuso"]) if "fuso" in sezione else None
+    nome_fuso = _fuso(file, sezione["fuso"]) if "fuso" in sezione else None
 
     base = file.resolve().parent
     quaderno = base / testo("cartella")
@@ -342,6 +338,5 @@ def carica(percorso: str | None = None) -> Configurazione:
         recap_voci_diario=quanti_recap["voci_diario"],
         giorni_revisione=giorni,
         segno_chiusa=segno_chiusa,
-        fuso=fuso,
-        nome_fuso=sezione.get("fuso"),
+        nome_fuso=nome_fuso,
     )

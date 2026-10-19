@@ -7,7 +7,8 @@ parole) segnala soltanto, e decide l'utente.
 1. **Ramo**: due o più note vecchie cambiano (``corrects`` o ``done``) la stessa versione. Le note
    nuove non possono, perché si cambia sempre l'ultima versione.
 2. **Ferma**: un ``open`` o un ``todo`` aperto la cui ultima versione è più vecchia di N giorni
-   (impostazione ``giorni`` della sezione ``[revisione]``, di base 30).
+   (impostazione ``giorni`` della sezione ``[revisione]``, di base 30). Dalla 0.7.0 le versioni che
+   cambiano solo le etichette non contano: mettere le etichette non riazzera i giorni.
 3. **Promemoria scaduto**: la data è arrivata e la nota è ancora aperta.
 4. **Nominata**: il numero di un ``open`` o ``todo`` aperto compare (con o senza lettera e versione,
    non dentro una data) nel testo, nel contesto o nel motivo di una nota successiva: forse dice che
@@ -86,11 +87,11 @@ def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segn
         )))
 
     for storia in da_seguire:
-        fermo = (oggi - _giorno(storia.ultima.data)).days
+        fermo = (oggi - _giorno(storia.data_del_contenuto)).days
         if fermo > giorni:
             come = "aperta" if storia.ultima.contenuto.natura == "open" else "da fare"
             segnalazioni.append(Segnalazione(storia, (
-                f"{come} da {fermo} giorni (ultima versione del {storia.ultima.data[:10]}). Si può chiudere "
+                f"{come} da {fermo} giorni (ultima versione del {storia.data_del_contenuto[:10]}). Si può chiudere "
                 f"(done: {storia.base}), cambiare (updates: {storia.base}) o lasciarla com'è."
             )))
 
@@ -104,10 +105,10 @@ def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segn
         schema = _numero_nominato(_numeri_della_storia(storia))
         gia = set()
         for altra, versione in _successive(quaderno, storia):
-            testi = (versione.contenuto.testo, versione.contenuto.contesto, versione.motivo)
+            testi = (versione.contenuto.testo, versione.contenuto.contesto, versione.motivo, versione.contesto)
             if versione.numero > 0 and "text corrected" not in versione.cambi:
-                # Una versione che non cambia il testo lo copia: conta solo il suo motivo.
-                testi = (versione.motivo,)
+                # Una versione che non cambia il testo lo copia: contano solo il suo motivo e il suo contesto.
+                testi = (versione.motivo, versione.contesto)
             if altra.base not in gia and any(t is not None and schema.search(t) for t in testi):
                 gia.add(altra.base)
                 segnalazioni.append(Segnalazione(storia, (

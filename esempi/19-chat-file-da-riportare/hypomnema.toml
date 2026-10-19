@@ -19,14 +19,11 @@ file_registro = "registro.md"
 # Quante cifre usare per il numero delle note (4 => 0001, 0002, ...).
 cifre_numero_nota = 4
 
-# Il fuso orario in cui si scrivono date e ore (dalla 0.6.1). La macchina della chat può avere
-# l'orologio in UTC: con questa impostazione «oggi» e le ore del registro sono quelli del tuo fuso,
-# con l'ora legale. Se il fuso non si trova (nome sbagliato o tabella dei fusi mancante) il programma
-# si ferma con un errore e non scrive niente. Senza questa riga vale l'ora del computer.
-# "Europe/Rome" è solo un ESEMPIO (l'Italia): scrivi il TUO fuso, con il nome della tabella dei fusi
-# orari, per esempio "Europe/Zurich" o "America/New_York". Quando la chat crea questo file, scrive
-# il fuso dell'utente (e se non lo conosce lo chiede).
-fuso = "Europe/Rome"
+# Il fuso orario (dalla 0.7.0) viene dal sistema operativo del tuo computer: Hypomnema lo scrive nel
+# file fuso-del-sistema.jsonl del quaderno, e la macchina della chat, che ha l'orologio in UTC, lo
+# legge da lì. Non serve scrivere niente qui. Solo se vuoi un altro fuso sulle macchine in UTC puoi
+# aggiungere una riga come questa (è un ESEMPIO):  fuso = "Europe/Rome"
+# Sulle macchine in UTC la riga vince sul file; sul tuo computer vale sempre il sistema operativo.
 
 [testimone]
 # Il testimone registra le parole esatte di ogni tuo messaggio a Claude, con data e ora,
