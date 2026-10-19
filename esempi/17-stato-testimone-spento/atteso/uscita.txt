@@ -4,6 +4,7 @@ $ hypomnema testimone messaggio.json
 $ hypomnema stato
 Configurazione: <cartella di prova>/hypomnema.toml
 Quaderno: <cartella di prova>/quaderno
+Fuso orario: quello del computer.
 Testimone: SPENTO (nella configurazione attivo = false): i messaggi non vengono registrati e le note con autore «user» saranno marcate «author not verified (witness off)».
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 0

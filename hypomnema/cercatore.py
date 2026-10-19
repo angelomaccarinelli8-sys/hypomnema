@@ -11,6 +11,9 @@ cambiamento. Le note trovate vanno dalla più recente (numero più alto) alla pi
 non si mostrano, a meno di chiederle tutte (``tutte=True``, cioè ``search --all``), tranne quelle
 chiuse come decisione (vedi ``Storia.nascosta``).
 
+Dalla 0.7.0 si può filtrare per etichette CHI e COSA (``filtra``): devono valere tutte, sull'ultima
+versione della nota. Con un filtro la parola si può anche omettere.
+
 Ogni nota si porta dietro le note che la confermano (``confirms``), e una nota che conferma
 un'altra dice sempre com'è quella nota oggi, anche se è chiusa o è stata cambiata.
 """
@@ -34,24 +37,41 @@ def dal_piu_recente(storie: list[Storia]) -> list[Storia]:
 
 def _contiene(versione: Versione, schema: re.Pattern) -> bool:
     nota = versione.contenuto
-    return any(t is not None and schema.search(t) for t in (nota.testo, nota.contesto, versione.motivo))
+    return any(t is not None and schema.search(t)
+               for t in (nota.testo, nota.contesto, versione.motivo, versione.contesto))
+
+
+def filtra(storie: list[Storia], chi: list[str] = (), cosa: list[str] = ()) -> list[Storia]:
+    """Le storie la cui ultima versione ha tutte le etichette chieste (CHI e COSA insieme)."""
+    return [
+        s for s in storie
+        if all(e in (s.ultima.contenuto.chi or ()) for e in chi)
+        and all(e in (s.ultima.contenuto.cosa or ()) for e in cosa)
+    ]
+
+
+def per_data(storie: list[Storia]) -> list[Storia]:
+    """Dal giorno dell'ultima versione più recente (le versioni di sole etichette non contano); a parità
+    di giorno, dal numero più alto. Dalla 0.7.0 è l'ordine del recap, dopo la priorità."""
+    return sorted(storie, key=lambda s: (s.data_del_contenuto[:10], ordine(s.base)), reverse=True)
 
 
 def leggi(config: Configurazione) -> Quaderno:
     return Quaderno(quaderno_su_disco.leggi_note(config))
 
 
-def cerca(quaderno: Quaderno | Configurazione, parola: str, tutte: bool = False) -> list[Storia]:
+def cerca(quaderno: Quaderno | Configurazione, parola: str | None, tutte: bool = False,
+          chi: list[str] = (), cosa: list[str] = ()) -> list[Storia]:
     if isinstance(quaderno, Configurazione):
         quaderno = leggi(quaderno)
-    parola = parola.strip()
-    if not parola:
+    parola = (parola or "").strip()
+    if not parola and not (chi or cosa):
         raise ValueError("serve una parola da cercare.")
-    schema = schema_parola(parola)
-    return dal_piu_recente([
+    schema = schema_parola(parola) if parola else None
+    return dal_piu_recente(filtra([
         s for s in quaderno.elenco()
-        if any(_contiene(v, schema) for v in s.versioni) and (tutte or not s.nascosta)
-    ])
+        if (schema is None or any(_contiene(v, schema) for v in s.versioni)) and (tutte or not s.nascosta)
+    ], chi, cosa))
 
 
 def confermata_da(quaderno: Quaderno) -> dict[str, list[Storia]]:
@@ -94,6 +114,8 @@ VOCI_ITALIANE = (
     ("remind ", "promemoria "),
     ("closed", "chiusa"),
     ("reopened", "riaperta"),
+    ("who ", "chi "),
+    ("about ", "cosa "),
 )
 
 
@@ -118,7 +140,9 @@ def descrivi_cambio(storia: Storia, versione: Versione, breve: bool) -> str:
     if versione.numero == 0:
         return "creata"
     taglia = prima_riga if breve else su_una_riga
-    perche = f", perché «{taglia(versione.motivo)}»" if versione.motivo else ""
+    # Il contesto di Claude accanto al motivo dell'utente (dalla 0.7.0); nel recap no, per stare brevi.
+    contesto = f" (contesto: «{su_una_riga(versione.contesto)}»)" if versione.contesto and not breve else ""
+    perche = f", perché «{taglia(versione.motivo)}»{contesto}" if versione.motivo else ""
     voci = []
     for voce in versione.cambi:
         if voce == "reopened":
@@ -133,7 +157,7 @@ def descrivi_cambio(storia: Storia, versione: Versione, breve: bool) -> str:
     descrizione = ", ".join(voci)
     con_motivo = {"reopened", "closed"} & set(versione.cambi)
     if versione.motivo and not con_motivo and not breve:
-        descrizione += f". Motivo: «{taglia(versione.motivo)}»"
+        descrizione += f". Motivo: «{taglia(versione.motivo)}»{contesto}"
     if versione.bloccati:
         bloccati = []
         for voce in versione.bloccati:

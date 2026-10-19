@@ -53,7 +53,7 @@ def _file_del_quaderno(config: Configurazione) -> dict[str, bytes]:
     return {
         p.relative_to(quaderno).as_posix(): p.read_bytes()
         for p in sorted(quaderno.rglob("*"))
-        if p.is_file() and p != blocco.file_del_blocco(quaderno)
+        if p.is_file() and p != blocco.file_vecchio(quaderno)
     }
 
 

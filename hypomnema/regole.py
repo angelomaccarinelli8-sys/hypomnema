@@ -16,14 +16,17 @@ import re
 from dataclasses import replace
 from datetime import date, datetime
 
-from hypomnema import versioni
-from hypomnema.nota import TITOLI_CONTESTO, TITOLO_CAMBIO, VALORI_ITALIANI, Nota, numeri
+from hypomnema import etichette as lista_etichette, versioni
+from hypomnema.nota import TITOLI_CONTESTO, TITOLO_CAMBIO, TITOLO_CONTESTO_CAMBIO, VALORI_ITALIANI, Nota, numeri
 from hypomnema.testimone import Messaggio, Ritrovamento, trova_citazione
 
 CAMPI_OBBLIGATORI = ("date", "source", "author", "knowledge", "kind", "text")
 CAMPI_FACOLTATIVI = (
     "priority", "confirms", "corrects", "updates", "done", "reopens", "remind", "quote", "context", "from_reply",
+    "who", "about",
 )
+# Le etichette (dalla 0.7.0): CHI (who) e COSA (about), dalla lista del file etichette.toml del quaderno.
+CAMPI_ETICHETTE = ("who", "about")
 # I campi che cambiano una nota che c'è già: ognuno crea una versione nuova. Uno per proposta.
 CAMPI_CAMBIAMENTO = ("corrects", "updates", "done", "reopens")
 # Campi che possono andare a capo: tutti gli altri devono stare su una riga.
@@ -36,6 +39,7 @@ NOMI_ITALIANI = {
     "testo": "text", "priorità": "priority", "conferma_di": "confirms", "corregge": "corrects",
     "aggiorna": "updates", "riapre": "reopens",
     "riprendere_il": "remind", "citazione": "quote", "contesto": "context", "da_risposta": "from_reply",
+    "chi": "who", "cosa": "about",
 }
 # I valori italiani, accettati per sempre nelle proposte (gli stessi che si leggono nelle note vecchie).
 VALORI_ITALIANI_PER_CAMPO = {
@@ -111,6 +115,7 @@ def in_inglese(proposta: dict) -> tuple[dict, list[str]]:
 def controlla(
     proposta: dict, note_esistenti: list[Nota], messaggi: list[Messaggio] | None, segno: str,
     risposte: list[Messaggio] | None = None, segno_chiusa: str = versioni.SEGNO_CHIUSA,
+    etichette: "lista_etichette.Etichette | None" = None,
 ) -> list[str]:
     """Restituisce i motivi di rifiuto, in ordine fisso. Lista vuota = nota accettabile.
 
@@ -118,6 +123,7 @@ def controlla(
     ``messaggi`` sono i messaggi registrati dal testimone, oppure None se il testimone è spento.
     ``segno`` è il segno di citazione del testimone.
     ``risposte`` sono le risposte di Claude registrate, oppure None se quel testimone è spento.
+    ``etichette`` è la lista del file etichette.toml del quaderno, oppure None se il file non c'è.
     """
     motivi: list[str] = []
     # In un cambiamento «kind» è facoltativo: se manca, la natura resta quella dell'ultima versione.
@@ -179,6 +185,8 @@ def controlla(
             motivi.append(f"note «{valori['confirms']}» is a «{rimando.storia.ultima.contenuto.natura}», not an "
                           "idea: only an idea can be confirmed as a decision.")
 
+    motivi += _controlla_etichette(valori, etichette)
+
     usati = [c for c in CAMPI_CAMBIAMENTO if c in valori]
     if len(usati) > 1:
         motivi.append("a proposal can make only one change: use only one of «corrects», «updates», «done» "
@@ -239,7 +247,7 @@ def controlla(
 
     for campo in ("text", "context"):
         righe = [r.rstrip("\r") for r in valori.get(campo, "").split("\n")]
-        for titolo in (*TITOLI_CONTESTO, TITOLO_CAMBIO):
+        for titolo in (*TITOLI_CONTESTO, TITOLO_CAMBIO, TITOLO_CONTESTO_CAMBIO):
             if campo in valori and titolo in righe:
                 motivi.append(f"the field «{campo}» cannot contain the line «{titolo}»: "
                               "it is reserved for the note format.")
@@ -273,11 +281,14 @@ def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia") -> 
             conferma_di=attuale.conferma_di, riprendere_il=valori.get("remind", attuale.riprendere_il),
             citazione=valori.get("quote"), contesto=valori.get("context"), da_risposta=valori.get("from_reply"),
             priorita=valori.get("priority", attuale.priorita), stato=attuale.stato,
+            chi=attuale.chi, cosa=attuale.cosa,
         )
     if campo == "updates":
         return replace(attuale, natura=valori.get("kind", attuale.natura),
                        priorita=valori.get("priority", attuale.priorita),
-                       riprendere_il=valori.get("remind", attuale.riprendere_il))
+                       riprendere_il=valori.get("remind", attuale.riprendere_il),
+                       chi=lista_etichette.separa(valori["who"]) if "who" in valori else attuale.chi,
+                       cosa=lista_etichette.separa(valori["about"]) if "about" in valori else attuale.cosa)
     if campo == "done":
         return replace(attuale, natura=valori.get("kind", attuale.natura), stato=versioni.CHIUSA)
     return replace(attuale, natura=valori.get("kind", storia.natura_prima_della_chiusura()), stato=None,
@@ -288,11 +299,15 @@ def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia") -> 
 def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa) -> list[str]:
     """Le regole dei cambiamenti: si cambia l'ultima versione, e solo chi può."""
     motivi = []
-    if campo != "corrects":
-        for estraneo in ("context", "from_reply"):
-            if estraneo in valori:
-                motivi.append(f"the field «{estraneo}» belongs to the text of a note: it can be used only in a "
-                              f"new note or with «corrects», not with «{campo}».")
+    if campo != "corrects" and "from_reply" in valori:
+        motivi.append(f"the field «from_reply» belongs to the text of a note: it can be used only in a "
+                      f"new note or with «corrects», not with «{campo}».")
+    # Dalla 0.7.0 un cambiamento chiesto dall'utente può avere il contesto di Claude (accanto al motivo,
+    # che sono le parole dell'utente); in quelli di Claude lo vieta già la regola generale.
+    if campo != "updates":
+        for etichetta in CAMPI_ETICHETTE:
+            if etichetta in valori:
+                motivi.append(f"the labels («{etichetta}») change only with «updates», not with «{campo}».")
     if campo == "done":
         for estraneo in ("priority", "remind"):
             if estraneo in valori:
@@ -354,6 +369,11 @@ def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa
             motivi.append(f"the text of note «{numero}» is the user's words: only the user can correct it. "
                           "Claude can suggest the correction to the user, or save its own idea note.")
             continue
+        if (campo == "updates" and any(e in valori for e in CAMPI_ETICHETTE) and attuale.autore == "user"
+                and autore != "user" and (attuale.chi or attuale.cosa)):
+            motivi.append(f"only the user can change the labels of one of the user's notes once they are set "
+                          f"(note «{numero}» has them already): Claude can suggest the change to the user.")
+            continue
 
         dopo = dopo_il_cambiamento(campo, valori, storia)
         prima_natura = storia.natura_prima_della_chiusura() if campo == "reopens" else attuale.natura
@@ -365,7 +385,36 @@ def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa
         if campo in ("corrects", "updates") and not versioni.differenze(attuale, dopo):
             motivi.append(f"«{campo}» on note «{numero}» changes nothing: "
                           + ("the new text is the same as the current one." if campo == "corrects"
-                             else "write in «kind», «priority» or «remind» the new value."))
+                             else "write in «kind», «priority», «remind», «who» or «about» the new value."))
+    return motivi
+
+
+def _controlla_etichette(valori: dict, etichette) -> list[str]:
+    """Le etichette di una proposta: dalla lista del quaderno, al massimo due per campo, senza doppioni."""
+    motivi = []
+    for campo in CAMPI_ETICHETTE:
+        if campo not in valori:
+            continue
+        if etichette is None:
+            motivi.append(f"there are no labels in this notebook, so «{campo}» cannot be used: the user lists them "
+                          f"in the file {lista_etichette.NOME_FILE} inside the notebook folder.")
+            continue
+        scelte = lista_etichette.separa(valori[campo])
+        ammesse = etichette.ammesse(campo)
+        if any(not s for s in scelte):
+            motivi.append(f"«{campo}» has an empty label: write the labels separated by a comma, for example "
+                          f"«{', '.join(ammesse[:2]) or 'Anna, Marco'}».")
+            continue
+        if len(scelte) > lista_etichette.MASSIMO_PER_NOTA:
+            motivi.append(f"a note can have at most {lista_etichette.MASSIMO_PER_NOTA} «{campo}» labels: "
+                          f"«{valori[campo]}» has {len(scelte)}.")
+        for ripetuta in sorted({s for s in scelte if scelte.count(s) > 1}):
+            motivi.append(f"the label «{ripetuta}» is repeated in «{campo}»: write it once.")
+        for scelta in dict.fromkeys(scelte):
+            if scelta not in ammesse:
+                elenco = ", ".join(ammesse) if ammesse else f"none (the list «{dict(lista_etichette.CAMPI_INVERSI)[campo]}» is empty)"
+                motivi.append(f"the label «{scelta}» is not in the list of «{campo}» labels: the allowed ones are "
+                              f"{elenco}. Only the user adds labels, in the file {lista_etichette.NOME_FILE}.")
     return motivi
 
 

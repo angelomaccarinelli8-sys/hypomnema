@@ -1,6 +1,7 @@
 $ hypomnema status
 Configurazione: <cartella di prova>/hypomnema.toml
 Quaderno: <cartella di prova>/quaderno
+Fuso orario: quello del computer.
 Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 0
@@ -10,6 +11,7 @@ Ultimo messaggio registrato: nessuno.
 $ hypomnema chat: status
 Configurazione: <cartella di prova>/hypomnema-chat.toml
 Quaderno: <cartella di prova>/quaderno
+Fuso orario: Europe/Rome (funziona, con la tabella dei fusi del computer).
 Testimone: NON C'È (configurazione per la chat di Claude): i messaggi arrivano solo a Claude e le note con autore «user» saranno marcate «author not verified (chat, no witness)».
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 0

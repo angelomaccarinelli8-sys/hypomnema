@@ -73,12 +73,20 @@ def fuso_disponibile(nome: str = "Europe/Rome") -> bool:
 
 
 def per_questo_computer(testo: str) -> str:
-    """Una configurazione per le prove: se su questo computer manca la tabella dei fusi orari, senza la
-    riga «fuso = …», che altrimenti fermerebbe il programma (è la regola, dalla 0.6.1). Le prove sul fuso
-    stanno in test_chat_diretta e lì, senza la tabella, si saltano."""
-    if fuso_disponibile():
-        return testo
-    return "".join(r for r in testo.splitlines(keepends=True) if not r.startswith("fuso = "))
+    """Una configurazione per le prove, così com'è.
+
+    Nella 0.6.1, su un computer senza la tabella dei fusi orari, qui si toglieva la riga «fuso = …».
+    Dalla 0.7.0 non serve più: per i fusi europei vale la regola dell'ora legale scritta nel programma
+    (``fuso_europeo``), e gli esempi usano Europe/Rome. Resta il nome, usato da molte prove.
+    """
+    return testo
+
+
+# La riga di «status» sul fuso cambia da computer a computer (dalla 0.7.0): negli esempi si scrive sempre
+# come con la tabella dei fusi. Le due frasi sono provate a parte (test_difetti).
+def fuso_come_con_la_tabella(testo: str) -> str:
+    from hypomnema.cli import FUSO_CON_REGOLA, FUSO_CON_TABELLA
+    return testo.replace(FUSO_CON_REGOLA, FUSO_CON_TABELLA)
 
 
 def modello_chat(cartella: Path) -> Path:
@@ -149,7 +157,7 @@ def esegui(esempio: Path, lavoro: Path) -> str:
         if destinazione:
             destinazione.write_text(uscita_comando.getvalue(), encoding="utf-8")
         uscita.write(f"[codice di uscita: {codice}]\n\n")
-    return senza_cartella_di_prova(uscita.getvalue(), lavoro, esempio)
+    return fuso_come_con_la_tabella(senza_cartella_di_prova(uscita.getvalue(), lavoro, esempio))
 
 
 def file_di(cartella: Path) -> dict[str, str]:

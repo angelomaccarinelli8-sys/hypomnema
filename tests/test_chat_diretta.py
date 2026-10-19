@@ -21,7 +21,7 @@ from unittest import mock
 
 from hypomnema import _tomli, archivio, blocco, cambiamenti, configurazione, controllo, sportello
 from hypomnema.cli import main
-from tests.esecutore import CONFIG_DI_PROVA, RADICE, fuso_disponibile, modello_chat, per_questo_computer
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, modello_chat, per_questo_computer
 
 
 def registro_intestazione() -> str:
@@ -137,9 +137,8 @@ class TestGiroDellaChat(CartellaDellUtente):
         # Niente toccato fuori dal quaderno, e nessuna cartella __pycache__ nella cartella collegata.
         self.assertEqual(self.config_code.read_bytes(), config_code_prima)
         self.assertEqual(list(self.hypomnema.rglob("__pycache__")), [])
-        self.assertEqual(sorted(p.name for p in (self.hypomnema / "quaderno").iterdir()),
-                         [".sportello.lock", "note", "registro.md"])
-        self.assertEqual((self.hypomnema / "quaderno" / ".sportello.lock").read_bytes(), b"")
+        # Dalla 0.7.0 il file del blocco sta nella cartella temporanea: nel quaderno solo note e registro.
+        self.assertEqual(sorted(p.name for p in (self.hypomnema / "quaderno").iterdir()), ["note", "registro.md"])
 
     def test_configurazione_sbagliata_si_vede_da_status(self):
         programma = self.copia_il_programma()
@@ -304,9 +303,10 @@ class TestDueCheScrivonoInsieme(CartellaDellUtente):
         nuova = self.casa / "proposta.json"
         nuova.write_bytes(proposta(text="Una nota nuova."))
         apri = builtins.open
+        nome_del_blocco = blocco.file_del_blocco(self.quaderno).name
 
         def come_windows(file, mode="r", *args, **kwargs):
-            if Path(os.fspath(file)).name == blocco.NOME_FILE and "a" not in mode:
+            if Path(os.fspath(file)).name == nome_del_blocco and "a" not in mode:
                 raise PermissionError(13, "Permission denied (simulato: file bloccato su Windows)", str(file))
             return apri(file, mode, *args, **kwargs)
 
@@ -324,7 +324,7 @@ class TestDueCheScrivonoInsieme(CartellaDellUtente):
     def test_chi_legge_non_crea_il_blocco_e_cambiati_non_lo_riporta(self):
         config = configurazione.carica(str(self.config_chat))
         self.assertEqual(main(["--config", str(self.config_chat), "recap"], adesso=ADESSO, uscita=io.StringIO()), 0)
-        self.assertFalse((self.quaderno / ".sportello.lock").exists())
+        self.assertFalse(blocco.file_del_blocco(self.quaderno).exists())
         istantanea = json.dumps(cambiamenti.istantanea(config)).encode("utf-8")
         sportello.ricevi(proposta(), "p.json", config, ADESSO)
         self.assertEqual([c.percorso for c in cambiamenti.cambiati(config, cambiamenti.leggi_istantanea(istantanea))],
@@ -332,7 +332,8 @@ class TestDueCheScrivonoInsieme(CartellaDellUtente):
         archivio.copia(config, json.dumps({"chat": "https://claude.ai/chat/esempio-inventato", "fuso": "UTC+01:00",
                                            "messaggi": [{"turno": 1, "quando": "Thu 2026-01-15 10:00", "chi": "utente",
                                                          "testo": "Ciao."}]}).encode("utf-8"))
-        self.assertEqual((self.quaderno / ".sportello.lock").read_bytes(), b"")
+        self.assertEqual(blocco.file_del_blocco(self.quaderno).read_bytes(), b"")
+        self.assertFalse((self.quaderno / blocco.NOME_FILE).exists())
 
 
 class TestStessiByteDaWindowsELinux(unittest.TestCase):
@@ -428,7 +429,6 @@ class TestFuso(unittest.TestCase):
     def registro(self) -> str:
         return (self.cartella / "quaderno" / "registro.md").read_text(encoding="utf-8")
 
-    @unittest.skipUnless(fuso_disponibile(), "su questo computer manca la tabella dei fusi orari")
     def test_macchina_in_utc_alle_00_30_italiane(self):
         config = self.config("Europe/Rome")
         for adesso, giorno, ora in (
@@ -441,7 +441,6 @@ class TestFuso(unittest.TestCase):
                 _, recap = self.lancia(config, adesso, "recap")
                 self.assertTrue(recap.startswith(f"Dove eravamo rimasti (recap del {giorno})."))
 
-    @unittest.skipUnless(fuso_disponibile(), "su questo computer manca la tabella dei fusi orari")
     def test_il_modello_della_chat_ha_il_fuso_italiano(self):
         config = configurazione.carica(str(MODELLO_CHAT))
         self.assertEqual(config.nome_fuso, "Europe/Rome")
@@ -462,8 +461,10 @@ class TestFuso(unittest.TestCase):
         def senza_tabella(nome):
             raise zoneinfo.ZoneInfoNotFoundError(f"No time zone found with key {nome}")
 
-        for caso, fuso, sostituto in (("nome sbagliato", "Europa/Roma", None), ("tabella mancante", "Europe/Rome",
-                                                                              senza_tabella)):
+        # Dalla 0.7.0 per Europe/Rome senza tabella vale la regola europea (test_difetti): qui un fuso fuori
+        # dall'elenco.
+        for caso, fuso, sostituto in (("nome sbagliato", "Europa/Roma", None),
+                                      ("tabella mancante", "America/New_York", senza_tabella)):
             with self.subTest(caso=caso):
                 config = self.config(fuso)
                 with mock.patch.object(zoneinfo, "ZoneInfo", sostituto or zoneinfo.ZoneInfo):

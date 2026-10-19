@@ -110,7 +110,9 @@ class TestFileDelleVersioni(ConQuaderno):
         self.accettata(kind="todo", text="Uno.")
         self.assertIn("only one change", self.motivi(updates="0001", done="0001", text="x"))
         self.assertIn("«confirms» makes a new decision note", self.motivi(confirms="0001", done="0001", text="x"))
-        self.assertIn("the field «context» belongs to the text", self.motivi(done="0001", text="x", context="c"))
+        # Dalla 0.7.0 il contesto si può mettere in un cambiamento dell'utente (test_etichette); from_reply no.
+        self.assertIn("the field «from_reply» belongs to the text",
+                      self.motivi(author="claude", knowledge="inferred", done="0001", text="x", from_reply="yes"))
         self.assertIn("to change «priority» use «updates»", self.motivi(done="0001", text="x", priority="high"))
         self.assertIn("names only one note", self.motivi(updates="0001, 0002", priority="high", text="x"))
         self.assertIn("the field «kind» is missing", self.motivi(text="Senza natura."))

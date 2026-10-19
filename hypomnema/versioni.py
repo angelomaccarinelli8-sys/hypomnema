@@ -31,6 +31,8 @@ NATURE_DOPO_LA_CHIUSURA = ("decision", "fact", "idea")
 CHIUSA = "closed"
 RIAPERTA = "reopened"
 TESTO_CORRETTO = "text corrected"
+# Le voci dei cambiamenti delle etichette (dalla 0.7.0): «who → Anna», «about orto → orto, gioco».
+VOCI_ETICHETTE = ("who ", "about ")
 
 FORMA_NUMERO = re.compile(r"^\d+(?:\.\d+)?$")
 # Un numero con davanti una lettera o un segno, per esempio «T0049» o «✓T0049.3».
@@ -55,6 +57,8 @@ class Versione:
     # Solo nelle versioni virtuali: ciò che la nota vecchia cambiava ma che oggi non avrebbe il
     # permesso di cambiare (voci come in «cambi»). Resta nella storia, ma non vale.
     bloccati: tuple[str, ...] = ()
+    # Dalla 0.7.0: il contesto scritto da Claude nel cambiamento chiesto dall'utente.
+    contesto: str | None = None
 
     @property
     def id(self) -> str:
@@ -63,6 +67,11 @@ class Versione:
     @property
     def virtuale(self) -> bool:
         return self.origine.id != self.id
+
+    @property
+    def solo_etichette(self) -> bool:
+        """Una versione che cambia soltanto le etichette (dalla 0.7.0)."""
+        return self.numero > 0 and bool(self.cambi) and all(c.startswith(VOCI_ETICHETTE) for c in self.cambi)
 
     def codice(self, segno: str = SEGNO_CHIUSA) -> str:
         return (segno if self.chiusa else "") + LETTERE.get(self.contenuto.natura, "?") + self.id
@@ -88,6 +97,15 @@ class Storia:
     @property
     def chiusa(self) -> bool:
         return self.ultima.chiusa
+
+    @property
+    def data_del_contenuto(self) -> str:
+        """La data dell'ultima versione che cambia qualcosa oltre alle etichette (dalla 0.7.0).
+
+        Mettere le etichette a una nota vecchia non la fa sembrare nuova: il recap la lascia al suo
+        posto e la revisione non riazzera i giorni.
+        """
+        return next(v.data for v in reversed(self.versioni) if not v.solo_etichette)
 
     @property
     def nascosta(self) -> bool:
@@ -122,6 +140,11 @@ def differenze(prima: Nota, dopo: Nota) -> list[str]:
     if dopo.riprendere_il != prima.riprendere_il:
         cambi.append(f"remind {prima.riprendere_il} → {dopo.riprendere_il}" if prima.riprendere_il
                      else f"remind {dopo.riprendere_il}")
+    for campo, attributo in (("who", "chi"), ("about", "cosa")):
+        vecchie, nuove = getattr(prima, attributo), getattr(dopo, attributo)
+        if nuove and nuove != vecchie:
+            da = f" {', '.join(vecchie)}" if vecchie else ""
+            cambi.append(f"{campo}{da} → {', '.join(nuove)}")
     return cambi
 
 
@@ -249,6 +272,7 @@ class Quaderno:
                 cambio.data if cambio else file.data, cambio.fonte if cambio else file.fonte,
                 cambio.autore if cambio else file.autore,
                 tuple(cambio.cambio.split("; ")) if cambio else (), cambio.motivo if cambio else None,
+                contesto=cambio.contesto if cambio else None,
             ))
         return storia
 

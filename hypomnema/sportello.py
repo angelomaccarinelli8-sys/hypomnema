@@ -14,7 +14,8 @@ from datetime import datetime
 from pathlib import Path
 
 from hypomnema import (
-    archivio as testimone_archivio, blocco, quaderno, registro, regole, risposte as testimone_risposte, testimone, versioni,
+    archivio as testimone_archivio, blocco, etichette, quaderno, registro, regole, risposte as testimone_risposte,
+    testimone, versioni,
 )
 from hypomnema import configurazione
 from hypomnema.configurazione import Configurazione
@@ -71,6 +72,11 @@ def _facoltativo(proposta: dict, campo: str) -> str | None:
     return valore.strip() if valore is not None else None
 
 
+def _etichette(proposta: dict, campo: str) -> tuple[str, ...] | None:
+    valore = _facoltativo(proposta, campo)
+    return etichette.separa(valore) if valore is not None else None
+
+
 def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datetime) -> Esito:
     """Esamina una proposta e restituisce l'esito. Annota sempre il passaggio nel registro.
 
@@ -100,8 +106,12 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
     if proposta is not None:
         # I nomi e i valori italiani di prima valgono per sempre: qui diventano inglesi.
         proposta, motivi = regole.in_inglese(proposta)
+        # La lista delle etichette si legge solo se la proposta ne ha: un file scritto male ferma tutto
+        # (etichette.ErroreEtichette) prima di scrivere qualunque cosa, anche nel registro.
+        lista = (etichette.leggi(config.cartella_quaderno)
+                 if any(proposta.get(c) is not None for c in regole.CAMPI_ETICHETTE) else None)
         motivi += regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte,
-                                   config.segno_chiusa)
+                                   config.segno_chiusa, lista)
 
     if motivi:
         registro.annota(config, adesso, origine, None, motivi)
@@ -142,6 +152,8 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
         contesto=_facoltativo(proposta, "context"),
         da_risposta=da_risposta,
         verifica=dicitura,
+        chi=_etichette(proposta, "who"),
+        cosa=_etichette(proposta, "about"),
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)
     numero = int(id_nota)
@@ -171,6 +183,9 @@ def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura) 
         citazione=None if campo == "corrects" else valori.get("quote"), verifica=dicitura,
         # In una correzione le parole nuove sono il testo stesso: non c'è un motivo a parte.
         motivo=None if campo == "corrects" else valori["text"],
+        # In una correzione il contesto descrive il testo nuovo e sta nella nota; negli altri cambiamenti
+        # dell'utente (dalla 0.7.0) accompagna il motivo.
+        contesto=None if campo == "corrects" else valori.get("context"),
     )
     config.cartella_note.mkdir(parents=True, exist_ok=True)
     scritte = []

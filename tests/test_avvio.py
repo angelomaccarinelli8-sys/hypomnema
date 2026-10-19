@@ -50,6 +50,7 @@ class TestStato(ConCartella):
         self.assertEqual(uscita.splitlines(), [
             f"Configurazione: {self.file_config}",
             f"Quaderno: {self.cartella / 'quaderno'}",
+            "Fuso orario: quello del computer.",
             "Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).",
             f"File del testimone: {self.cartella / 'quaderno' / 'testimone.jsonl'}",
             "Messaggi registrati: 0",

@@ -39,7 +39,14 @@ se la versione è chiusa, e in fondo il blocco del cambiamento::
 
     Il motivo, con le parole di chi ha chiesto il cambiamento.
 
+    ### Context written by Claude
+
+    Dalla 0.7.0, facoltativo e solo nei cambiamenti chiesti dall'utente: la spiegazione di Claude.
+
 Il blocco si legge solo nei file con il punto: una nota vecchia con quella riga nel testo resta com'è.
+
+Dalla 0.7.0 l'intestazione può avere le etichette, dopo la priorità: ``- who: Anna, Marco`` (CHI) e
+``- about: orto`` (COSA). Vedi ``etichette``.
 """
 
 from dataclasses import dataclass
@@ -55,6 +62,8 @@ TITOLI_CONTESTO = (TITOLO_CONTESTO, TITOLO_CONTESTO_ITALIANO)
 # Il blocco del cambiamento, solo nelle versioni (file con il punto).
 TITOLO_CAMBIO = "## Change"
 TITOLO_MOTIVO = "### Reason"
+# Dalla 0.7.0: il contesto scritto da Claude in un cambiamento chiesto dall'utente.
+TITOLO_CONTESTO_CAMBIO = "### Context written by Claude"
 
 # I campi d'intestazione: il nome inglese (quello che si scrive), il nome italiano (che si legge
 # per sempre) e l'attributo della nota. Ordine fisso; i campi facoltativi compaiono solo se presenti.
@@ -66,6 +75,8 @@ CAMPI = (
     ("kind", "natura", "natura"),
     ("status", "status", "stato"),
     ("priority", "priorità", "priorita"),
+    ("who", "chi", "chi"),
+    ("about", "cosa", "cosa"),
     ("confirms", "conferma_di", "conferma_di"),
     ("corrects", "corregge", "corregge"),
     ("done", "done", "done"),
@@ -75,6 +86,8 @@ CAMPI = (
     ("verification", "verifica", "verifica"),
 )
 CAMPI_SEMPRE_PRESENTI = ("data", "fonte", "autore", "tipo", "natura")
+# I campi con più valori separati da virgola.
+CAMPI_ELENCO = ("done", "chi", "cosa")
 # I campi del blocco del cambiamento, in ordine fisso.
 CAMPI_CAMBIO = (
     ("date", "data"), ("source", "fonte"), ("author", "autore"), ("knowledge", "tipo"),
@@ -130,6 +143,8 @@ class Cambio:
     # Il motivo: le parole di chi ha chiesto il cambiamento. Manca nelle correzioni del testo,
     # dove le parole nuove sono il testo stesso.
     motivo: str | None = None
+    # Dalla 0.7.0: ciò che Claude aggiunge al motivo dell'utente (mai nelle parole dell'utente).
+    contesto: str | None = None
 
     def in_markdown(self) -> list[str]:
         righe = [TITOLO_CAMBIO, ""]
@@ -140,6 +155,8 @@ class Cambio:
         righe.append("")
         if self.motivo is not None:
             righe += [TITOLO_MOTIVO, "", self.motivo, ""]
+        if self.contesto is not None:
+            righe += [TITOLO_CONTESTO_CAMBIO, "", self.contesto, ""]
         return righe
 
 
@@ -167,6 +184,9 @@ class Nota:
     verifica: str | None = None
     # high, normal o low: solo nelle note dell'utente.
     priorita: str | None = None
+    # Le etichette (dalla 0.7.0): CHI (who) e COSA (about), al massimo due per campo.
+    chi: tuple[str, ...] | None = None
+    cosa: tuple[str, ...] | None = None
     # "closed" nelle versioni chiuse; altrimenti None.
     stato: str | None = None
     # Solo nelle versioni: il blocco del cambiamento.
@@ -177,7 +197,7 @@ class Nota:
         for inglese, _, attributo in CAMPI:
             valore = getattr(self, attributo)
             if valore is not None:
-                if attributo == "done":
+                if attributo in CAMPI_ELENCO:
                     valore = ", ".join(valore)
                 righe.append(f"- {inglese}: {valore}")
         righe += ["", TITOLO_TESTO, "", self.testo, ""]
@@ -205,8 +225,14 @@ def _cambio(id_nota: str, righe: list[str]) -> Cambio:
     mancanti = [c for c in ("data", "fonte", "autore", "tipo", "cambio") if c not in campi]
     if mancanti:
         raise NotaIlleggibile(f"nel cambiamento della nota {id_nota} mancano: {', '.join(mancanti)}")
-    motivo = "\n".join(righe[fine + 1:]).strip() if fine < len(righe) else None
-    return Cambio(motivo=motivo, **campi)
+    resto = righe[fine + 1:]
+    contesto = None
+    if TITOLO_CONTESTO_CAMBIO in resto:
+        inizio = resto.index(TITOLO_CONTESTO_CAMBIO)
+        contesto = "\n".join(resto[inizio + 1:]).strip()
+        resto = resto[:inizio]
+    motivo = "\n".join(resto).strip() if fine < len(righe) else None
+    return Cambio(motivo=motivo, contesto=contesto, **campi)
 
 
 def da_markdown(id_nota: str, contenuto: str) -> Nota:
@@ -228,7 +254,7 @@ def da_markdown(id_nota: str, contenuto: str) -> Nota:
         chiave, separatore, valore = riga[2:].partition(": ")
         if separatore and chiave in ATTRIBUTO:
             attributo = ATTRIBUTO[chiave]
-            campi[attributo] = numeri(valore) if attributo == "done" else in_inglese(attributo, valore)
+            campi[attributo] = numeri(valore) if attributo in CAMPI_ELENCO else in_inglese(attributo, valore)
 
     mancanti = [c for c in CAMPI_SEMPRE_PRESENTI if c not in campi]
     if mancanti:
