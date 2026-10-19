@@ -9,7 +9,7 @@ from pathlib import Path
 
 from hypomnema import archivio, configurazione, sportello
 from hypomnema.cli import main
-from tests.esecutore import RADICE, modello_chat
+from tests.esecutore import RADICE, modello_chat, testo_della_skill
 from tests.test_chat import CONFIG_CHAT
 from tests.test_regole import ADESSO, NOTA_BUONA
 from tests.test_testimone import CONFIG_ACCESO
@@ -318,7 +318,7 @@ class TestCambiatiEControlla(ConArchivio):
 
 class TestSkillArchivio(unittest.TestCase):
     def test_skill(self):
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = testo_della_skill()
         for frammento in ("H archive", "Where we left off", "H recap", "copia_ogni",
                           "**Never copy the user's words from memory**", "50 turni", "segnalino",
                           '"fuso": "UTC+02:00"', '"turno"'):

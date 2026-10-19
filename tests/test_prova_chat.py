@@ -9,7 +9,7 @@ from pathlib import Path
 from hypomnema import registro, sportello
 from hypomnema.cli import main
 from hypomnema.registro import INTESTAZIONE
-from tests.esecutore import RADICE
+from tests.esecutore import RADICE, testo_della_skill
 from tests.test_chat import ConQuaderno
 from tests.test_regole import ADESSO
 
@@ -196,7 +196,7 @@ class TestConfronta(unittest.TestCase):
 
 class TestSkill(unittest.TestCase):
     def setUp(self):
-        self.skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        self.skill = testo_della_skill()
 
     def test_riporto_da_cartella_nuova_e_verifica(self):
         self.assertIn("copy it into a **new folder** of the work computer, never used before in this chat", self.skill)

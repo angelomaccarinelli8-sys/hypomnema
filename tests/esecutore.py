@@ -173,3 +173,12 @@ def file_di(cartella: Path) -> dict[str, str]:
         for p in sorted(cartella.rglob("*"))
         if p.is_file() and p.name != ".sportello.lock"
     }
+
+
+CARTELLA_SKILL = RADICE / "skills" / "hypomnema"
+
+
+def testo_della_skill() -> str:
+    """Tutti i file della skill (dalla 0.7.0 divisa in più file): SKILL.md e poi gli altri, in ordine di nome."""
+    file = [CARTELLA_SKILL / "SKILL.md", *sorted(p for p in CARTELLA_SKILL.glob("*.md") if p.name != "SKILL.md")]
+    return "\n".join(f.read_text(encoding="utf-8") for f in file)

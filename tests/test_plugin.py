@@ -14,7 +14,7 @@ from pathlib import Path
 
 from hypomnema import avvio, configurazione, risposte, sportello, testimone
 from hypomnema.cli import main
-from tests.esecutore import RADICE
+from tests.esecutore import RADICE, testo_della_skill
 from tests.test_regole import ADESSO, NOTA_BUONA
 from tests.test_risposte import CONFIG_RISPOSTE, messaggio, risposta
 from tests.test_testimone import CONFIG_ACCESO, _bash
@@ -326,7 +326,7 @@ class TestPausa(unittest.TestCase):
 
 class TestSkillPlugin(unittest.TestCase):
     def test_skill(self):
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = testo_della_skill()
         self.assertIn("**La pausa la decide solo l'utente**", skill)
         self.assertIn("`~/Hypomnema/hypomnema.toml`", skill)
         self.assertNotIn("avviabile", skill.split("## Chat mode")[0])

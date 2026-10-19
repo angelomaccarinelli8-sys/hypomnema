@@ -13,7 +13,7 @@ from pathlib import Path
 from hypomnema import __version__, cercatore, configurazione, quaderno, sportello, testimone
 from hypomnema.cli import INGLESE, main
 from hypomnema.nota import da_markdown
-from tests.esecutore import CONFIG_DI_PROVA, RADICE
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, testo_della_skill
 from tests.test_testimone import CONFIG_ACCESO, messaggio
 
 ADESSO = datetime(2026, 1, 15, 10, 0, 0, tzinfo=timezone(timedelta(hours=1)))
@@ -270,7 +270,7 @@ class TestPriorita(ConQuaderno):
 
 class TestDocumenti(unittest.TestCase):
     def test_skill_in_inglese_con_le_novita(self):
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = testo_della_skill()
         self.assertIn("description: Permanent memory", skill)
         for frammento in ("**Language by role.**", "**only the user** closes, reopens or changes the kind of an `open`", "### Priority",
                           "Da questa nota in poi", "`todo`: something to do", "P search <word> --all",

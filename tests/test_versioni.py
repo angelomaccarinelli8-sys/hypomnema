@@ -14,7 +14,7 @@ from hypomnema import cambiamenti, configurazione, controllo, quaderno, sportell
 from hypomnema.cli import main
 from hypomnema.nota import da_markdown
 from hypomnema.revisione import rivedi
-from tests.esecutore import CONFIG_DI_PROVA, RADICE
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, testo_della_skill
 
 ADESSO = datetime(2026, 1, 15, 10, 0, 0, tzinfo=timezone(timedelta(hours=1)))
 QUADERNO_DI_PROVA = RADICE / "esempi" / "53-versioni" / "quaderno-iniziale"
@@ -488,7 +488,7 @@ class TestDocumenti(unittest.TestCase):
             self.assertIn(frammento, formato)
 
     def test_skill_readme_storia_comandi(self):
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = testo_della_skill()
         for frammento in ("Then run `P review`", "### Changing a note: versions", "**A correction does not close**",
                           "### The rules of the notebook, in short", "`note/0049.1.md`", "Then run\n   `H review`"):
             with self.subTest(frammento=frammento):

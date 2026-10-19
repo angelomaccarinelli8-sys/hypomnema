@@ -11,7 +11,7 @@ from pathlib import Path
 
 from hypomnema import cambiamenti, configurazione, sportello
 from hypomnema.cli import main
-from tests.esecutore import CARTELLA_ESEMPI, CONFIG_DI_PROVA, RADICE, modello_chat
+from tests.esecutore import CARTELLA_ESEMPI, CONFIG_DI_PROVA, RADICE, modello_chat, testo_della_skill
 from tests.test_regole import ADESSO, NOTA_BUONA
 
 MODELLO_CHAT = RADICE / "chat" / "hypomnema-chat.toml"
@@ -368,8 +368,9 @@ class TestControlla(ConQuaderno):
 
 class TestSkillModalitaChat(unittest.TestCase):
     def test_sezione_nella_skill(self):
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
-        self.assertIn("## Chat mode", skill)
+        skill = testo_della_skill()
+        # Dalla 0.7.0 la modalità chat è un file a parte della skill, chat-mode.md.
+        self.assertIn("# Hypomnema: chat mode", skill)
         for comando in ("H snapshot >", "H changed", "chat/hypomnema-chat.toml", "H check"):
             self.assertIn(comando, skill)
         # Prima il registro, poi le note: il registro fa da lucchetto.

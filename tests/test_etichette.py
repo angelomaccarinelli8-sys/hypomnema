@@ -328,6 +328,33 @@ class TestContestoNelleChiusure(ConEtichette):
         self.assertNotIn("### Context written by Claude", testo)
 
 
+class TestSkillDivisa(unittest.TestCase):
+    CARTELLA = RADICE / "skills" / "hypomnema"
+
+    def test_skill_corta_e_file_citati(self):
+        skill = (self.CARTELLA / "SKILL.md").read_text(encoding="utf-8")
+        self.assertLess(len(skill.splitlines()), 500)
+        for nome in ("chat-mode.md", "labels.md", "replies.md", "diary.md"):
+            with self.subTest(file=nome):
+                self.assertIn(f"`{nome}`", skill)
+                self.assertTrue((self.CARTELLA / nome).is_file())
+        # Le regole che servono sempre restano in SKILL.md.
+        for frammento in ("## 0. Check the witness", "## 1. At the start of a chat: reread",
+                          "## 2. During the chat: prepare the notes", "### Changing a note: versions",
+                          "### Labels: CHI and COSA", "## 3. Pass the notes to the desk",
+                          "## 5. From idea to decision", "**read `chat-mode.md`**"):
+            self.assertIn(frammento, skill)
+
+    def test_etichette_nella_skill(self):
+        etichette_md = (self.CARTELLA / "labels.md").read_text(encoding="utf-8")
+        for frammento in ("**You never write, change or delete this file**",
+                          "**propose the\n  list in your message**", "**only if it has none yet**",
+                          "**Exactly as in the list**", "esempi/etichette.toml"):
+            self.assertIn(frammento, etichette_md)
+        skill = (self.CARTELLA / "SKILL.md").read_text(encoding="utf-8")
+        self.assertIn("propose the list **in your message**", skill)
+
+
 class TestQuadernoDellaVersionePrima(unittest.TestCase):
     def test_un_quaderno_0_6_1_si_legge_uguale(self):
         """Il quaderno dell'esempio 53 dopo i suoi passi (scritto dalla 0.6.1): check pulito, file intatti."""

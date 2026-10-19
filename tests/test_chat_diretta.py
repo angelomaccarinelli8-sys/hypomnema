@@ -21,7 +21,7 @@ from unittest import mock
 
 from hypomnema import _tomli, archivio, blocco, cambiamenti, configurazione, controllo, sportello
 from hypomnema.cli import main
-from tests.esecutore import CONFIG_DI_PROVA, RADICE, modello_chat, per_questo_computer
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, modello_chat, per_questo_computer, testo_della_skill
 
 
 def registro_intestazione() -> str:
@@ -500,7 +500,7 @@ class TestAggiunta(unittest.TestCase):
 
 class TestDocumenti(unittest.TestCase):
     def test_skill_readme_storia(self):
-        skill = (RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8")
+        skill = testo_della_skill()
         for frammento in ("### C0. Chat connected to the computer", "python3 -B <HY>/programma-chat/programma.py",
                           "**you must never delete or overwrite files in the connected\nfolders**",
                           "`H status` must say `Testimone: NON C'È (configurazione per la chat di Claude)`",
