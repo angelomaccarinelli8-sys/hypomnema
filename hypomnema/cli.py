@@ -39,7 +39,7 @@ from typing import TextIO
 
 from hypomnema import (
     __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
-    promemoria, registro, revisione, risposte, sportello, testimone,
+    fuso_del_sistema, promemoria, registro, revisione, risposte, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
 from hypomnema.versioni import LEGENDA, Quaderno, Storia
@@ -549,12 +549,12 @@ def _rientrato(testo: str) -> list[str]:
     return [f"  {riga}" if riga else "" for riga in testo.split("\n")]
 
 
-def _stato(argomenti, config, uscita: TextIO) -> int:
+def _stato(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: non crea e non modifica niente."""
     righe = [
         f"Configurazione: {configurazione.trova(argomenti.config).resolve()}",
         f"Quaderno: {config.cartella_quaderno}",
-        _riga_fuso(config),
+        fuso_del_sistema.scegli(config, adesso).descrizione,
     ]
     pausa = testimone.in_pausa(testimone.leggi_messaggi(config)) if config.testimone_attivo else None
     if pausa is not None:
@@ -593,18 +593,6 @@ def _stato(argomenti, config, uscita: TextIO) -> int:
     for riga in righe:
         print(riga, file=uscita)
     return 0
-
-
-FUSO_CON_TABELLA = "funziona, con la tabella dei fusi del computer"
-FUSO_CON_REGOLA = ("funziona, con la regola europea dell'ora legale scritta nel programma: su questo computer "
-                   "manca la tabella dei fusi")
-
-
-def _riga_fuso(config) -> str:
-    """Come vanno date e ore (dalla 0.7.0): il fuso funziona? Con la tabella o con la regola europea?"""
-    if config.fuso is None:
-        return "Fuso orario: quello del computer."
-    return f"Fuso orario: {config.nome_fuso} ({FUSO_CON_REGOLA if config.fuso_con_regola else FUSO_CON_TABELLA})."
 
 
 def _stato_archivio(config) -> list[str]:
@@ -976,7 +964,7 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
     if comando == "propose":
         return _proponi(argomenti, config, adesso, uscita)
     if comando == "status":
-        return _stato(argomenti, config, uscita)
+        return _stato(argomenti, config, adesso, uscita)
     if comando == "snapshot":
         return _istantanea(config, uscita)
     if comando == "changed":

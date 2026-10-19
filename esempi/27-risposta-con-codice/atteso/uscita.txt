@@ -11,7 +11,7 @@ Impronta di «<esempio>/giorni.py»: 7e350f40e4ef (88 byte).
 $ hypomnema stato
 Configurazione: <cartella di prova>/hypomnema.toml
 Quaderno: <cartella di prova>/quaderno
-Fuso orario: quello del computer.
+Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, che nasce la prima volta che usi Hypomnema sul tuo computer.
 Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 1

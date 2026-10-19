@@ -19,6 +19,10 @@ Ogni cartella è un esempio:
 - `messaggio*.json` / `1-privato.json` ecc.: un messaggio inventato dell'utente, come Claude Code
   lo passa al testimone. Il comando `testimone FILE` simula l'arrivo di quel messaggio.
 
+Un file `sistema-operativo.txt` (solo nell'esempio 63) contiene il nome di un fuso: l'esempio gira come
+sul computer dell'utente con quel fuso del sistema operativo; senza, ogni esempio gira come una macchina
+in UTC.
+
 Il file `etichette.toml` di questa cartella non è un esempio da eseguire: è il **modello commentato**
 della lista delle etichette (dalla 0.7.0), da copiare nella cartella del quaderno.
 
@@ -90,6 +94,7 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `60-etichette` | Un quaderno con `etichette.toml` (CHI: Anna, Marco, Code; COSA: orto, bilancio, gioco) e due configurazioni, come nel 59. Un todo con `who` e `about`; un fatto senza etichette; tre proposte sbagliate (etichetta fuori lista, tre CHI, etichetta ripetuta); Claude etichetta il fatto dell'utente e poi prova a cambiare le etichette; dalla chat una nota con i nomi italiani `chi` e `cosa` e una con «Bilancio» maiuscolo. Poi `search` con i filtri, `recap --about orto`, `labels`, un filtro con un'etichetta che non c'è, `check`. | Accettate le note con etichette giuste (`- who: Anna`, `- about: orto` nell'intestazione) e la versione `F0002.1` («cosa → orto»); rifiutate le altre, ognuna con il suo motivo («not in the list… the allowed ones are orto, bilancio, gioco», «at most 2», «repeated», «only the user can change the labels…»); la chat legge la stessa lista. I filtri valgono tutti insieme; il recap filtrato non mostra il diario; `labels` conta le note (e le aperte); l'etichetta che non c'è dà errore (codice 2). |
 | `61-recap-per-data` | Configurazione con `voci_diario = 0`. Tre todo con date non in ordine di numero (2, 10 e 5 gennaio), un open, una decisione; recap. Poi una correzione di oggi del todo più vecchio, una versione di Claude che mette solo un'etichetta, la chiusura dell'open come decisione il 14; recap. | Il primo recap mette i todo per data dell'ultima versione (T0002, T0003, T0001). Nel secondo il todo corretto oggi sale in cima (`T0001.1 2026-01-15`), quello con la sola etichetta resta al suo posto con la sua data (`T0003.1 2026-01-05 … · cosa: orto`), e la questione chiusa come decisione il 14 viene prima della decisione del 12. Il blocco del diario non c'è. |
 | `62-contesto-nelle-chiusure` | Un todo, un open, un todo di Claude. L'utente chiude il todo con un motivo e un contesto di Claude; Claude chiude il suo todo con un contesto; una chiusura con `from_reply`; l'utente alza la priorità dell'open con un contesto. Poi `search` (anche di una parola che è solo nel contesto) e recap. | La versione `✓T0001.1` ha `### Reason` e poi `### Context written by Claude`; la ricerca mostra «chiusa il …, perché «Fatto ieri sera.» (contesto: «…»)». Il contesto nella chiusura di Claude e `from_reply` sono rifiutati come prima. «ferie», solo nel contesto della priorità, trova l'open. |
+| `63-fuso-del-sistema` | Il computer dell'utente (il file `sistema-operativo.txt` fa girare l'esempio con il sistema operativo su `Europe/Rome`), con `fuso = "Europe/Zurich"` nella configurazione. `status`, due proposte, `status`, `check`. | `status` dice «Fuso orario: Europe/Rome, dal sistema operativo» e segnala che la riga della configurazione è diversa, senza bloccare. Il file `fuso-del-sistema.jsonl` nasce con una riga sola (la seconda proposta non la ripete); `check` è in ordine. |
 | `26-confronta` | `confronta` tra due file uguali, due diversi e un file che manca. | `UGUALI` (codice 0); `DIVERSI` con il primo byte diverso (codice 1); errore (codice 2). |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
@@ -131,8 +136,10 @@ motivo («chiusa il …, perché «…»», esempi 50, 53-56); le catene vecchie
 permesse restano nella storia ma non valgono (esempio 52: il discorso aperto 0004 resta aperto).
 
 Dalla versione 0.7.0 cambiano i risultati attesi di questi esempi già approvati:
-- 16, 17, 18, 27, 31, 32 e 59: `status` ha una riga nuova, «Fuso orario: …» (negli esempi sempre «con
-  la tabella dei fusi del computer», anche su un computer che usa la regola europea);
+- 16, 17, 18, 27, 31, 32 e 59: `status` ha una riga nuova, «Fuso orario: …». Gli esempi girano come
+  una macchina in UTC senza il file del fuso, quindi la riga dice «UTC, quello di questa macchina: il
+  quaderno non ha ancora il file fuso-del-sistema.jsonl…» (le ore degli esempi restano quelle fisse);
+- 18, 19, 58, 59 e 60: la configurazione della chat (copia del modello) non ha più la riga `fuso`;
 - 15 e 53: i motivi di rifiuto elencano anche i campi nuovi (`who`, `about`) e i valori che `updates`
   può cambiare («write in «kind», «priority», «remind», «who» or «about» the new value»);
 - 55 e 56: nel recap le cose da fare vanno per giorno dell'ultima versione (55: `T0001.3`, cambiata il

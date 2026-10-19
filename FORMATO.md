@@ -526,25 +526,38 @@ Il file si crea una volta sola: il programma non sovrascrive mai una nota esiste
 ## Date e ore: il fuso orario
 
 Le date e le ore che scrive il programma (righe del registro, data delle versioni, file dei testimoni)
-e il giorno di «oggi» (recap, promemoria, revisione) sono quelli del computer. Dalla 0.6.1 la sezione
-`[quaderno]` accetta l'impostazione facoltativa `fuso`, con il nome di un fuso orario (per esempio
-`fuso = "Europe/Rome"`): date e ore si scrivono in quel fuso, con l'ora legale, qualunque sia
-l'orologio del computer. Serve alla chat collegata al computer, la cui macchina può avere l'orologio
-in UTC: alle 00:30 italiane del 15 luglio «oggi» è già il 15 e la riga del registro dice
-`2026-07-15T00:30:00+02:00`.
+e il giorno di «oggi» (recap, promemoria, revisione) seguono questa regola (dalla 0.7.0; decisione di
+Angelo: il fuso del taccuino viene dal sistema operativo dell'utente):
 
-Dalla 0.7.0, se sul computer manca la tabella dei fusi orari (come di solito su Windows), per un elenco
-fisso di fusi europei vale la regola europea dell'ora legale scritta nel programma: ora solare +0
-(`Europe/London`, `Europe/Dublin`, `Europe/Lisbon` e le isole atlantiche), +1 (`Europe/Rome`,
-`Europe/Zurich`, `Europe/Paris`, `Europe/Berlin`, `Europe/Madrid`, `Europe/Vienna` e gli altri
-dell'Europa centrale) o +2 (`Europe/Athens`, `Europe/Helsinki`, `Europe/Bucharest` e gli altri
-dell'Europa orientale); un'ora in più dall'ultima domenica di marzo all'ultima domenica di ottobre,
-sempre alle 01:00 di ora universale. Se la tabella c'è si usa sempre quella. `status` lo dice in una
-riga: «Fuso orario: Europe/Rome (funziona, con la tabella dei fusi del computer).», «(funziona, con la
-regola europea dell'ora legale scritta nel programma: su questo computer manca la tabella dei fusi).»
-oppure «Fuso orario: quello del computer.». Se l'impostazione c'è ma il fuso non si trova lo stesso
-(nome sbagliato, o un fuso fuori dall'elenco senza tabella) il programma si ferma con un errore e non
-scrive niente: non torna mai in silenzio all'ora del computer.
+1. **Sul computer dell'utente** vale sempre l'ora del sistema operativo, anche se la configurazione
+   ha la riga `fuso` (`[quaderno]`, facoltativa, dalla 0.6.1). Se la riga dice un fuso diverso dal
+   sistema, `status` lo segnala, ma non blocca.
+2. Il computer dell'utente legge il **nome** del fuso del sistema e lo aggiunge in fondo al file
+   `fuso-del-sistema.jsonl` del quaderno quando è diverso dall'ultima riga (o il file manca), a inizio
+   sessione (`start`) e a ogni proposta. Una riga per volta, solo in aggiunta, con una sola scrittura:
+   `{"quando": "2026-10-20T09:12:00+02:00", "fuso": "Europe/Rome", "dal_sistema": "Windows: W. Europe
+   Standard Time, regione IT"}`. Vale l'ultima riga valida; le righe rovinate si saltano. Una
+   configurazione per la chat non lo scrive mai. Il file non è una nota: `check` lo ignora.
+3. **Su una macchina in UTC** (la chat collegata al computer, le sessioni in cloud) vale, in
+   quest'ordine: la riga `fuso` della configurazione; l'ultima riga del file del quaderno; UTC. Un fuso
+   che su quella macchina non si trova (nome sbagliato, tabella dei fusi mancante) si salta.
+
+**Macchina in UTC**, regola fissa: il nome del fuso del sistema è `UTC`, `Etc/UTC`, `Etc/Universal`,
+`Universal`, `Zulu`, `Etc/Zulu`, `UCT`, `GMT`, `Etc/GMT` (e le sue forme `+0`, `-0`, `0`) o `Greenwich`;
+oppure il nome non si legge e la differenza dall'ora universale è zero. Ogni altro nome è il computer
+dell'utente.
+
+**Il nome del fuso del sistema** si legge, su Windows, dal registro (`TimeZoneKeyName` e la regione in
+`Control Panel\International\Geo\Name`) e si traduce con la tabella ufficiale di Unicode CLDR
+(`hypomnema/_cldr/windowsZones.xml`, copia non modificata): «W. Europe Standard Time» con la regione `IT`
+è `Europe/Rome`, senza regione `Europe/Berlin` (stesse ore). Su macOS e Linux: la variabile `TZ`, poi
+dove punta `/etc/localtime`, poi `/etc/timezone`.
+
+`status` dice sempre quale fuso vale, su una riga: «Fuso orario: Europe/Rome, dal sistema operativo
+(…).», «Fuso orario: Europe/Rome, dal file fuso-del-sistema.jsonl del quaderno (scritto il … dal
+computer dell'utente): questa macchina è in UTC.», «Fuso orario: Europe/Zurich, scritto nella
+configurazione: questa macchina è in UTC.» oppure «Fuso orario: UTC, quello di questa macchina: …» con il
+motivo.
 
 ## Il registro degli ingressi
 

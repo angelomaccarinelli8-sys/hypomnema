@@ -23,9 +23,12 @@ Hypomnema e come aggiornarsi.
   contano. I promemoria scaduti restano in ordine di scadenza.
 - **Il contesto nelle chiusure.** Nei tuoi `done`, `updates` e `reopens` Claude può aggiungere la sua
   spiegazione (`context`) accanto al tuo motivo, tenuta a parte come sempre.
-- **Il fuso orario senza la tabella dei fusi** (di solito su Windows): per i fusi europei vale la
-  regola europea dell'ora legale scritta nel programma; `status` dice sempre se e come il fuso
-  funziona.
+- **Il fuso orario viene dal sistema operativo.** Sul tuo computer vale sempre l'ora del sistema, anche
+  su Windows senza la tabella dei fusi e anche se la configurazione ha una riga `fuso` (`status` segnala
+  se è diversa). Hypomnema scrive il nome del fuso del sistema nel file `fuso-del-sistema.jsonl` del
+  quaderno quando cambia (su Windows con la tabella ufficiale CLDR, per avere `Europe/Rome`); la chat e
+  le sessioni in cloud, che hanno l'orologio in UTC, lo leggono da lì. Il modello della chat non ha più
+  la riga `fuso`. `status` dice sempre quale fuso vale e perché.
 - **`voci_diario = 0`** nella sezione `[recap]` toglie il blocco del diario dal recap.
 - **Il file del blocco non sta più nel quaderno** ma nella cartella temporanea del computer: niente
   più `.sportello.lock` che finisce in git. Quello lasciato dalla 0.6.1 non serve più: puoi

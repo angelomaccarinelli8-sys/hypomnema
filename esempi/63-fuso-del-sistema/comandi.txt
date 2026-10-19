@@ -1,0 +1,5 @@
+status
+propose 1-nota.json
+propose 2-nota.json
+status
+check

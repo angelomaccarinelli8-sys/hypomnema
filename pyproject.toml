@@ -16,4 +16,7 @@ dependencies = []
 hypomnema = "hypomnema.cli:main"
 
 [tool.setuptools]
-packages = ["hypomnema"]
+packages = ["hypomnema", "hypomnema._tomli"]
+
+[tool.setuptools.package-data]
+hypomnema = ["_cldr/*"]

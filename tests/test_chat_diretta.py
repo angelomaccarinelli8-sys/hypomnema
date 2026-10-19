@@ -21,7 +21,7 @@ from unittest import mock
 
 from hypomnema import _tomli, archivio, blocco, cambiamenti, configurazione, controllo, sportello
 from hypomnema.cli import main
-from tests.esecutore import CONFIG_DI_PROVA, RADICE, modello_chat, per_questo_computer, testo_della_skill
+from tests.esecutore import CONFIG_DI_PROVA, RADICE, fuso_disponibile, modello_chat, per_questo_computer, testo_della_skill
 
 
 def registro_intestazione() -> str:
@@ -429,6 +429,7 @@ class TestFuso(unittest.TestCase):
     def registro(self) -> str:
         return (self.cartella / "quaderno" / "registro.md").read_text(encoding="utf-8")
 
+    @unittest.skipUnless(fuso_disponibile(), "simula la macchina della chat, che ha la tabella dei fusi: qui manca")
     def test_macchina_in_utc_alle_00_30_italiane(self):
         config = self.config("Europe/Rome")
         for adesso, giorno, ora in (
@@ -441,42 +442,35 @@ class TestFuso(unittest.TestCase):
                 _, recap = self.lancia(config, adesso, "recap")
                 self.assertTrue(recap.startswith(f"Dove eravamo rimasti (recap del {giorno})."))
 
-    def test_il_modello_della_chat_ha_il_fuso_italiano(self):
-        config = configurazione.carica(str(MODELLO_CHAT))
-        self.assertEqual(config.nome_fuso, "Europe/Rome")
-        self.assertEqual(configurazione.nel_fuso(config, datetime(2026, 7, 14, 22, 30, tzinfo=timezone.utc)).isoformat(),
-                         "2026-07-15T00:30:00+02:00")
+    def test_il_modello_della_chat_non_ha_il_fuso(self):
+        # Dalla 0.7.0 il fuso viene dal sistema operativo dell'utente (test_difetti): la riga è solo un esempio.
+        self.assertIsNone(configurazione.carica(str(MODELLO_CHAT)).nome_fuso)
+        self.assertNotIn("\nfuso = ", MODELLO_CHAT.read_text(encoding="utf-8"))
 
-    def test_senza_fuso_vale_l_ora_del_computer(self):
-        self.assertIsNone(configurazione.carica(str(RADICE / "hypomnema.toml")).fuso)  # come Claude Code
+    def test_senza_fuso_vale_l_ora_del_sistema(self):
+        self.assertIsNone(configurazione.carica(str(RADICE / "hypomnema.toml")).nome_fuso)  # come Claude Code
         config = self.config(None)
         self.assertEqual(self.lancia(config, datetime(2026, 1, 14, 23, 30, tzinfo=timezone.utc), "propose",
                                      str(self.proposta))[0], 0)
         self.assertIn("- 2026-01-14T23:30:00+00:00 | ACCETTATA |", self.registro())
 
-    def test_fuso_che_non_si_trova_ferma_tutto(self):
-        """Nome sbagliato o tabella mancante: errore chiaro e niente scritto, mai l'ora del computer in silenzio."""
+    def test_fuso_che_non_si_trova_non_ferma_niente(self):
+        """Dalla 0.7.0 (decisione di Angelo): un fuso che non si trova si salta, e status lo dice."""
         import zoneinfo
 
         def senza_tabella(nome):
             raise zoneinfo.ZoneInfoNotFoundError(f"No time zone found with key {nome}")
 
-        # Dalla 0.7.0 per Europe/Rome senza tabella vale la regola europea (test_difetti): qui un fuso fuori
-        # dall'elenco.
         for caso, fuso, sostituto in (("nome sbagliato", "Europa/Roma", None),
-                                      ("tabella mancante", "America/New_York", senza_tabella)):
+                                      ("tabella mancante", "Europe/Rome", senza_tabella)):
             with self.subTest(caso=caso):
                 config = self.config(fuso)
                 with mock.patch.object(zoneinfo, "ZoneInfo", sostituto or zoneinfo.ZoneInfo):
                     codice, uscita = self.lancia(config, ADESSO, "propose", str(self.proposta))
-                    self.assertEqual(codice, 2)
-                    self.assertIn(f'c\'è fuso = "{fuso}", ma su questo computer il fuso non si trova', uscita)
-                    self.assertIn("Non ho scritto niente.", uscita)
-                    # Il testimone (un aggancio) non esce mai con 2, ma non registra niente.
-                    messaggio = self.cartella / "messaggio.json"
-                    messaggio.write_text(json.dumps({"prompt": "Ciao."}), encoding="utf-8")
-                    self.assertEqual(self.lancia(config, ADESSO, "witness", str(messaggio))[0], 1)
-                self.assertFalse((self.cartella / "quaderno").exists())
+                    self.assertEqual(codice, 0, uscita)
+                    _, stato = self.lancia(config, ADESSO, "status")
+                self.assertIn(f'Fuso orario: UTC, quello di questa macchina: fuso = "{fuso}" della configurazione '
+                              "non si trova su questa macchina", stato)
         with self.assertRaisesRegex(configurazione.ErroreConfigurazione, "deve essere il nome di un fuso orario"):
             configurazione.carica(str(self.config(" Europe/Rome")))
 
@@ -507,8 +501,7 @@ class TestDocumenti(unittest.TestCase):
                           "~/hypomnema-temp/proposta.json", "go on with C1-C5", "Python 3.10 or newer",
                           "**Always, right after every `propose` (and every `archive`): `H check`.**",
                           "it does **not** pass between Windows and the\nchat's machine",
-                          "**the user's time zone** in place of the model's example",
-                          "**If you do not know it, ask**"):
+                          "**Do not add a `fuso`\nline**", "**Never write that file and never add a `fuso` line yourself**"):
             with self.subTest(frammento=frammento):
                 self.assertIn(frammento, skill)
         readme = (RADICE / "README.md").read_text(encoding="utf-8")
@@ -517,8 +510,8 @@ class TestDocumenti(unittest.TestCase):
         self.assertIn("## 0.6.1 (prototipo) — la chat scrive direttamente sul quaderno",
                       (RADICE / "STORIA.md").read_text(encoding="utf-8"))
         self.assertIn("`.sportello.lock`", (RADICE / "FORMATO.md").read_text(encoding="utf-8"))
-        # Il modello è pubblico: Europe/Rome è solo un esempio, e la chat scrive il fuso dell'utente.
-        self.assertIn('"Europe/Rome" è solo un ESEMPIO', MODELLO_CHAT.read_text(encoding="utf-8"))
+        # Il modello è pubblico: Europe/Rome è solo un esempio (dalla 0.7.0 in un commento).
+        self.assertIn('(è un ESEMPIO):  fuso = "Europe/Rome"', MODELLO_CHAT.read_text(encoding="utf-8"))
 
 
 if __name__ == "__main__":

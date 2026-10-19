@@ -54,25 +54,15 @@ python3 -B <HY>/programma-chat/programma.py --version   # hypomnema 0.6.1 or new
 
 **D2. The chat configuration.** The chat uses its own file, `<HY>/hypomnema-chat.toml`, next to
 `hypomnema.toml` (Claude Code's, with the witnesses on), **which you never use and never touch**.
-If `hypomnema-chat.toml` is missing, create it from the model, without overwriting anything, with
-**the user's time zone** in place of the model's example (`fuso = "Europe/Rome"` is only an example):
-
-1. Find the user's time zone, as a name of the time zone table (for example `Europe/Rome`,
-   `Europe/Zurich`, `America/New_York`): from what you know from the conversation (where the user
-   lives or is now). **If you do not know it, ask** («In che fuso orario sei? Per esempio: Italia,
-   Svizzera…») and never guess from the language.
-2. Check that the name exists on that machine, before writing anything:
-   `python3 -c "import zoneinfo; zoneinfo.ZoneInfo('<FUSO>')"` (no output = it exists).
-3. Create the file, with that time zone (`<FUSO>` is the name, for example `Europe/Zurich`):
+If `hypomnema-chat.toml` is missing, create it from the model, without overwriting anything:
 
 ```
-[ -e <HY>/hypomnema-chat.toml ] || sed 's|^fuso = .*|fuso = "<FUSO>"|' <HY>/programma-chat/chat/hypomnema-chat.toml > <HY>/hypomnema-chat.toml
-grep '^fuso = ' <HY>/hypomnema-chat.toml
+[ -e <HY>/hypomnema-chat.toml ] || cp <HY>/programma-chat/chat/hypomnema-chat.toml <HY>/hypomnema-chat.toml
 ```
 
-4. Tell the user («Ho creato hypomnema-chat.toml, la configurazione della chat, accanto a quella di
-   Claude Code: stesso quaderno, fuso orario <FUSO>.»). If the file already exists, never change it:
-   if its time zone looks wrong, tell the user, who changes it.
+Then tell the user («Ho creato hypomnema-chat.toml, la configurazione della chat, accanto a quella di
+Claude Code: stesso quaderno.»). If the file already exists, never change it. **Do not add a `fuso`
+line**: from 0.7.0 the time zone comes from the user's operating system (see «The time zone» below).
 
 From here on `H` means exactly:
 
@@ -121,12 +111,15 @@ the user in one line («Non riesco a scrivere direttamente sul quaderno: uso la 
 copia.») and go on with C1-C5. If a proposal may have been half done, first run `H check` (or,
 in C1-C5, check the copied register): a note already saved must not be proposed again.
 
-**The time zone.** The chat configuration has `fuso = "Europe/Rome"`: the chat's machine may keep
-its clock in UTC, and with this setting «today» and the times in the register are the Italian ones.
-`H status` says on the line `Fuso orario:` whether it works (with the time zone table, or, for the
-European zones, with the European summer time rule written in the program).
-If a command answers with an `ERRORE` about `fuso` (the name or the time zone table is missing),
-nothing was written: **never remove the setting yourself**; tell the user the error in one line.
+**The time zone** (from 0.7.0). The time zone of the notebook comes from **the user's operating
+system**: on the user's computer Hypomnema reads it (on Windows with the official CLDR table) and writes
+it in the file `fuso-del-sistema.jsonl` of the notebook, adding a line when it changes. The chat's
+machine keeps its clock in UTC: there the programs use, in this order, a `fuso` line of the
+configuration if the user wrote one, then the last line of that file, then UTC. `H status` says which,
+on the line `Fuso orario:`. If it says «UTC, quello di questa macchina» with «il quaderno non ha ancora
+il file», tell the user once: «Il quaderno non sa ancora il tuo fuso orario: lo scrive Hypomnema la
+prima volta che lo usi in Claude Code sul tuo computer. Fino ad allora date e ore della chat sono in
+UTC.» **Never write that file and never add a `fuso` line yourself**; nothing is blocked either way.
 
 **Labels** (`who`, `about`, `H labels`) need `programma-chat` 0.7.0 or newer: with an older one,
 propose notes without labels. The list is `<HY>/quaderno/etichette.toml`, the same for Claude Code
@@ -178,8 +171,9 @@ python3 --version
      same paths**, the file `registro.md` and all the files of the `note/` folder (also the versions,
      such as `0049.1.md`), in groups of at
      most 50 files at a time, the chat archive files `archivio-chat.jsonl` and
-     `diario-chat.jsonl` if they are there, and the list of labels `etichette.toml` if it is there
-     (never bring it back: only the user writes it). Then check that the number of copied files equals the
+     `diario-chat.jsonl` if they are there, the list of labels `etichette.toml` and the time zone
+     file `fuso-del-sistema.jsonl` if they are there (never bring them back: the user and their
+     computer write them). Then check that the number of copied files equals the
      number listed. **Do not copy `testimone.jsonl` or `risposte.jsonl`**: in chat they are not
      needed, and they contain private words.
 3. Check the copied notebook: `H check` (see section 1). It catches a save left halfway in a

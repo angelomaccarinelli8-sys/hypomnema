@@ -50,7 +50,8 @@ class TestStato(ConCartella):
         self.assertEqual(uscita.splitlines(), [
             f"Configurazione: {self.file_config}",
             f"Quaderno: {self.cartella / 'quaderno'}",
-            "Fuso orario: quello del computer.",
+            "Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, "
+            "che nasce la prima volta che usi Hypomnema sul tuo computer.",
             "Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).",
             f"File del testimone: {self.cartella / 'quaderno' / 'testimone.jsonl'}",
             "Messaggi registrati: 0",

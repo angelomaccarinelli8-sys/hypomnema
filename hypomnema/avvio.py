@@ -12,9 +12,10 @@
 
 import os
 import shutil
+from datetime import datetime
 from pathlib import Path, PurePath, PureWindowsPath
 
-from hypomnema import configurazione, testimone
+from hypomnema import configurazione, fuso_del_sistema, testimone
 from hypomnema.configurazione import Configurazione
 
 # La cartella del programma: quella che contiene il pacchetto hypomnema (nel plugin installato,
@@ -74,6 +75,15 @@ def prepara(file_config: Path) -> list[str]:
             "programma, che un aggiornamento sostituisce. I testimoni non registrano finché non cambi "
             f"«cartella» in «{file_config}»."
         )
+    elif config.cartella_quaderno.is_dir():
+        # Il fuso del sistema operativo nel file del quaderno, se è cambiato (dalla 0.7.0): lo leggono le
+        # macchine in UTC, come la chat collegata al computer.
+        adesso = datetime.now().astimezone()
+        prima = fuso_del_sistema.ultima_riga(config.cartella_quaderno)
+        scelta = fuso_del_sistema.scegli(config, adesso)
+        if fuso_del_sistema.annota(config, scelta, adesso) and prima is not None:
+            avvisi.append(f"Hypomnema: il fuso orario del sistema è cambiato ({prima.fuso} → {scelta.sistema.nome}): "
+                          "l'ho scritto nel quaderno, così anche la chat usa la tua ora.")
     sincronizzata = cartella_sincronizzata(config)
     if sincronizzata:
         avvisi.append(

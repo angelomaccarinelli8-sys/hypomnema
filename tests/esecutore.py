@@ -26,6 +26,11 @@ Se l'esempio ha anche un ``hypomnema-chat.toml`` (dalla 0.6.1, la chat collegata
 file va accanto a ``hypomnema.toml`` e le righe che cominciano con ``chat:`` usano quello: due
 configurazioni, lo stesso quaderno.
 
+Il fuso del sistema operativo (dalla 0.7.0, vedi ``fuso_del_sistema``) è sempre quello di una macchina
+in UTC, come la chat (lo fissa ``tests/__init__.py``), così i risultati sono uguali su ogni computer. Se
+l'esempio ha un file ``sistema-operativo.txt`` con il nome di un fuso (per esempio ``Europe/Rome``),
+l'esempio gira invece come sul computer dell'utente con quel fuso.
+
 Per avere risultati ripetibili l'ora di ogni comando è fissa:
 il primo comando avviene il 15 gennaio 2026 alle 10:00 (ora italiana),
 ogni comando successivo un minuto dopo.
@@ -38,6 +43,9 @@ import shutil
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
+from unittest import mock
+
+from hypomnema import fuso_del_sistema
 from hypomnema.cli import INGLESE, main
 
 RADICE = Path(__file__).resolve().parent.parent
@@ -76,17 +84,10 @@ def per_questo_computer(testo: str) -> str:
     """Una configurazione per le prove, così com'è.
 
     Nella 0.6.1, su un computer senza la tabella dei fusi orari, qui si toglieva la riga «fuso = …».
-    Dalla 0.7.0 non serve più: per i fusi europei vale la regola dell'ora legale scritta nel programma
-    (``fuso_europeo``), e gli esempi usano Europe/Rome. Resta il nome, usato da molte prove.
+    Dalla 0.7.0 non serve più: una riga «fuso» che non si trova non ferma niente (vedi fuso_del_sistema).
+    Resta il nome, usato da molte prove.
     """
     return testo
-
-
-# La riga di «status» sul fuso cambia da computer a computer (dalla 0.7.0): negli esempi si scrive sempre
-# come con la tabella dei fusi. Le due frasi sono provate a parte (test_difetti).
-def fuso_come_con_la_tabella(testo: str) -> str:
-    from hypomnema.cli import FUSO_CON_REGOLA, FUSO_CON_TABELLA
-    return testo.replace(FUSO_CON_REGOLA, FUSO_CON_TABELLA)
 
 
 def modello_chat(cartella: Path) -> Path:
@@ -113,6 +114,16 @@ def elenco_esempi() -> list[Path]:
 
 def esegui(esempio: Path, lavoro: Path) -> str:
     """Esegue i comandi dell'esempio con un quaderno in ``lavoro``; restituisce l'uscita."""
+    sistema = esempio / "sistema-operativo.txt"
+    if sistema.is_file():
+        nome = sistema.read_text(encoding="utf-8").strip()
+        finto = fuso_del_sistema.Sistema(nome, f"prova: sistema operativo con {nome}")
+        with mock.patch.object(fuso_del_sistema, "leggi_sistema", return_value=finto):
+            return _esegui(esempio, lavoro)
+    return _esegui(esempio, lavoro)
+
+
+def _esegui(esempio: Path, lavoro: Path) -> str:
     config = lavoro / "hypomnema.toml"
     proprio = esempio / "hypomnema.toml"
     testo_config = proprio.read_text(encoding="utf-8") if proprio.is_file() else CONFIG_DI_PROVA
@@ -157,7 +168,7 @@ def esegui(esempio: Path, lavoro: Path) -> str:
         if destinazione:
             destinazione.write_text(uscita_comando.getvalue(), encoding="utf-8")
         uscita.write(f"[codice di uscita: {codice}]\n\n")
-    return fuso_come_con_la_tabella(senza_cartella_di_prova(uscita.getvalue(), lavoro, esempio))
+    return senza_cartella_di_prova(uscita.getvalue(), lavoro, esempio)
 
 
 def file_di(cartella: Path) -> dict[str, str]:

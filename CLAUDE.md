@@ -105,10 +105,11 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `skills/hypomnema/` | La skill, in inglese (istruzioni per Claude); le frasi da dire all'utente restano in italiano. Dalla 0.7.0 `SKILL.md` (le regole di sempre, sotto le 500 righe) e accanto `chat-mode.md`, `labels.md`, `replies.md`, `diary.md`, letti solo quando servono. Le prove leggono tutti i file (`tests/esecutore.testo_della_skill`). |
 | `windows/` | L'avviabile (`Hypomnema.cmd` → `avvia-hypomnema.ps1`), il modello della configurazione in uso (`hypomnema-uso.toml`) e l'aggiornamento della copia in uso (`aggiorna-hypomnema.cmd`). I `.cmd` sono ASCII con fine riga CRLF; il `.ps1` è UTF-8 con BOM. |
 | `.claude/settings.json` | Nella copia di sviluppo vieta a Claude di modificare `quaderno/`. Nessun aggancio. |
-| `hypomnema/configurazione.py` | Lettura di `hypomnema.toml` (con `tomllib`, o con la copia di tomli in `_tomli/` su Python 3.10); il fuso orario facoltativo `fuso` di `[quaderno]` (0.6.1, `nel_fuso`): tabella dei fusi, oppure (0.7.0) regola europea per i fusi europei; se non si trova, errore e niente scritto. Negli esempi la riga di `status` sul fuso si scrive sempre «con la tabella» (`tests/esecutore.fuso_come_con_la_tabella`). |
+| `hypomnema/configurazione.py` | Lettura di `hypomnema.toml` (con `tomllib`, o con la copia di tomli in `_tomli/` su Python 3.10); il nome del fuso facoltativo `fuso` di `[quaderno]` (0.6.1); `nel_fuso` chiede a `fuso_del_sistema` quale fuso vale. |
 | `hypomnema/blocco.py` | Il blocco del quaderno (0.6.1): `fcntl.flock`/`msvcrt.locking` su un file della cartella temporanea (dalla 0.7.0; prima `.sportello.lock` nel quaderno), attesa al massimo 10 secondi, si va avanti senza se il disco non permette i blocchi. |
 | `hypomnema/etichette.py` | Le etichette CHI e COSA (0.7.0): la lista `etichette.toml` nella cartella del quaderno, scritta dall'utente e letta solo quando serve; errore chiaro se è scritta male. |
-| `hypomnema/fuso_europeo.py` | La regola europea dell'ora legale (0.7.0) per un elenco fisso di fusi, usata solo se manca la tabella dei fusi. |
+| `hypomnema/fuso_del_sistema.py` | Il fuso orario dal sistema operativo dell'utente (0.7.0): sul computer dell'utente vale il sistema e il nome del fuso si scrive in `quaderno/fuso-del-sistema.jsonl` quando cambia; le macchine in UTC (chat, cloud) usano la riga `fuso`, poi il file, poi UTC. Riconosce le macchine in UTC dal nome del fuso. Le prove fissano una macchina in UTC (`tests/__init__.py`); un esempio con `sistema-operativo.txt` gira come sul computer dell'utente. |
+| `hypomnema/_cldr/` | Copia non modificata di `windowsZones.xml` di Unicode CLDR (release-46, licenza Unicode): i nomi dei fusi di Windows → `Europe/Rome`, con la regione. |
 | `hypomnema/aggiunta.py` | Una riga in fondo a un file con una sola scrittura in aggiunta (0.6.1): `O_APPEND` su Linux e macOS, il solo permesso di aggiungere (`FILE_APPEND_DATA`) su Windows. La usano registro, testimoni e archivio. |
 | `hypomnema/_tomli/` | Copia non modificata di tomli 2.0.1 (MIT), solo per Python 3.10. |
 | `FORMATO.md` | Formato delle note e regole: tenerlo allineato al codice. |
@@ -168,6 +169,10 @@ Prossimo passo proposto:
 - **Fuori perimetro del compito 9** (11/10/2026): la verifica a posteriori sull'esportazione
   ufficiale delle chat di Claude (potrà promuovere le note «riscontrate sull'archivio della chat» a
   «verificate»); il vocabolario (compito 10); un'interfaccia propria.
+- **Il fuso del taccuino viene dal sistema operativo dell'utente** (decisione di Angelo, 19/10/2026): sul
+  computer dell'utente vale sempre il sistema, anche con la riga `fuso` (status la segnala se diversa); sulle
+  macchine in UTC prima la riga `fuso`, poi `fuso-del-sistema.jsonl`, poi UTC detto chiaramente. Niente si
+  blocca per un fuso che non si trova. La regola europea dell'ora legale (prima versione della 0.7.0) è stata tolta.
 - **Etichette** (0.7.0): la lista sta in `quaderno/etichette.toml` (decisione di Angelo, 19/10/2026), mai
   in `hypomnema.toml` né nei modelli di configurazione; il modello commentato è `esempi/etichette.toml`.
   Claude non scrive mai il file: nei taccuini dove scrive solo Claude propone la lista nel messaggio e

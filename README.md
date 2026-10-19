@@ -246,29 +246,27 @@ dell'avviabile) non si tocca.
 **La configurazione della chat** è un file a parte, `hypomnema-chat.toml`, accanto al tuo
 `hypomnema.toml`: stesso quaderno, testimone spento (`modalita = "chat"`), archivio della chat. La
 prima volta lo crea Claude dal modello (`programma-chat/chat/hypomnema-chat.toml`), senza
-sovrascrivere niente, con il **tuo** fuso orario (se non lo sa, te lo chiede); puoi anche copiarlo
-tu, e poi correggere la riga `fuso` con il tuo fuso:
+sovrascrivere niente; puoi anche copiarlo tu:
 
 ```powershell
 Copy-Item programma-chat\chat\hypomnema-chat.toml hypomnema-chat.toml
-notepad hypomnema-chat.toml
 ```
 
-**Il fuso orario.** Il modello ha `fuso = "Europe/Rome"` come **esempio** (l'Italia): nel tuo
-`hypomnema-chat.toml` va il tuo fuso, con il nome della tabella dei fusi orari (per esempio
-`Europe/Zurich`). La macchina della chat può avere l'orologio in UTC, e con questa impostazione
-«oggi» (recap, promemoria, revisione) e le ore del registro sono quelle del tuo fuso, con l'ora
-legale. Sulla macchina della chat la tabella dei fusi c'è
-(verificato il 18/10/2026). Dalla 0.7.0, se la tabella manca (come di solito su Windows), per i fusi
-europei il programma usa **la regola europea dell'ora legale scritta dentro di sé** (dall'ultima
-domenica di marzo all'ultima di ottobre, alle 01:00 di ora universale) per un elenco fisso di fusi:
-Londra, Dublino e Lisbona; Roma, Zurigo, Parigi, Berlino, Madrid, Vienna e gli altri dell'Europa
-centrale; Atene, Helsinki, Bucarest e gli altri dell'Europa orientale. `status` dice sempre come va:
-«Fuso orario: Europe/Rome (funziona, con la tabella dei fusi del computer).» oppure «(funziona, con la
-regola europea dell'ora legale scritta nel programma: su questo computer manca la tabella dei fusi).»
-Se il fuso non si trova lo stesso (nome scritto male, o un fuso fuori dall'Europa senza tabella) il
-programma si ferma con un errore chiaro e non scrive niente: non torna mai in silenzio all'ora del
-computer. Nella configurazione di Claude Code non serve: lì vale l'ora del tuo computer.
+**Il fuso orario (dalla 0.7.0) viene dal sistema operativo del tuo computer.**
+- **Sul tuo computer** vale sempre l'ora del sistema: non serve la tabella dei fusi, e nemmeno una
+  riga `fuso` nella configurazione. Se la configurazione ha una riga `fuso` diversa dal sistema,
+  `status` lo dice, ma non blocca niente.
+- Hypomnema legge anche il **nome** del fuso del sistema (su Windows con la tabella ufficiale di
+  Unicode CLDR che collega i nomi di Windows, come «W. Europe Standard Time», a quelli come
+  `Europe/Rome`, con la tua regione) e lo scrive nel file `fuso-del-sistema.jsonl` del quaderno, a
+  inizio sessione e a ogni proposta, **solo quando cambia**: una riga in più, vale l'ultima. Se usi due
+  computer con fusi diversi, vale quello che ha scritto per ultimo.
+- **Le macchine in UTC** (la chat collegata al computer, le sessioni in cloud) usano, in quest'ordine:
+  la riga `fuso` della loro configurazione, se c'è; poi l'ultima riga del file del quaderno; poi UTC,
+  e `status` lo dice chiaramente («Fuso orario: UTC, quello di questa macchina: …»). Un fuso che lì
+  non si trova si salta: niente si blocca.
+- Una macchina è «in UTC» se il nome del suo fuso è UTC (UTC, Etc/UTC, Zulu…), oppure se il nome non
+  si legge e l'ora è quella universale.
 
 Il tuo `hypomnema.toml` (quello di Claude Code, con i testimoni accesi) resta com'è: la chat non lo
 usa. Le note salvate dalla chat sono marcate come sempre: «chat, no witness», oppure riscontrate

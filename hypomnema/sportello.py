@@ -14,10 +14,9 @@ from datetime import datetime
 from pathlib import Path
 
 from hypomnema import (
-    archivio as testimone_archivio, blocco, etichette, quaderno, registro, regole, risposte as testimone_risposte,
+    archivio as testimone_archivio, blocco, etichette, fuso_del_sistema, quaderno, registro, regole, risposte as testimone_risposte,
     testimone, versioni,
 )
-from hypomnema import configurazione
 from hypomnema.configurazione import Configurazione
 from hypomnema.nota import Cambio, Nota, numeri
 
@@ -84,11 +83,15 @@ def ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: datet
     registro.RegistroToccato. Tiene il blocco del quaderno per tutto il passaggio (vedi ``blocco``);
     se un altro passaggio lo tiene troppo a lungo solleva blocco.QuadernoOccupato senza scrivere.
     """
-    adesso = configurazione.nel_fuso(config, adesso)
+    scelta = fuso_del_sistema.scegli(config, adesso)
+    if scelta.fuso is not None:
+        adesso = adesso.astimezone(scelta.fuso)
     # Prima del blocco, così un registro toccato a mano ferma tutto senza creare niente; poi di nuovo
     # dentro il passaggio.
     registro.controlla_fine(config)
     with blocco.blocco(config.cartella_quaderno, crea=True):
+        # Sul computer dell'utente: il fuso del sistema nel file del quaderno, se è cambiato (dalla 0.7.0).
+        fuso_del_sistema.annota(config, scelta, adesso)
         return _ricevi(contenuto, origine, config, adesso)
 
 
