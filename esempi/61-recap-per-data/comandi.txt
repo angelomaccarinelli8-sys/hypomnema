@@ -1,0 +1,10 @@
+propose 1-todo-del-2-gennaio.json
+propose 2-todo-del-10-gennaio.json
+propose 3-todo-del-5-gennaio.json
+propose 4-open-del-3-gennaio.json
+propose 5-decisione-del-12-gennaio.json
+recap
+propose 6-correzione-di-oggi.json
+propose 7-solo-etichette-di-oggi.json
+propose 8-chiusa-come-decisione-il-14.json
+recap

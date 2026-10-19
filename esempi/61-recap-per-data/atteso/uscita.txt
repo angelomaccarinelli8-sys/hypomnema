@@ -1,0 +1,81 @@
+$ hypomnema propose 1-todo-del-2-gennaio.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-todo-del-10-gennaio.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 3-todo-del-5-gennaio.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 4-open-del-3-gennaio.json
+ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 5-decisione-del-12-gennaio.json
+ACCETTATA: la nota 0005 è stata salvata nel quaderno (note/0005.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [O0004] 2026-01-03: Dove mettere la compostiera?
+
+Cose da fare: 3 di 3 (prima la priorità alta, poi dal più recente)
+- [T0002] 2026-01-10: Rinvasare il limone.
+- [T0003] 2026-01-05: Pulire la serra.
+- [T0001] 2026-01-02: Comprare il terriccio.
+
+Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [D0005] 2026-01-12: Il limone resta sul balcone.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema propose 6-correzione-di-oggi.json
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 7-solo-etichette-di-oggi.json
+ACCETTATA: la versione 0003.1 della nota 0003 è stata salvata nel quaderno (note/0003.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 8-chiusa-come-decisione-il-14.json
+ACCETTATA: la versione 0004.1 della nota 0004 è stata salvata nel quaderno (note/0004.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: 3 di 3 (prima la priorità alta, poi dal più recente)
+- [T0001.1] 2026-01-15: Comprare il terriccio universale.
+    ↳ T0001.1 2026-01-15 · user: testo corretto
+- [T0002] 2026-01-10: Rinvasare il limone.
+- [T0003.1] 2026-01-05: Pulire la serra. · cosa: orto
+    ↳ T0003.1 2026-01-15 · claude: cosa → orto
+
+Ultime decisioni: 2 di 2 (prima la priorità alta, poi dal più recente)
+- [✓D0004.1] 2026-01-14: Dove mettere la compostiera?
+    ↳ ✓D0004.1 2026-01-14 · user: chiusa il 2026-01-14, perché «Sotto il fico.», natura open → decision
+- [D0005] 2026-01-12: Il limone resta sul balcone.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+

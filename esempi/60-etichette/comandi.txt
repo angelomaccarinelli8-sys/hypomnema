@@ -1,0 +1,16 @@
+propose 1-todo-con-etichette.json
+propose 2-fatto-senza-etichette.json
+propose 3-etichetta-non-in-lista.json
+propose 4-tre-etichette-chi.json
+propose 5-etichetta-ripetuta.json
+propose 6-claude-etichetta-nota-vecchia.json
+propose 7-claude-cambia-di-nuovo.json
+chat: proponi 8-nomi-italiani-dalla-chat.json
+chat: propose 9-maiuscola-dalla-chat.json
+search --about orto
+search basilico --who Anna --about orto
+cerca --cosa bilancio --cosa orto
+recap --about orto
+labels
+search --cosa giardino
+check
