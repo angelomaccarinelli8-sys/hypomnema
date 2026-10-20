@@ -606,10 +606,20 @@ decisioni = 5
 voci_diario = 10
 ```
 
-### Le etichette CHI e COSA (dalla 0.7.0)
+### Le etichette CHI e COSA (dalla 0.7.0; le COSA dallo sportello dalla 0.8.0)
 
 Una nota può avere delle **etichette**: CHI (le persone, `who`) e COSA (i progetti o gli argomenti,
-`about`), al massimo due per tipo. Servono a leggere il quaderno per persona o per progetto.
+`about`). Servono a leggere il quaderno per persona o per progetto.
+
+**Dalla 0.8.0 le COSA le mette lo sportello.** Cerca nel testo della nota (il campo `text`) le
+etichette della lista `cosa` e aggiunge quelle che trova, scritte come nella lista, una volta sola e
+senza limite di numero. Cerca la parola intera, come `search`, senza badare alle maiuscole: «l'Orto»
+dà `orto`, «ortografia» no. Nella nota le trovi in `about`, e la riga `- labels from text: about orto`
+dice quali ha messo lo sportello; le altre sono state proposte a mano. A ogni versione nuova (una
+correzione, una chiusura…) lo sportello le ricalcola dal testo; quelle proposte a mano non le tocca
+mai. Le **CHI** restano solo a mano, al massimo due per nota, come nella 0.7.0. La regola è fissa e
+non capisce il senso: «è in gioco la scadenza» dà `gioco`, «i bilanci» non dà `bilancio`. Il comando
+`matches` (`riscontri`) mostra, in sola lettura, dove lo sportello ha trovato ogni COSA.
 
 **La lista la scrivi tu**, nel file `etichette.toml` dentro la cartella del quaderno (accanto a
 `registro.md`): così la leggono tutte e due le configurazioni dello stesso quaderno (Claude Code e la
@@ -622,16 +632,18 @@ cosa = ["orto", "bilancio", "gioco"]
 ```
 
 - Se il file manca, nessuna nota può avere etichette. Se è scritto male, il comando si ferma con un
-  errore chiaro e non scrive niente.
-- Il confronto è esatto: «Orto» non è «orto». Un'etichetta fuori dalla lista viene rifiutata, con
-  l'elenco di quelle ammesse.
+  errore chiaro e non scrive niente: dalla 0.8.0 vale per **ogni** proposta, perché lo sportello legge
+  la lista ogni volta. `status` dice se il file è letto bene.
+- Nelle proposte a mano il confronto è esatto: «Orto» non è «orto». Un'etichetta fuori dalla lista viene
+  rifiutata, con l'elenco di quelle ammesse.
 - Claude non scrive mai il file. In un quaderno dove scrive solo Claude (per esempio il diario di
   cantiere di Claude Code su un progetto) Claude ti propone la lista nel suo messaggio, e tu la salvi
   nel file.
-- Le etichette le sceglie chi propone la nota: nelle note di Claude, Claude; nelle tue, Claude te le
-  propone e tu puoi cambiarle.
-- Le note vecchie non si toccano: le etichette si aggiungono con una versione nuova (`updates`).
-  Claude può etichettare una tua nota solo se non ne ha ancora; poi le cambi solo tu. Una versione
+- Le CHI (e le COSA che non sono scritte nel testo) le propone chi propone la nota: nelle note di
+  Claude, Claude; nelle tue, Claude te le propone e tu puoi cambiarle.
+- Le note vecchie non si toccano: le etichette si aggiungono con una versione nuova (`updates`), e
+  ogni versione nuova prende anche le COSA del suo testo. Claude può etichettare una tua nota solo se
+  non ha ancora etichette proposte a mano (quelle dello sportello non contano); poi le cambi solo tu. Una versione
   che cambia solo le etichette non sposta la nota nel recap e non riazzera i giorni della revisione.
 - `source` resta la chat da cui viene la nota: non è un'etichetta.
 
@@ -639,11 +651,16 @@ cosa = ["orto", "bilancio", "gioco"]
 search --about orto                     # tutte le note su orto (la parola si può omettere)
 search basilico --who Anna --about orto # con la parola e tutte e due le etichette
 recap --cosa orto                       # il recap delle sole note su orto (senza il diario)
-labels                                  # le etichette, con quante note ha ognuna
+labels                                  # le etichette, con quante note ha ognuna (COSA: dal testo e a mano)
+matches                                 # dove lo sportello ha trovato ogni COSA (--cosa orto per una sola)
 ```
 
-Si possono ripetere i filtri, e devono valere tutti. I nomi italiani sono `--chi`, `--cosa` ed
-`etichette`.
+Si possono ripetere i filtri, e devono valere tutti. I nomi italiani sono `--chi`, `--cosa`,
+`etichette` e `riscontri`.
+
+**Due copie del programma** (il plugin di Claude Code e `programma-chat`) leggono lo stesso
+`etichette.toml`. Il file non cambia rispetto alla 0.7.0, quindi una copia rimasta alla 0.7.0 non si
+ferma: semplicemente non aggiunge le COSA dal testo. Aggiornale tutte e due.
 
 ### Le tue parole e quelle di Claude restano separate
 
