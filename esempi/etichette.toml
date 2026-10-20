@@ -4,9 +4,13 @@
 # nome etichette.toml, e scrivi le TUE etichette al posto di quelle di esempio, che sono inventate.
 # Lo leggono tutte e due le configurazioni dello stesso quaderno (Claude Code e la chat): una lista sola.
 #
-# - chi: le persone (al massimo 2 per nota). cosa: i progetti o gli argomenti (al massimo 2 per nota).
+# - chi: le persone. Si propongono solo a mano (al massimo 2 per nota): lo sportello non le cerca.
+# - cosa: i progetti o gli argomenti. Dalla 0.8.0 lo SPORTELLO le trova da solo nel testo della nota
+#   (parola intera, maiuscole e minuscole indifferenti: "orto" trova «l'Orto», non «ortografia») e le
+#   aggiunge, senza limite di numero. Si possono anche proporre a mano (al massimo 2 per nota).
+#   Scegli parole che nel testo vogliono dire solo quella cosa: "gioco" si trova anche in «è in gioco».
 # - Liste corte e fisse: ogni etichetta tra virgolette, su una riga, senza virgole, senza doppioni.
-# - Il confronto è esatto: "Orto" e "orto" sono due etichette diverse.
+# - Nelle proposte a mano il confronto è esatto: "Orto" e "orto" sono due etichette diverse.
 # - Se questo file manca dal quaderno, nessuna nota può avere etichette.
 # - Lo scrivi tu: Claude non lo scrive mai. Può proporti la lista nel suo messaggio, e tu la salvi qui.
 # - Togliere un'etichetta dalla lista non cambia le note che la hanno già (labels le mostra a parte).

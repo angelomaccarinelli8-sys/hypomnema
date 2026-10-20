@@ -2,6 +2,7 @@ $ hypomnema status
 Configurazione: <cartella di prova>/hypomnema.toml
 Quaderno: <cartella di prova>/quaderno
 Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, che nasce la prima volta che usi Hypomnema sul tuo computer.
+Etichette: nessun file etichette.toml (nessuna etichetta).
 Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 0
@@ -12,6 +13,7 @@ $ hypomnema chat: status
 Configurazione: <cartella di prova>/hypomnema-chat.toml
 Quaderno: <cartella di prova>/quaderno
 Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, che nasce la prima volta che usi Hypomnema sul tuo computer.
+Etichette: nessun file etichette.toml (nessuna etichetta).
 Testimone: NON C'È (configurazione per la chat di Claude): i messaggi arrivano solo a Claude e le note con autore «user» saranno marcate «author not verified (chat, no witness)».
 File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 0

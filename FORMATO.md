@@ -431,7 +431,30 @@ etichette finisce con ` · chi: … · cosa: …`.
 ## Le etichette
 
 Dalla 0.7.0 una nota può avere fino a due etichette CHI (`who`: persone) e fino a due COSA (`about`:
-progetti o argomenti). L'intestazione le mostra dopo la priorità: `- who: Anna, Marco`, `- about: orto`.
+progetti o argomenti) proposte a mano. L'intestazione le mostra dopo la priorità: `- who: Anna, Marco`,
+`- about: orto`.
+
+**Dalla 0.8.0 lo sportello aggiunge da solo le COSA trovate nel testo.**
+- Per ogni etichetta di `cosa`, nell'ordine della lista, cerca nel `text` della nota (non in `context`
+  né in `quote`) la parola intera, con la regola di `search`: una parola finisce dove c'è un segno che
+  non è una lettera o una cifra (spazio, punteggiatura, apostrofo, trattino, trattino basso, punto,
+  barra); maiuscole e minuscole non contano; gli accenti sì; tra le parole di un'etichetta va bene
+  qualsiasi spazio o a capo.
+- Ogni etichetta trovata si aggiunge scritta come nella lista, una volta sola, senza limite di numero.
+- `about` è l'elenco finale: prima quelle proposte a mano, poi quelle trovate, senza doppioni. La riga
+  `- labels from text: about orto, gioco` (dopo `about`) elenca quelle messe dallo sportello e non
+  proposte a mano. Una copia della 0.7.0 salta la riga e legge `about` come sempre.
+- A ogni versione nuova (`corrects`, `updates`, `done`, `reopens`) le COSA dello sportello si
+  ricalcolano dal testo della versione, con la lista di adesso: seguono il testo. Quelle proposte a mano
+  non si toccano (le cambia solo `updates`). Le CHI non si cercano mai nel testo. Il tipo (`kind`) non si
+  tocca.
+- Il permesso «Claude può mettere etichette a una nota dell'utente solo se non ne ha» conta solo quelle
+  proposte a mano.
+- **`matches`** (`riscontri`), in sola lettura: per ogni COSA messa dallo sportello, una riga con il
+  codice della nota, l'etichetta e il pezzo di frase dove l'ha trovata (fino a 4 parole prima e dopo,
+  la parola tra `[ ]`); per ogni COSA proposta a mano che nel testo non c'è, una riga «a mano, non nel
+  testo». Ordine fisso: per etichetta (nell'ordine della lista, poi quelle fuori lista in ordine
+  alfabetico), poi per numero di nota. `--about`/`--cosa` per una sola etichetta.
 
 - **La lista** è il file `etichette.toml` nella cartella del quaderno, scritto dall'utente (Claude non
   lo scrive mai; un modello commentato è `esempi/etichette.toml`):
@@ -440,6 +463,9 @@ progetti o argomenti). L'intestazione le mostra dopo la priorità: `- who: Anna,
   quaderno. Si legge solo quando serve (una proposta con etichette, un filtro, `labels`); se è scritto
   male il comando si ferma con un errore e non scrive niente, nemmeno nel registro. `check` lo ignora.
 - **Senza il file**, nessuna nota può avere etichette: «there are no labels in this notebook…».
+- Dalla 0.8.0 il file si legge a **ogni** proposta (per le COSA dal testo): se è scritto male lo
+  sportello non salva niente finché non è corretto. `status` ha la riga «Etichette: …» che dice se è
+  letto bene, senza fermarsi.
 - **Regole dello sportello:** ogni etichetta dev'essere nella lista, uguale lettera per lettera; al
   massimo due per campo; nessuna ripetuta, nessuna vuota. Le etichette si cambiano solo con `updates`
   (non con `corrects`, `done`, `reopens`); le versioni le copiano.
@@ -452,8 +478,8 @@ progetti o argomenti). L'intestazione le mostra dopo la priorità: `- who: Anna,
   devono valere tutti, sull'ultima versione. Con un filtro `search` può fare a meno della parola.
   Un'etichetta che non è nella lista e che nessuna nota usa è un errore (codice 2).
 - **`labels`** (`etichette`): per ogni etichetta della lista quante note la hanno (ultima versione) e
-  quante sono aperte (open, todo e promemoria non chiusi); poi le etichette usate in qualche nota ma
-  non più nella lista.
+  quante sono aperte (open, todo e promemoria non chiusi); per le COSA anche quante dal testo e quante
+  proposte (dalla 0.8.0); poi le etichette usate in qualche nota ma non più nella lista.
 
 ## La revisione
 
@@ -841,14 +867,16 @@ Claude, e la revisione (`review`) ne controlla solo la parte che ha un segno fis
 
 ### 25. Le etichette vengono dalla lista dell'utente (dalla 0.7.0)
 
-- **Dice:** CHI e COSA si scelgono solo dalla lista di `etichette.toml`, che scrive l'utente; al
-  massimo due per campo. Claude sceglie le etichette delle sue note e propone quelle delle note
-  dell'utente, dicendole all'utente. Una volta messe, le etichette di una nota dell'utente le cambia
-  solo l'utente.
-- **Chi:** lo sportello controlla lista, numero e permessi; Claude sceglie bene (questo il programma
-  non lo può controllare).
+- **Dice:** CHI e COSA si scelgono solo dalla lista di `etichette.toml`, che scrive l'utente. Le COSA
+  scritte nel testo le mette lo sportello (dalla 0.8.0); a mano si propongono le CHI e le COSA che nel
+  testo non ci sono, al massimo due per campo. Claude sceglie le etichette delle sue note e propone
+  quelle delle note dell'utente, dicendole all'utente. Una volta messe a mano, le etichette di una nota
+  dell'utente le cambia solo l'utente.
+- **Chi:** lo sportello controlla lista, numero e permessi e trova le COSA nel testo; Claude sceglie
+  bene le altre (questo il programma non lo può controllare).
 - **Effetto:** si legge il quaderno per persona o per progetto (`search --about`, `recap --cosa`,
   `labels`).
-- ✔ `"about": "orto"` per «sabato semino il basilico», con `orto` nella lista.
+- ✔ `"about": "orto"` per «sabato semino il basilico», con `orto` nella lista; niente `about` per
+  «sabato semino l'orto»: lo trova lo sportello.
 - ✘ Scrivere `etichette.toml` al posto dell'utente; `"about": "Orto"` se la lista dice `orto`; usare
   un'etichetta per dire da quale chat viene la nota (quello è `source`).

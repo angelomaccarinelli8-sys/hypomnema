@@ -122,7 +122,8 @@ prima volta che lo usi in Claude Code sul tuo computer. Fino ad allora date e or
 UTC.» **Never write that file and never add a `fuso` line yourself**; nothing is blocked either way.
 
 **Labels** (`who`, `about`, `H labels`) need `programma-chat` 0.7.0 or newer: with an older one,
-propose notes without labels. The list is `<HY>/quaderno/etichette.toml`, the same for Claude Code
+propose notes without labels. The COSA added by the desk from the text (and `H matches`) need 0.8.0:
+with 0.7.0 the notes are saved with the hand-written labels only. The list is `<HY>/quaderno/etichette.toml`, the same for Claude Code
 and the chat: read `labels.md`.
 
 ### C1. Prepare the work computer (once per chat)

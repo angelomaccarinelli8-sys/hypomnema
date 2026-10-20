@@ -156,11 +156,11 @@ Etichette CHI:
 - Marco: 1 nota (0 aperte)
 - Code: 0 note
 Etichette COSA:
-- orto: 3 note (1 aperta)
-- bilancio: 1 nota (0 aperte)
+- orto: 3 note (1 aperta): 0 dal testo, 3 proposte
+- bilancio: 1 nota (0 aperte): 0 dal testo, 1 proposta
 - gioco: 0 note
 Etichette usate in qualche nota ma non nella lista: nessuna.
-(Si contano le note per la loro ultima versione; «aperte»: open, todo e promemoria non chiusi.)
+(Si contano le note per la loro ultima versione; «aperte»: open, todo e promemoria non chiusi; le COSA «dal testo» le ha messe lo sportello.)
 [codice di uscita: 0]
 
 $ hypomnema search --cosa giardino

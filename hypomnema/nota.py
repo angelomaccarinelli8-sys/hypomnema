@@ -46,7 +46,9 @@ se la versione è chiusa, e in fondo il blocco del cambiamento::
 Il blocco si legge solo nei file con il punto: una nota vecchia con quella riga nel testo resta com'è.
 
 Dalla 0.7.0 l'intestazione può avere le etichette, dopo la priorità: ``- who: Anna, Marco`` (CHI) e
-``- about: orto`` (COSA). Vedi ``etichette``.
+``- about: orto`` (COSA). Vedi ``etichette``. Dalla 0.8.0 ``about`` comprende anche le COSA trovate nel
+testo dallo sportello, che sono elencate anche nella riga ``- labels from text: about orto, bilancio``:
+le altre sono state proposte a mano. Una copia della 0.7.0 salta la riga e legge ``about`` come sempre.
 """
 
 from dataclasses import dataclass
@@ -77,6 +79,7 @@ CAMPI = (
     ("priority", "priorità", "priorita"),
     ("who", "chi", "chi"),
     ("about", "cosa", "cosa"),
+    ("labels from text", "labels from text", "cosa_dal_testo"),
     ("confirms", "conferma_di", "conferma_di"),
     ("corrects", "corregge", "corregge"),
     ("done", "done", "done"),
@@ -88,6 +91,8 @@ CAMPI = (
 CAMPI_SEMPRE_PRESENTI = ("data", "fonte", "autore", "tipo", "natura")
 # I campi con più valori separati da virgola.
 CAMPI_ELENCO = ("done", "chi", "cosa")
+# La riga «labels from text» comincia con il tipo di etichetta: per ora solo COSA (about).
+PREFISSO_DAL_TESTO = "about "
 # I campi del blocco del cambiamento, in ordine fisso.
 CAMPI_CAMBIO = (
     ("date", "data"), ("source", "fonte"), ("author", "autore"), ("knowledge", "tipo"),
@@ -187,6 +192,8 @@ class Nota:
     # Le etichette (dalla 0.7.0): CHI (who) e COSA (about), al massimo due per campo.
     chi: tuple[str, ...] | None = None
     cosa: tuple[str, ...] | None = None
+    # Dalla 0.8.0: le COSA messe dallo sportello perché trovate nel testo (sono anche in «cosa»).
+    cosa_dal_testo: tuple[str, ...] | None = None
     # "closed" nelle versioni chiuse; altrimenti None.
     stato: str | None = None
     # Solo nelle versioni: il blocco del cambiamento.
@@ -197,7 +204,9 @@ class Nota:
         for inglese, _, attributo in CAMPI:
             valore = getattr(self, attributo)
             if valore is not None:
-                if attributo in CAMPI_ELENCO:
+                if attributo == "cosa_dal_testo":
+                    valore = PREFISSO_DAL_TESTO + ", ".join(valore)
+                elif attributo in CAMPI_ELENCO:
                     valore = ", ".join(valore)
                 righe.append(f"- {inglese}: {valore}")
         righe += ["", TITOLO_TESTO, "", self.testo, ""]
@@ -254,7 +263,11 @@ def da_markdown(id_nota: str, contenuto: str) -> Nota:
         chiave, separatore, valore = riga[2:].partition(": ")
         if separatore and chiave in ATTRIBUTO:
             attributo = ATTRIBUTO[chiave]
-            campi[attributo] = numeri(valore) if attributo in CAMPI_ELENCO else in_inglese(attributo, valore)
+            if attributo == "cosa_dal_testo":
+                # «about orto, bilancio»: per ora solo le COSA (dalla 0.8.0).
+                campi[attributo] = numeri(valore.removeprefix(PREFISSO_DAL_TESTO))
+            else:
+                campi[attributo] = numeri(valore) if attributo in CAMPI_ELENCO else in_inglese(attributo, valore)
 
     mancanti = [c for c in CAMPI_SEMPRE_PRESENTI if c not in campi]
     if mancanti:

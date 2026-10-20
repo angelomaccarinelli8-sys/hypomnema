@@ -52,12 +52,13 @@ INGLESE = {
     "stato": "status", "istantanea": "snapshot", "cambiati": "changed", "controlla": "check",
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
-    "revisione": "review", "etichette": "labels",
+    "revisione": "review", "etichette": "labels", "riscontri": "matches",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
 # I comandi che leggono il quaderno: aspettano che un passaggio dello sportello finisca (vedi blocco).
-LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary", "labels")
+LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary", "labels",
+           "matches")
 
 
 def _filtri(comando: argparse.ArgumentParser) -> None:
@@ -99,6 +100,13 @@ def _parser() -> argparse.ArgumentParser:
     comandi.add_parser(
         "labels", aliases=["etichette"], help="le etichette CHI e COSA della lista, con quante note ha ognuna"
     )
+    riscontri = comandi.add_parser(
+        "matches", aliases=["riscontri"],
+        help="per ogni COSA messa dallo sportello, dove l'ha trovata nel testo; e le COSA a mano che nel testo non ci "
+             "sono (solo lettura)",
+    )
+    riscontri.add_argument("--about", "--cosa", dest="cosa", action="append", default=[], metavar="ETICHETTA",
+                           help="solo queste etichette COSA (si può ripetere)")
     comandi.add_parser(
         "review", aliases=["revisione"],
         help="che cosa conviene guardare nel quaderno: rami, note ferme, promemoria scaduti, note nominate (solo lettura)",
@@ -188,6 +196,8 @@ def _descrivi(storia: Storia, quaderno: Quaderno, segno: str, conferme, titolo: 
         righe.append(f"chi: {', '.join(nota.chi)}")
     if nota.cosa is not None:
         righe.append(f"cosa: {', '.join(nota.cosa)}")
+    if nota.cosa_dal_testo:
+        righe.append(f"etichette dal testo (messe dallo sportello): cosa {', '.join(nota.cosa_dal_testo)}")
     if nota.conferma_di is not None:
         righe.append(f"conferma di: {cercatore.rimando(quaderno, nota.conferma_di, segno)}")
     if nota.corregge is not None:
@@ -513,6 +523,11 @@ def _etichette(config, uscita: TextIO) -> int:
             quante = "1 nota" if len(con) == 1 else f"{len(con)} note"
             if con:
                 quante += " (1 aperta)" if aperte == 1 else f" ({aperte} aperte)"
+            if con and campo == "about":
+                # Dalla 0.8.0: quante le ha messe lo sportello dal testo e quante sono state proposte a mano.
+                dal_testo = sum(1 for s in con if etichetta in (s.ultima.contenuto.cosa_dal_testo or ()))
+                a_mano = len(con) - dal_testo
+                quante += f": {dal_testo} dal testo, {a_mano} {'proposta' if a_mano == 1 else 'proposte'}"
             righe.append(f"- {etichetta}: {quante}")
     usate = _etichette_usate(archivio_note)
     fuori = [(nome, e) for campo, nome in (("who", "CHI"), ("about", "COSA"))
@@ -522,7 +537,8 @@ def _etichette(config, uscita: TextIO) -> int:
                      + ", ".join(f"{nome} «{e}»" for nome, e in fuori) + ".")
     elif lista is not None:
         righe.append("Etichette usate in qualche nota ma non nella lista: nessuna.")
-    righe.append("(Si contano le note per la loro ultima versione; «aperte»: open, todo e promemoria non chiusi.)")
+    righe.append("(Si contano le note per la loro ultima versione; «aperte»: open, todo e promemoria non chiusi; "
+                 "le COSA «dal testo» le ha messe lo sportello.)")
     for riga in righe:
         print(riga, file=uscita)
     return 0
@@ -555,6 +571,7 @@ def _stato(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
         f"Configurazione: {configurazione.trova(argomenti.config).resolve()}",
         f"Quaderno: {config.cartella_quaderno}",
         fuso_del_sistema.scegli(config, adesso).descrizione,
+        _riga_etichette(config),
     ]
     pausa = testimone.in_pausa(testimone.leggi_messaggi(config)) if config.testimone_attivo else None
     if pausa is not None:
@@ -593,6 +610,60 @@ def _stato(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     for riga in righe:
         print(riga, file=uscita)
     return 0
+
+
+def _riscontri(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura (dalla 0.8.0): i riscontri delle etichette COSA, per costruire la tabella dei riscontri.
+
+    Una riga per caso, in ordine fisso: per etichetta (nell'ordine della lista, poi quelle fuori lista in
+    ordine alfabetico), poi per numero di nota. Per ogni COSA messa dallo sportello: il codice della nota,
+    l'etichetta e il pezzo di frase dove l'ha trovata. Per ogni COSA proposta a mano che nel testo non c'è:
+    il codice, l'etichetta e «a mano, non nel testo». Non giudica e non cambia niente.
+    """
+    lista = etichette.leggi(config.cartella_quaderno)
+    archivio_note = cercatore.leggi(config)
+    storie = archivio_note.elenco()
+    segno = config.segno_chiusa
+    usate = sorted({e for s in storie for e in (s.ultima.contenuto.cosa or ())} - set(lista.cosa if lista else ()))
+    ordine = [*(lista.cosa if lista else ()), *usate]
+    if argomenti.cosa:
+        sconosciute = [e for e in argomenti.cosa if e not in ordine]
+        if sconosciute:
+            print(f"ERRORE: l'etichetta COSA «{sconosciute[0]}» non è nella lista e nessuna nota la usa. Il confronto "
+                  "è esatto: maiuscole e minuscole contano.", file=uscita)
+            return 2
+        ordine = [e for e in ordine if e in argomenti.cosa]
+    righe = []
+    for etichetta in ordine:
+        for storia in storie:
+            nota = storia.ultima.contenuto
+            if etichetta not in (nota.cosa or ()):
+                continue
+            codice = storia.ultima.etichetta(segno)
+            if etichetta in (nota.cosa_dal_testo or ()):
+                pezzo = etichette.pezzo_di_frase(nota.testo, etichetta)
+                righe.append(f"- {codice} · {etichetta} · dal testo: «{pezzo}»")
+            elif etichette.pezzo_di_frase(nota.testo, etichetta) is None:
+                righe.append(f"- {codice} · {etichetta} · a mano, non nel testo")
+    quante = "1 riga" if len(righe) == 1 else f"{len(righe)} righe"
+    print(f"Riscontri delle etichette COSA: {quante} (solo lettura: non giudica e non cambia niente).", file=uscita)
+    print("«dal testo»: messa dallo sportello, con il pezzo di frase dove l'ha trovata (tra [ ] la parola); "
+          "«a mano, non nel testo»: proposta a mano, e nel testo non c'è.", file=uscita)
+    for riga in righe:
+        print(riga, file=uscita)
+    return 0
+
+
+def _riga_etichette(config) -> str:
+    """La lista delle etichette (dalla 0.8.0): letta bene? Se è scritta male lo dice, senza fermarsi."""
+    try:
+        lista = etichette.leggi(config.cartella_quaderno)
+    except etichette.ErroreEtichette as errore:
+        return f"Etichette: ERRORE in {etichette.NOME_FILE}: {errore} Finché non è corretto lo sportello non salva niente."
+    if lista is None:
+        return f"Etichette: nessun file {etichette.NOME_FILE} (nessuna etichetta)."
+    return (f"Etichette: {etichette.NOME_FILE} letto bene: {len(lista.chi)} CHI, {len(lista.cosa)} COSA. Lo sportello "
+            "aggiunge da solo le COSA che trova nel testo; le CHI si propongono a mano.")
 
 
 def _stato_archivio(config) -> list[str]:
@@ -981,6 +1052,8 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
         return _recap(argomenti, config, adesso, uscita)
     if comando == "labels":
         return _etichette(config, uscita)
+    if comando == "matches":
+        return _riscontri(argomenti, config, uscita)
     if comando == "review":
         return _revisione(config, adesso, uscita)
     if comando == "claude-settings":

@@ -1,0 +1,183 @@
+$ hypomnema propose 1-orto-nel-testo.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-con-una-cosa-a-mano.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 3-la-stessa-a-mano.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 4-niente-nel-testo.json
+ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 5-tre-nel-testo.json
+ACCETTATA: la nota 0005 è stata salvata nel quaderno (note/0005.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 6-modo-di-dire.json
+ACCETTATA: la nota 0006 è stata salvata nel quaderno (note/0006.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 7-tre-a-mano.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- a note can have at most 2 «about» labels: «orto, bilancio, gioco» has 3.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 8-solo-nel-contesto.json
+ACCETTATA: la nota 0007 è stata salvata nel quaderno (note/0007.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 9-due-parole.json
+ACCETTATA: la nota 0008 è stata salvata nel quaderno (note/0008.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 10-nota-di-claude.json
+ACCETTATA: la nota 0009 è stata salvata nel quaderno (note/0009.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema search --about orto
+Trovate 6 note con le etichette cosa: orto (dalla più recente).
+
+--- Nota I0009 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: claude
+tipo: inferred
+natura: idea
+cosa: orto, gioco
+etichette dal testo (messe dallo sportello): cosa orto, gioco
+testo:
+  Un'aiuola per il gioco dei bambini nell'orto.
+
+--- Nota F0008 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: fact
+cosa: orto, orto botanico
+etichette dal testo (messe dallo sportello): cosa orto, orto botanico
+verifica: author not verified (witness off)
+testo:
+  Visita all'orto
+  botanico con i bambini.
+
+--- Nota T0005 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: todo
+cosa: orto, bilancio, gioco
+etichette dal testo (messe dallo sportello): cosa orto, bilancio, gioco
+verifica: author not verified (witness off)
+testo:
+  Rivedere orto, bilancio e gioco del fine settimana.
+
+--- Nota F0003 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: fact
+cosa: orto
+verifica: author not verified (witness off)
+testo:
+  L'orto è esposto a sud.
+
+--- Nota T0002 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: todo
+cosa: bilancio, orto
+etichette dal testo (messe dallo sportello): cosa orto
+verifica: author not verified (witness off)
+testo:
+  Seminare l'orto entro marzo.
+
+--- Nota F0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: fact
+cosa: orto
+etichette dal testo (messe dallo sportello): cosa orto
+verifica: author not verified (witness off)
+testo:
+  Seminare l'orto con Anna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema labels
+Etichette CHI:
+- Anna: 0 note
+- Marco: 0 note
+- Luca: 0 note
+Etichette COSA:
+- orto: 6 note (2 aperte): 5 dal testo, 1 proposta
+- bilancio: 2 note (2 aperte): 1 dal testo, 1 proposta
+- gioco: 3 note (2 aperte): 3 dal testo, 0 proposte
+- Famiglia: 0 note
+- orto botanico: 1 nota (0 aperte): 1 dal testo, 0 proposte
+Etichette usate in qualche nota ma non nella lista: nessuna.
+(Si contano le note per la loro ultima versione; «aperte»: open, todo e promemoria non chiusi; le COSA «dal testo» le ha messe lo sportello.)
+[codice di uscita: 0]
+
+$ hypomnema matches
+Riscontri delle etichette COSA: 11 righe (solo lettura: non giudica e non cambia niente).
+«dal testo»: messa dallo sportello, con il pezzo di frase dove l'ha trovata (tra [ ] la parola); «a mano, non nel testo»: proposta a mano, e nel testo non c'è.
+- F0001 · orto · dal testo: «Seminare l'[orto] con Anna.»
+- T0002 · orto · dal testo: «Seminare l'[orto] entro marzo.»
+- T0005 · orto · dal testo: «Rivedere [orto], bilancio e gioco del …»
+- F0008 · orto · dal testo: «Visita all'[orto] botanico con i bambini.»
+- I0009 · orto · dal testo: «… il gioco dei bambini nell'[orto].»
+- T0002 · bilancio · a mano, non nel testo
+- T0005 · bilancio · dal testo: «Rivedere orto, [bilancio] e gioco del fine …»
+- T0005 · gioco · dal testo: «Rivedere orto, bilancio e [gioco] del fine settimana.»
+- T0006 · gioco · dal testo: «È in [gioco] la scadenza della bolletta.»
+- I0009 · gioco · dal testo: «Un'aiuola per il [gioco] dei bambini nell'orto.»
+- F0008 · orto botanico · dal testo: «Visita all'[orto botanico] con i bambini.»
+[codice di uscita: 0]
+
+$ hypomnema riscontri --cosa gioco
+Riscontri delle etichette COSA: 3 righe (solo lettura: non giudica e non cambia niente).
+«dal testo»: messa dallo sportello, con il pezzo di frase dove l'ha trovata (tra [ ] la parola); «a mano, non nel testo»: proposta a mano, e nel testo non c'è.
+- T0005 · gioco · dal testo: «Rivedere orto, bilancio e [gioco] del fine settimana.»
+- T0006 · gioco · dal testo: «È in [gioco] la scadenza della bolletta.»
+- I0009 · gioco · dal testo: «Un'aiuola per il [gioco] dei bambini nell'orto.»
+[codice di uscita: 0]
+
+$ hypomnema status
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, che nasce la prima volta che usi Hypomnema sul tuo computer.
+Etichette: etichette.toml letto bene: 3 CHI, 5 COSA. Lo sportello aggiunge da solo le COSA che trova nel testo; le CHI si propongono a mano.
+Testimone: SPENTO (nella configurazione attivo = false): i messaggi non vengono registrati e le note con autore «user» saranno marcate «author not verified (witness off)».
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 0
+Ultimo messaggio registrato: nessuno.
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 9 note, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

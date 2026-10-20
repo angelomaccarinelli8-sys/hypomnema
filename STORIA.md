@@ -3,6 +3,42 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.8.0 (prototipo) — le etichette COSA le mette lo sportello
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **Le COSA le trova lo sportello.** Quando una nota passa dallo sportello, lo sportello cerca nel suo
+  testo le etichette della lista `cosa` di `etichette.toml` e aggiunge quelle che trova, scritte come
+  nella lista, una volta sola e senza limite di numero. Cerca la parola intera, come `search`, senza
+  badare alle maiuscole: «l'Orto» dà `orto`, «ortografia» no. Le etichette non si dimenticano più.
+- **Si vede chi le ha messe.** Nella nota `about` ha tutte le COSA; la riga
+  `- labels from text: about orto` dice quali ha messo lo sportello. Le altre sono state proposte a mano.
+- **Seguono il testo.** A ogni versione nuova (una correzione, una chiusura…) lo sportello le ricalcola
+  dal testo; quelle proposte a mano non le tocca mai.
+- **Le CHI restano a mano**, al massimo due per nota, come nella 0.7.0.
+- **`labels`** dice, per ogni COSA, quante note la hanno dal testo e quante a mano; **`status`** dice se
+  `etichette.toml` è letto bene; il comando nuovo **`matches`** (`riscontri`) mostra, in sola lettura,
+  dove lo sportello ha trovato ogni COSA, e le COSA messe a mano che nel testo non ci sono.
+- **La regola è fissa e non capisce il senso**: «è in gioco la scadenza» dà `gioco`, «i bilanci» non dà
+  `bilancio`. `matches` serve proprio a vedere questi casi.
+- **Attenzione:** lo sportello legge `etichette.toml` a ogni proposta. Se il file è scritto male, non
+  salva niente finché non è corretto (`status` lo dice).
+- Il file delle etichette **non cambia**: quello della 0.7.0 va bene così com'è. Le note già scritte non
+  si toccano; prendono le COSA dal testo solo alla loro prossima versione.
+
+**Aggiorna tutte e due le copie del programma.** Il plugin di Claude Code e `programma-chat` leggono lo
+stesso quaderno: una copia rimasta alla 0.7.0 non si ferma, ma non aggiunge le COSA dal testo.
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+e su Windows, nella cartella Hypomnema: `git -C programma-chat pull`.
+
+**Nella chat di claude.ai:** scarica il nuovo `hypomnema-skill.zip` e caricalo tra le skill nelle
+impostazioni di Claude, sostituendo quello vecchio.
+
 ## 0.7.0 (prototipo) — etichette, recap per data, difetti trovati da Code
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
