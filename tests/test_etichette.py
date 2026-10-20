@@ -224,7 +224,8 @@ class TestFiltri(ConEtichette):
         self.assertEqual(codice, 0)
         self.assertEqual(uscita.splitlines()[:9], [
             "Etichette CHI:", "- Anna: 2 note (1 aperta)", "- Marco: 1 nota (0 aperte)", "- Code: 0 note",
-            "Etichette COSA:", "- orto: 2 note (1 aperta)", "- bilancio: 1 nota (0 aperte)", "- gioco: 0 note",
+            "Etichette COSA:", "- orto: 2 note (1 aperta): 0 dal testo, 2 proposte",
+            "- bilancio: 1 nota (0 aperte): 0 dal testo, 1 proposta", "- gioco: 0 note",
             "Etichette usate in qualche nota ma non nella lista: nessuna.",
         ])
 
@@ -352,8 +353,9 @@ class TestSkillDivisa(unittest.TestCase):
     def test_etichette_nella_skill(self):
         etichette_md = (self.CARTELLA / "labels.md").read_text(encoding="utf-8")
         for frammento in ("**You never write, change or delete this file**",
-                          "**propose the\n  list in your message**", "**only if it has none yet**",
-                          "**Exactly as in the list**", "esempi/etichette.toml"):
+                          "**propose the\n  list in your message**", "**only if it has none proposed by hand yet**",
+                          "**exactly as in the list**", "esempi/etichette.toml",
+                          "**you no longer need to remember the COSA labels**"):
             self.assertIn(frammento, etichette_md)
         skill = (self.CARTELLA / "SKILL.md").read_text(encoding="utf-8")
         self.assertIn("propose the list **in your message**", skill)

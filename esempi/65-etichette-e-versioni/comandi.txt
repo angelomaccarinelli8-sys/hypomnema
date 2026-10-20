@@ -1,0 +1,14 @@
+propose 1-todo-orto.json
+propose 2-correzione.json
+propose 3-orto-a-mano.json
+propose 4-correzione-senza-orto.json
+propose 5-todo-dal-testo.json
+propose 6-claude-aggiunge-una-cosa.json
+propose 7-claude-cambia-di-nuovo.json
+propose 8-fatto-da-rifare.json
+propose 9-claude-aggiunge-chi.json
+propose 10-chiusura.json
+search orto --all
+labels
+matches
+check

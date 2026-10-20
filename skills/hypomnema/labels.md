@@ -1,4 +1,4 @@
-# Hypomnema: labels CHI and COSA (from version 0.7.0)
+# Hypomnema: labels CHI and COSA (from version 0.7.0; COSA by the desk from 0.8.0)
 
 Read this before proposing labels for the first time in a chat. It completes the "Labels" part of
 `SKILL.md`, whose rules stay the same.
@@ -41,22 +41,49 @@ cosa = ["orto", "bilancio"]
 
   Then wait: the labels work only after the user has saved the file. Never create it yourself.
 - If the file is written wrong, the commands that need it stop with «ERRORE: … Non ho scritto
-  niente.»: tell the user the error as it is; do not fix the file.
+  niente.»: from 0.8.0 that means **every** `propose`, because the desk reads the list each time. Tell
+  the user the error as it is; do not fix the file.
 - `P labels` (`H labels` in chat) shows the list with how many notes have each label (and how many are
   still open), and the labels used in some note but no longer in the list.
 
-## Choosing the labels of a note
+## COSA labels: the desk adds them (from 0.8.0)
 
-- **At most two** CHI and **at most two** COSA per note, comma-separated: `"who": "Anna, Marco"`,
-  `"about": "orto"`. No repeated labels.
-- **Exactly as in the list**: «Orto» is not «orto». If no label fits, propose the note without that
-  field: do not stretch a label, and do not invent one (the desk rejects labels not in the list).
+When a note passes through the desk, the desk looks in its `text` for the COSA labels of the list and
+adds every one it finds, **written as in the list**, once, with no limit on their number:
+
+- whole word, as `search` does, any case: «Orto», «ORTO», «l'orto», «orto-giardino» give `orto`;
+  «ortografia» does not; accents count («caffe» is not «caffè»); a label of several words is found
+  with any space or line break between the words;
+- only in `text`: not in `context`, not in `quote`;
+- the note then has the final list in `about` and, on its own line, the ones the desk added:
+  `- labels from text: about orto`. The others were proposed by hand;
+- at every new version (`corrects`, `updates`, `done`, `reopens`) the desk recomputes them from the
+  text of the version, with the list as it is now: they follow the text. Labels proposed by hand are
+  never touched by the desk;
+- it never touches CHI labels and never changes the kind of the note.
+
+So **you no longer need to remember the COSA labels**. Propose `about` only when the topic is not
+written in the text (for example «Fatto!» about the garden): at most two, exactly as in the list.
+
+The desk follows a fixed rule and does not understand meaning: «è in gioco la scadenza» gets `gioco`,
+«la famiglia del vicino» gets `Famiglia`, «i bilanci» does not get `bilancio`. Do not try to fix this
+by changing the user's words or by avoiding words: report it to the user if it matters. `P matches`
+(`riscontri`) shows, read only, where the desk found each COSA, and the COSA proposed by hand that are
+not in the text; `--about orto` for one label.
+
+## CHI labels: only by hand
+
+- **At most two** CHI per note, comma-separated: `"who": "Anna, Marco"`, **exactly as in the list**
+  («anna» is not «Anna»). If no label fits, leave the field out: do not invent one (the desk rejects
+  labels not in the list).
+- The desk never looks for CHI in the text: nicknames and words like «papà» or «mia sorella» are yours
+  to recognise.
 - Labels are about **what the note is about**, not about where it comes from: `source` stays the chat
   (or book) the note was born in.
-- **Your notes**: you choose the labels.
+- **Your notes**: you choose the CHI labels.
 - **The user's notes**: you propose them and **say them to the user** when you report the saved note
-  («Salvata la T0012 con cosa: orto, chi: Anna. Se le vuoi diverse dimmelo.»). If the user wants other
-  labels, propose an `updates` by the user with the labels they say.
+  («Salvata la T0012 con chi: Anna; cosa orto l'ha messa lo sportello. Se le vuoi diverse dimmelo.»). If
+  the user wants other labels, propose an `updates` by the user with the labels they say.
 
 ```json
 {
@@ -66,10 +93,11 @@ cosa = ["orto", "bilancio"]
   "knowledge": "stated",
   "kind": "todo",
   "who": "Anna",
-  "about": "orto",
-  "text": "sabato semino il basilico con Anna"
+  "text": "sabato semino il basilico nell'orto con Anna"
 }
 ```
+
+The desk adds `about: orto` by itself (it is in the text).
 
 ## Labels on notes already in the notebook
 
@@ -78,8 +106,10 @@ note, with `who` and/or `about` and, as always, `text` = the reason.
 
 - **The user** can always change the labels of any note.
 - **You** can change the labels of your own notes, and **add** labels to one of the user's notes
-  **only if it has none yet** (for example when the user asks you to label the old notes). Once a
-  user's note has labels, only the user changes them: if you think they are wrong, suggest it.
+  **only if it has none proposed by hand yet** (the ones added by the desk do not count). Once a
+  user's note has labels proposed by hand, only the user changes them: if you think they are wrong,
+  suggest it.
+- Old notes do not get the COSA from their text by themselves: only their next version does.
 - A version that only changes labels does not move the note in the recap and does not reset the days
   of the review: the note keeps the date of its last real change.
 - Labelling many old notes: ask the user first («Vuoi che metta le etichette alle note vecchie? Sono
@@ -106,3 +136,6 @@ note, with `who` and/or `about` and, as always, `text` = the reason.
 - Several filters must **all** hold: `--who Anna --about orto` = the notes about Anna **and** the
   garden.
 - A label that is neither in the list nor in any note is an error: check the spelling.
+- `P labels` shows, for every COSA, how many notes have it from the text and how many by hand.
+- `P status` has a line about the labels file. If it says `ERRORE`, tell the user the message as it is:
+  until the file is fixed, **the desk saves nothing**. Never fix the file yourself.

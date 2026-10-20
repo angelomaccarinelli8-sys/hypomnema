@@ -1,0 +1,16 @@
+propose 1-orto-nel-testo.json
+propose 2-con-una-cosa-a-mano.json
+propose 3-la-stessa-a-mano.json
+propose 4-niente-nel-testo.json
+propose 5-tre-nel-testo.json
+propose 6-modo-di-dire.json
+propose 7-tre-a-mano.json
+propose 8-solo-nel-contesto.json
+propose 9-due-parole.json
+propose 10-nota-di-claude.json
+search --about orto
+labels
+matches
+riscontri --cosa gioco
+status
+check

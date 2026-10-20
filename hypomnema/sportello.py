@@ -105,14 +105,14 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
         # In pausa i testimoni non registrano: niente verifica, e la nota lo dice
         # («autore non verificato (testimoni in pausa)»).
         messaggi = risposte = None
+    # La lista delle etichette, a ogni proposta (dalla 0.8.0 lo sportello mette da solo le COSA trovate nel
+    # testo): un file scritto male ferma tutto (etichette.ErroreEtichette) prima di scrivere qualunque cosa,
+    # anche nel registro.
+    lista = etichette.leggi(config.cartella_quaderno)
     proposta, motivi = _leggi_proposta(contenuto)
     if proposta is not None:
         # I nomi e i valori italiani di prima valgono per sempre: qui diventano inglesi.
         proposta, motivi = regole.in_inglese(proposta)
-        # La lista delle etichette si legge solo se la proposta ne ha: un file scritto male ferma tutto
-        # (etichette.ErroreEtichette) prima di scrivere qualunque cosa, anche nel registro.
-        lista = (etichette.leggi(config.cartella_quaderno)
-                 if any(proposta.get(c) is not None for c in regole.CAMPI_ETICHETTE) else None)
         motivi += regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte,
                                    config.segno_chiusa, lista)
 
@@ -139,7 +139,7 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
         valori = {k: v.strip() for k, v in proposta.items() if isinstance(v, str)}
         if citazione is not None:
             valori["quote"] = citazione
-        return _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura)
+        return _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura, lista)
     nota = Nota(
         id=id_nota,
         data=proposta["date"].strip(),
@@ -156,8 +156,10 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
         da_risposta=da_risposta,
         verifica=dicitura,
         chi=_etichette(proposta, "who"),
-        cosa=_etichette(proposta, "about"),
     )
+    # Le COSA: quelle proposte a mano, poi quelle che lo sportello trova nel testo (dalla 0.8.0).
+    cosa, dal_testo = etichette.cosa_finali(_etichette(proposta, "about"), etichette.trova_nel_testo(testo, lista))
+    nota = replace(nota, cosa=cosa, cosa_dal_testo=dal_testo)
     config.cartella_note.mkdir(parents=True, exist_ok=True)
     numero = int(id_nota)
     while True:
@@ -177,7 +179,7 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
     return Esito(accettata=True, id_nota=id_nota, percorso=percorso, motivi=[], scritte=((id_nota, percorso),))
 
 
-def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura) -> Esito:
+def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura, lista) -> Esito:
     """Scrive la versione successiva di ogni nota cambiata. Le regole sono già state controllate tutte."""
     elenco = numeri(valori[campo]) if campo == "done" else (valori[campo],)
     archivio_note = versioni.Quaderno(note_esistenti)
@@ -195,7 +197,7 @@ def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura) 
     for numero in elenco:
         storia = archivio_note.risolvi(numero, campo).storia
         attuale = storia.ultima.contenuto
-        dopo = regole.dopo_il_cambiamento(campo, valori, storia)
+        dopo = regole.dopo_il_cambiamento(campo, valori, storia, lista)
         voci = versioni.differenze(attuale, dopo)
         if campo == "done":
             voci.insert(0, versioni.CHIUSA)

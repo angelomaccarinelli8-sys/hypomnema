@@ -329,24 +329,24 @@ words, for example «Da questa nota in poi le spese le segno solo come todo». I
 decision: no special field. From then on follow it, and when you find it in the recap or in a
 search, respect it as a rule of the notebook.
 
-### Labels: CHI and COSA (from version 0.7.0)
+### Labels: CHI and COSA (from version 0.7.0; COSA by the desk from 0.8.0)
 
 **Before proposing labels for the first time in a chat, read `labels.md`.** In short:
 
 - The list is the file `etichette.toml` **in the notebook folder** (`chi = [...]`, `cosa = [...]`),
   shared by Claude Code and the chat. **The user writes it; you never write it.** Without the file no
-  note can have labels: propose notes without them. In a notebook where only you write (for example
-  Claude Code's «diario di cantiere» on a project), propose the list **in your message**, ready to
-  paste, and the user saves it in the file.
-- `who` and `about` take labels **exactly as written in the list** («Orto» is not «orto»), at most
-  two each. `source` stays the chat the note comes from: it is not a label.
-- You choose the labels of your notes. For the user's notes **you propose them and say them to the
-  user** («La salvo con cosa: orto, chi: Anna. Va bene?»): the user can change them.
-- Labels change with `updates` (a new version). You can add labels to one of the user's notes **only
-  if it has none yet**; once set, only the user changes them.
-- `P search --about orto` (also with a word, or `--who Anna`; `--chi`, `--cosa` in Italian),
-  `P recap --about orto`, `P labels` (every label with how many notes have it). Several filters must
-  all hold.
+  note can have labels. In a notebook where only you write (for example Claude Code's «diario di
+  cantiere» on a project), propose the list **in your message**, ready to paste, and the user saves it.
+- **COSA labels are added by the desk** (from 0.8.0): it finds the COSA of the list in the note's
+  `text` (whole word, any case) and adds them. You no longer need to remember them. Propose `about`
+  only when the topic is not written in the text (at most two, exactly as in the list).
+- **CHI labels are only proposed by hand**, as before: `who`, at most two, exactly as in the list. For
+  the user's notes you propose them and say them to the user; the user can change them.
+- Labels change with `updates`. You can add labels to one of the user's notes **only if it has none
+  proposed by hand yet**; once set, only the user changes them.
+- `P search --about orto`, `P recap --about orto` (`--who`, `--chi`, `--cosa` too), `P labels` (counts),
+  `P matches` (where the desk found each COSA, read only). If `P status` says `ERRORE` on the labels
+  line, tell the user: until the file is fixed the desk saves nothing.
 
 ### Saving your replies
 

@@ -194,7 +194,7 @@ def controlla(
     elif usati and "confirms" in valori:
         motivi.append(f"«confirms» makes a new decision note: it cannot be used together with «{usati[0]}».")
     elif usati:
-        motivi += _controlla_cambiamento(usati[0], valori, autore, natura, quaderno, segno_chiusa)
+        motivi += _controlla_cambiamento(usati[0], valori, autore, natura, quaderno, segno_chiusa, etichette)
 
     if "remind" in valori:
         giorno = valori["remind"]
@@ -270,33 +270,42 @@ def controlla(
     return motivi
 
 
-def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia") -> Nota:
-    """Come sarà la nota dopo il cambiamento (senza il blocco del cambiamento e senza verifica)."""
+def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia", lista=None) -> Nota:
+    """Come sarà la nota dopo il cambiamento (senza il blocco del cambiamento e senza verifica).
+
+    Dalla 0.8.0 le COSA messe dallo sportello si ricalcolano dal testo della versione nuova, con la lista
+    ``lista`` di adesso: seguono il testo. Quelle proposte a mano restano (o cambiano con ``updates``).
+    """
     attuale = storia.ultima.contenuto
+    a_mano = lista_etichette.cosa_a_mano(attuale)
     if campo == "corrects":
-        return Nota(
+        dopo = Nota(
             id=attuale.id, data=valori.get("date", attuale.data), fonte=valori.get("source", attuale.fonte),
             autore=valori.get("author", attuale.autore), tipo=valori.get("knowledge", attuale.tipo),
             natura=valori.get("kind", attuale.natura), testo=valori.get("text", attuale.testo),
             conferma_di=attuale.conferma_di, riprendere_il=valori.get("remind", attuale.riprendere_il),
             citazione=valori.get("quote"), contesto=valori.get("context"), da_risposta=valori.get("from_reply"),
             priorita=valori.get("priority", attuale.priorita), stato=attuale.stato,
-            chi=attuale.chi, cosa=attuale.cosa,
+            chi=attuale.chi,
         )
-    if campo == "updates":
-        return replace(attuale, natura=valori.get("kind", attuale.natura),
+    elif campo == "updates":
+        if "about" in valori:
+            a_mano = lista_etichette.separa(valori["about"])
+        dopo = replace(attuale, natura=valori.get("kind", attuale.natura),
                        priorita=valori.get("priority", attuale.priorita),
                        riprendere_il=valori.get("remind", attuale.riprendere_il),
-                       chi=lista_etichette.separa(valori["who"]) if "who" in valori else attuale.chi,
-                       cosa=lista_etichette.separa(valori["about"]) if "about" in valori else attuale.cosa)
-    if campo == "done":
-        return replace(attuale, natura=valori.get("kind", attuale.natura), stato=versioni.CHIUSA)
-    return replace(attuale, natura=valori.get("kind", storia.natura_prima_della_chiusura()), stato=None,
-                   priorita=valori.get("priority", attuale.priorita),
-                   riprendere_il=valori.get("remind", attuale.riprendere_il))
+                       chi=lista_etichette.separa(valori["who"]) if "who" in valori else attuale.chi)
+    elif campo == "done":
+        dopo = replace(attuale, natura=valori.get("kind", attuale.natura), stato=versioni.CHIUSA)
+    else:
+        dopo = replace(attuale, natura=valori.get("kind", storia.natura_prima_della_chiusura()), stato=None,
+                       priorita=valori.get("priority", attuale.priorita),
+                       riprendere_il=valori.get("remind", attuale.riprendere_il))
+    cosa, dal_testo = lista_etichette.cosa_finali(a_mano, lista_etichette.trova_nel_testo(dopo.testo, lista))
+    return replace(dopo, cosa=cosa, cosa_dal_testo=dal_testo)
 
 
-def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa) -> list[str]:
+def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa, lista=None) -> list[str]:
     """Le regole dei cambiamenti: si cambia l'ultima versione, e solo chi può."""
     motivi = []
     if campo != "corrects" and "from_reply" in valori:
@@ -370,12 +379,12 @@ def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa
                           "Claude can suggest the correction to the user, or save its own idea note.")
             continue
         if (campo == "updates" and any(e in valori for e in CAMPI_ETICHETTE) and attuale.autore == "user"
-                and autore != "user" and (attuale.chi or attuale.cosa)):
+                and autore != "user" and (attuale.chi or lista_etichette.cosa_a_mano(attuale))):
             motivi.append(f"only the user can change the labels of one of the user's notes once they are set "
                           f"(note «{numero}» has them already): Claude can suggest the change to the user.")
             continue
 
-        dopo = dopo_il_cambiamento(campo, valori, storia)
+        dopo = dopo_il_cambiamento(campo, valori, storia, lista)
         prima_natura = storia.natura_prima_della_chiusura() if campo == "reopens" else attuale.natura
         if dopo.natura != prima_natura:
             motivo = versioni.natura_che_cambia(prima_natura, dopo.natura, autore, attuale.autore, campo)

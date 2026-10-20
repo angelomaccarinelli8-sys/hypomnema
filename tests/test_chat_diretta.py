@@ -116,7 +116,7 @@ class TestGiroDellaChat(CartellaDellUtente):
             encoding="utf-8")), encoding="utf-8", newline="\n")
 
         codice, uscita = self.lancia(programma, "--version")
-        self.assertEqual((codice, uscita.strip()), (0, "hypomnema 0.7.0"))
+        self.assertEqual((codice, uscita.strip()), (0, "hypomnema 0.8.0"))
         # D3: status dice che è la configurazione della chat; check e recap sul quaderno vero.
         codice, uscita = self.lancia(programma, "status")
         self.assertIn("Testimone: NON C'È (configurazione per la chat di Claude)", uscita)

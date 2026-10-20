@@ -52,6 +52,7 @@ class TestStato(ConCartella):
             f"Quaderno: {self.cartella / 'quaderno'}",
             "Fuso orario: UTC, quello di questa macchina: il quaderno non ha ancora il file fuso-del-sistema.jsonl, "
             "che nasce la prima volta che usi Hypomnema sul tuo computer.",
+            "Etichette: nessun file etichette.toml (nessuna etichetta).",
             "Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).",
             f"File del testimone: {self.cartella / 'quaderno' / 'testimone.jsonl'}",
             "Messaggi registrati: 0",

@@ -12,10 +12,15 @@ diventare diverse. Se il file manca, nessuna nota può avere etichette. Se è sc
 ne ha bisogno si ferma con un errore chiaro senza scrivere niente. Claude non lo scrive mai: lo scrive
 l'utente (un modello commentato è ``esempi/etichette.toml``).
 
-Il file si legge solo quando serve: una proposta con etichette, un filtro, il comando ``labels``.
-Il confronto è esatto: «Orto» non è «orto».
+Nelle proposte il confronto è esatto: «Orto» non è «orto».
+
+Dalla 0.8.0 lo sportello aggiunge da solo le etichette COSA che trova nel testo della nota
+(``trova_nel_testo``): parola intera, come la ricerca, senza badare alle maiuscole, scritte come nella
+lista, una volta sola e senza limite di numero. Le CHI restano solo proposte a mano. Per questo il file
+si legge a ogni proposta (oltre che per un filtro e per il comando ``labels``).
 """
 
+import re
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -98,6 +103,60 @@ def leggi(cartella_quaderno: Path) -> Etichette | None:
             viste.add(etichetta)
         liste[chiave] = tuple(valore)
     return Etichette(chi=liste["chi"], cosa=liste["cosa"])
+
+
+def schema(etichetta: str) -> re.Pattern:
+    """L'etichetta come parola intera, come la ricerca (``cercatore.schema_parola``): delimitata da segni che
+    non sono lettere o cifre, senza badare alle maiuscole; tra le parole di un'etichetta va bene qualsiasi
+    spazio o a capo."""
+    parole = r"\s+".join(re.escape(p) for p in etichetta.split())
+    return re.compile(r"(?<![^\W_])" + parole + r"(?![^\W_])", re.IGNORECASE)
+
+
+def trova_nel_testo(testo: str, lista: Etichette | None) -> tuple[str, ...]:
+    """Le etichette COSA della lista che compaiono nel testo, scritte come nella lista e nel suo ordine."""
+    if lista is None:
+        return ()
+    return tuple(e for e in lista.cosa if schema(e).search(testo))
+
+
+def cosa_finali(a_mano: tuple[str, ...] | None, trovate: tuple[str, ...]) -> tuple[tuple[str, ...] | None,
+                                                                                     tuple[str, ...] | None]:
+    """Le COSA della nota (prima quelle a mano, poi quelle trovate nel testo, senza doppioni) e quelle
+    messe dallo sportello (le trovate che non erano già a mano)."""
+    a_mano = a_mano or ()
+    dal_testo = tuple(e for e in trovate if e not in a_mano)
+    finali = a_mano + dal_testo
+    return (finali or None), (dal_testo or None)
+
+
+def cosa_a_mano(nota) -> tuple[str, ...]:
+    """Le COSA proposte a mano: quelle della nota meno quelle messe dallo sportello."""
+    dal_testo = nota.cosa_dal_testo or ()
+    return tuple(e for e in (nota.cosa or ()) if e not in dal_testo)
+
+
+# Quante parole mostrare prima e dopo l'etichetta trovata, nel comando «matches» (dalla 0.8.0).
+PAROLE_INTORNO = 4
+
+
+def pezzo_di_frase(testo: str, etichetta: str) -> str | None:
+    """Il punto del testo dove l'etichetta si trova (la prima volta): fino a PAROLE_INTORNO parole prima e
+    dopo, la parola trovata tra parentesi quadre, su una riga. None se non si trova."""
+    trovato = schema(etichetta).search(testo)
+    if trovato is None:
+        return None
+    prima = testo[:trovato.start()]
+    dopo = testo[trovato.end():]
+    # Il pezzo attaccato alla parola (per esempio «l'» in «l'orto») resta con lei.
+    parole_prima = prima.split()
+    attaccato = "" if not prima or prima[-1].isspace() else parole_prima.pop()
+    parole_dopo = dopo.split()
+    seguito = "" if not dopo or dopo[0].isspace() else parole_dopo.pop(0)
+    inizio = ("… " if len(parole_prima) > PAROLE_INTORNO else "") + " ".join(parole_prima[-PAROLE_INTORNO:])
+    fine = " ".join(parole_dopo[:PAROLE_INTORNO]) + (" …" if len(parole_dopo) > PAROLE_INTORNO else "")
+    centro = f"{attaccato}[{' '.join(trovato.group(0).split())}]{seguito}"
+    return " ".join(parte for parte in (inizio, centro, fine) if parte)
 
 
 def separa(valore: str) -> tuple[str, ...]:
