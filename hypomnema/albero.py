@@ -85,3 +85,31 @@ def albero(quaderno: Quaderno, lista, tutte: bool = False) -> list[tuple[str, li
         risultato.append((ramo, [(nome, sorted(note, key=lambda s: ordine(s.base), reverse=True))
                                  for nome, note in sotto]))
     return risultato
+
+
+# La regola dell'integrazione (pezzo 2, I0213): per le idee lo sportello rifiuta, per i fatti dà solo un suggerimento
+# (decisione di Angelo del 21/10). Decisioni, domande aperte e cose da fare restano fuori.
+NATURE_DELLA_REGOLA = ("idea", "fact")
+
+
+def gia_nel_sotto_ramo(note_esistenti, lista, autore: str, natura: str, testo: str,
+                       cosa_a_mano: tuple[str, ...] | None) -> list[tuple[Storia, tuple[str, str]]]:
+    """Le note vive dello stesso autore e dello stesso tipo che hanno un sotto-ramo in comune con la nota nuova (dal
+    testo proprio), dalla più recente, con il primo sotto-ramo in comune. Vuoto senza sotto-rami nella lista."""
+    if lista is None or not lista.rami or natura not in NATURE_DELLA_REGOLA:
+        return []
+    cosa, _ = etichette.cosa_finali(cosa_a_mano, etichette.trova_nel_testo(testo, lista))
+    nuovi = etichette.sotto_rami(testo, cosa, lista)
+    if not nuovi:
+        return []
+    quaderno = Quaderno(note_esistenti)
+    etichette.con_cosa_dal_testo(quaderno, lista)
+    trovate = []
+    for storia in reversed(quaderno.elenco()):
+        nota = storia.ultima.contenuto
+        if not viva(storia) or nota.autore != autore or nota.natura != natura:
+            continue
+        comuni = [r for r in sotto_rami_propri(storia, lista) if r in nuovi]
+        if comuni:
+            trovate.append((storia, comuni[0]))
+    return trovate

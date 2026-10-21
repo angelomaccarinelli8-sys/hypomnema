@@ -365,6 +365,11 @@ search, respect it as a rule of the notebook.
   `etichette.toml` (only the user writes them). `P tree` (`albero`, `--cosa X` for one branch) shows branch →
   sub-branches → notes, integration chains on one line (`I0005.2 ← I0002 ← I0001`), and «senza argomento» for the
   notes of the branch that no sub-branch catches: tell the user when that list is long, words are missing.
+- **One idea, one note per sub-branch** (I0213): the desk rejects a new `idea` when a live idea of the same author is in
+  the same sub-branch («this idea already has its note (0002, sub-branch orto/pomodori)…»): propose it as `integrates`
+  of that note instead. For a new `fact` it only prints a SUGGERIMENTO and the note passes: ask the user whether it is
+  the same fact growing. Never get around the rule: if the ideas are really different, tell the user that the
+  sub-branch needs more precise words in `etichette.toml`.
 - `P search --about orto`, `P recap --about orto` (`--who`, `--chi`, `--cosa` too), `P labels` (counts),
   `P matches` (where the desk found each COSA, read only). If `P status` says `ERRORE` on the labels
   line, tell the user: until the file is fixed the desk saves nothing.

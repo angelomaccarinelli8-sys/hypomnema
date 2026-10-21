@@ -113,8 +113,20 @@ La nota viene **rifiutata** se (i motivi sono scritti in inglese, perché li leg
 24. cambia la natura in `decision` senza `author: user`, cambia la natura di una decisione o di una
     nota dell'utente senza `author: user`, oppure fa diventare decisione un'idea (per questo c'è
     `confirms`).
+25. (dalla 0.10.0, I0213) è un'**idea nuova** (non un cambiamento) e nel quaderno c'è già un'idea **viva** (non
+    chiusa, non annullata, non integrata) dello **stesso autore** con un **sotto-ramo** in comune (dal testo proprio,
+    vedi «L'albero delle etichette»): «this idea already has its note (0002, sub-branch orto/pomodori): propose it as
+    an integration of 0002 …». Il motivo nomina la più recente e le altre dello stesso sotto-ramo. Vale solo sul
+    sotto-ramo, mai sul ramo intero: senza `[rami…]` nella lista non cambia niente. Se sono davvero idee diverse, la
+    soluzione sono parole più precise nei sotto-rami, che scrive l'utente; non c'è un campo per aggirare la regola.
 
 Tutti i motivi trovati vengono elencati insieme, sempre nello stesso ordine.
+
+**I fatti, con un suggerimento** (dalla 0.10.0, decisione di Angelo del 21/10): un **fatto nuovo** nel sotto-ramo di un
+fatto vivo dello stesso autore **passa**, e `propose` aggiunge la riga «SUGGERIMENTO (non cambia niente): there is
+already fact 0003 in this sub-branch (orto/irrigazione): is this an integration? («integrates»: «0003»)». Due fatti
+diversi restano due note («una nota = una cosa sola»): decide chi propone. Decisioni, domande aperte e cose da fare
+restano fuori dalla regola (una decisione nuova può superarne una vecchia: per quello ci sono `updates` e `cancels`).
 
 ## Il testimone
 

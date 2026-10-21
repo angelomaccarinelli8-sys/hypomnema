@@ -14,6 +14,12 @@ Hypomnema e come aggiornarsi.
 - **Il comando `tree`** (`albero`), in sola lettura: ramo → sotto-rami → note, con le catene di integrazione su una riga
   sola (`I0005.2 ← I0002 ← I0001`) e la voce «senza argomento» per le note del ramo che nessun sotto-ramo prende: lì
   mancano parole. `--cosa orto` per un ramo solo, `--all` anche per le note chiuse e annullate.
+- **Un'idea, una nota per sotto-ramo** (I0213). Se nel quaderno c'è già un'idea viva dello stesso autore nello stesso
+  sotto-ramo, lo sportello rifiuta l'idea nuova e dice di proporla come integrazione di quella nota. Per i **fatti**
+  solo un suggerimento: la nota passa. Decisioni, domande aperte e cose da fare restano fuori. Il sotto-ramo che conta
+  è quello del testo proprio della nota (prima versione o ultima correzione): una nota che riceve integrazioni non si
+  allarga a tutto il ramo. Senza sotto-rami nella lista non cambia niente. Se due idee sono davvero diverse, servono
+  parole più precise nei sotto-rami.
 
 Le note già scritte non si toccano e il quaderno della 0.9.0 si legge come prima. Aggiorna tutte e due le copie del
 programma (plugin di Claude Code e `programma-chat`).

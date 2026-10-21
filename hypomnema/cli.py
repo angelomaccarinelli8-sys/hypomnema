@@ -308,7 +308,12 @@ COME_SUONA = {"decision": "una decisione", "idea": "un'idea", "todo": "una cosa 
 
 
 def _stampa_suggerimento(esito, uscita: TextIO) -> None:
-    """Dalla 0.9.0: il tipo che suona meglio secondo gli schemi dell'utente. Solo un suggerimento."""
+    """Dalla 0.9.0: il tipo che suona meglio secondo gli schemi dell'utente; dalla 0.10.0 il fatto che c'è già nello
+    stesso sotto-ramo. Solo suggerimenti: non cambiano niente."""
+    if esito.integrazione is not None:
+        numero, sotto = esito.integrazione
+        print(f"SUGGERIMENTO (non cambia niente): there is already fact {numero} in this sub-branch ({sotto}): is this "
+              f"an integration? («integrates»: «{numero}»)", file=uscita)
     if esito.suggerimento is None:
         return
     tipo, trovate, proposto = esito.suggerimento

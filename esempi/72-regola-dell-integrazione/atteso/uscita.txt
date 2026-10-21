@@ -1,0 +1,46 @@
+$ hypomnema propose 1-idea-pomodori.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- this idea already has its note (0002, sub-branch orto/pomodori): propose it as an integration of 0002 («integrates»: «0002», with only the new words in «text», no «kind» and no «about»). Also in this sub-branch: 0001. If they are really different ideas, the sub-branches in etichette.toml need more precise words: only the user writes them.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 2-integra-la-rete.json
+ACCETTATA: la versione 0002.1 della nota 0002 è stata salvata nel quaderno (note/0002.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 3-fatto-irrigazione.json
+ACCETTATA: la nota 0006 è stata salvata nel quaderno (note/0006.md).
+Il passaggio è annotato nel registro.
+SUGGERIMENTO (non cambia niente): there is already fact 0003 in this sub-branch (orto/irrigazione): is this an integration? («integrates»: «0003»)
+[codice di uscita: 0]
+
+$ hypomnema propose 4-idea-irrigazione.json
+ACCETTATA: la nota 0007 è stata salvata nel quaderno (note/0007.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 5-decisione-pomodori.json
+ACCETTATA: la nota 0008 è stata salvata nel quaderno (note/0008.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema tree --cosa orto
+Albero del taccuino: 1 ramo. Non è stato cambiato niente.
+
+orto · 7 note
+  pomodori · 3
+    D0008  nell'orto i pomodori li lego con lo spago
+    I0002.1  nell'orto i pomodori li legherei con lo spago …
+    I0001  per i pomodori dell'orto userei i tutori di bambù
+  irrigazione · 3
+    I0007  nell'orto metterei un secondo tubo per l'irrigazione
+    F0006  nell'orto la goccia consuma venti litri al giorno
+    F0003  nell'orto l'irrigazione a goccia parte alle 6
+  senza argomento · 1
+    I0004  nell'orto metterei una panchina
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa · ← integrata nella nota a sinistra
+[codice di uscita: 0]
+

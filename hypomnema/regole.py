@@ -192,6 +192,8 @@ def controlla(
                           "idea: only an idea can be confirmed as a decision.")
 
     motivi += _controlla_etichette(valori, etichette)
+    if not cambiamento and natura == "idea" and "text" in valori and autore in AUTORI:
+        motivi += _controlla_sotto_ramo(valori, autore, note_esistenti, etichette)
 
     if "from_note" in valori and "integrates" not in valori:
         motivi.append("«from_note» goes only with «integrates»: it names the note to integrate.")
@@ -479,6 +481,26 @@ def _controlla_etichette(valori: dict, etichette) -> list[str]:
                 motivi.append(f"the label «{scelta}» is not in the list of «{campo}» labels: the allowed ones are "
                               f"{elenco}. Only the user adds labels, in the file {lista_etichette.NOME_FILE}.")
     return motivi
+
+
+def _controlla_sotto_ramo(valori, autore, note_esistenti, lista) -> list[str]:
+    """La regola dell'integrazione (dalla 0.10.0, I0213): un'idea nuova nel sotto-ramo di un'idea viva dello stesso
+    autore non apre un'altra nota, ma si integra in quella."""
+    from hypomnema import albero
+    trovate = albero.gia_nel_sotto_ramo(note_esistenti, lista, autore, "idea", valori["text"],
+                                        _etichette_della_proposta(valori))
+    if not trovate:
+        return []
+    storia, (ramo, sotto) = trovate[0]
+    altre = "".join(f" Also in this sub-branch: {', '.join(s.base for s, _ in trovate[1:])}." if trovate[1:] else "")
+    return [f"this idea already has its note ({storia.base}, sub-branch {ramo}/{sotto}): propose it as an integration "
+            f"of {storia.base} («integrates»: «{storia.base}», with only the new words in «text», no «kind» and no "
+            f"«about»).{altre} If they are really different ideas, the sub-branches in {lista_etichette.NOME_FILE} "
+            "need more precise words: only the user writes them."]
+
+
+def _etichette_della_proposta(valori) -> tuple[str, ...] | None:
+    return lista_etichette.separa(valori["about"]) if "about" in valori else None
 
 
 def _controlla_integrazione(valori, autore, quaderno, storia, numero, codice, lista) -> list[str]:

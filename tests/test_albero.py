@@ -22,6 +22,10 @@ class ConAlbero(ConEtichette):
     def scrivi_lista(self, testo):
         (self.config.cartella_quaderno / "etichette.toml").write_text(testo, encoding="utf-8")
 
+    def senza_rami(self):
+        """Un quaderno della 0.9.0: la lista senza sotto-rami (la regola dell'integrazione non c'è)."""
+        self.scrivi_lista(LISTA.split("[rami")[0])
+
     def lista_letta(self):
         return etichette.leggi(self.config.cartella_quaderno)
 
@@ -96,10 +100,12 @@ class TestSottoRami(ConAlbero):
 
 class TestTestoProprio(ConAlbero):
     def test_le_integrazioni_non_allargano_il_testo_proprio(self):
+        self.senza_rami()
         self.accettata(kind="idea", text="Nell'orto i pomodori vicino al muro.")
         self.accettata(kind="idea", text="Nell'orto la goccia sotto il pacciame.")
         self.accettata(integrates="0001", from_note="0002")
         self.accettata(integrates="0001", text="Anche l'irrigazione la sera.")
+        self.scrivi_lista(LISTA)
         quaderno = leggi(self.config)
         storia, lista = quaderno.storie["0001"], self.lista_letta()
         self.assertEqual(albero.testo_proprio(storia), "Nell'orto i pomodori vicino al muro.")
@@ -115,13 +121,15 @@ class TestTestoProprio(ConAlbero):
 
 class TestComandoTree(ConAlbero):
     def test_catene_e_senza_argomento(self):
+        self.senza_rami()
         self.accettata(kind="idea", text="Nell'orto i pomodori vicino al muro.")   # 0001
         self.accettata(kind="fact", text="Nell'orto i pomodori sono dodici.")      # 0002
         self.accettata(kind="idea", text="Nell'orto una panchina.")                # 0003
-        self.accettata(kind="idea", text="Nell'orto i pomodori sotto la rete.")    # 0004 (prima della regola I0213)
+        self.accettata(kind="idea", text="Nell'orto i pomodori sotto la rete.")    # 0004 (senza i sotto-rami)
         self.accettata(integrates="0001", from_note="0004")
         self.accettata(kind="todo", text="Chiudere il bilancio.")                 # 0005
         self.accettata(done="0005", text="fatto")
+        self.scrivi_lista(LISTA)
         codice, uscita = self.comando("tree")
         self.assertEqual(codice, 0)
         self.assertIn("orto · 3 note\n  pomodori · 2\n    F0002  Nell'orto i pomodori sono dodici.\n"
@@ -135,10 +143,12 @@ class TestComandoTree(ConAlbero):
         self.assertNotIn("orto", uscita)
 
     def test_catena_in_piu_passaggi(self):
+        self.senza_rami()
         for testo in ("Nell'orto i pomodori A.", "Nell'orto i pomodori B.", "Nell'orto i pomodori C."):
             self.accettata(kind="idea", text=testo)
         self.accettata(integrates="0002", from_note="0001")
         self.accettata(integrates="0003", from_note="0002")
+        self.scrivi_lista(LISTA)
         self.assertIn("    I0003.1 ← I0002.1 ← I0001  Nell'orto i pomodori C. …\n", self.comando("tree")[1])
 
     def test_senza_lista(self):
@@ -153,6 +163,85 @@ class TestComandoTree(ConAlbero):
         prima = {p: p.read_bytes() for p in self.config.cartella_quaderno.rglob("*") if p.is_file()}
         self.comando("tree")
         self.assertEqual({p: p.read_bytes() for p in self.config.cartella_quaderno.rglob("*") if p.is_file()}, prima)
+
+
+
+class TestRegolaDellIntegrazione(ConAlbero):
+    """Pezzo 2 (I0213): un'idea nuova nel sotto-ramo di un'idea viva dello stesso autore si integra in quella."""
+
+    def test_idea_rifiutata_con_il_numero_e_il_sotto_ramo(self):
+        self.accettata(kind="idea", text="Nell'orto i pomodori vicino al muro.")
+        motivi = self.motivi(kind="idea", text="Nell'orto i pomodori sotto la rete.")
+        self.assertEqual(motivi, "this idea already has its note (0001, sub-branch orto/pomodori): propose it as an "
+                                 "integration of 0001 («integrates»: «0001», with only the new words in «text», no "
+                                 "«kind» and no «about»). If they are really different ideas, the sub-branches in "
+                                 "etichette.toml need more precise words: only the user writes them.")
+        # La proposta giusta passa: le parole nuove in fondo alla 0001.
+        self.assertEqual(self.accettata(integrates="0001", text="Nell'orto i pomodori sotto la rete."), "0001.1")
+
+    def test_la_cosa_a_mano_conta(self):
+        self.accettata(kind="idea", text="Nell'orto i pomodori vicino al muro.")
+        self.assertIn("sub-branch orto/pomodori", self.motivi(kind="idea", about="orto", text="I pomodori in vaso."))
+        # Senza la COSA del ramo (né a mano né nel testo) il sotto-ramo non c'è.
+        self.assertEqual(self.accettata(kind="idea", text="I pomodori in vaso."), "0002")
+
+    def test_quando_non_vale(self):
+        self.accettata(kind="idea", text="Nell'orto i pomodori vicino al muro.")   # 0001
+        casi = (
+            dict(kind="idea", text="Nell'orto la goccia sotto il pacciame."),       # altro sotto-ramo
+            dict(kind="idea", text="Nell'orto una panchina."),                      # nessun sotto-ramo
+            dict(kind="decision", text="Nell'orto i pomodori vanno al muro."),      # decisione
+            dict(kind="todo", text="Comprare i tutori per i pomodori dell'orto."),  # da fare
+            dict(kind="open", text="Quanti pomodori nell'orto?"),                   # aperta
+            dict(author="claude", knowledge="inferred", kind="idea",                # altro autore
+                 text="Proposta: nell'orto i pomodori in fila."),
+        )
+        for numero, caso in enumerate(casi, start=2):
+            with self.subTest(caso=caso):
+                self.assertEqual(self.accettata(**caso), f"{numero:04d}")
+
+    def test_una_nota_non_viva_non_conta(self):
+        self.accettata(kind="idea", text="Nell'orto i pomodori vicino al muro.")   # 0001
+        self.accettata(cancels="0001", text="non vale più")
+        self.assertEqual(self.accettata(kind="idea", text="Nell'orto i pomodori sotto la rete."), "0002")
+
+    def test_vale_il_testo_proprio_non_le_integrazioni(self):
+        self.accettata(kind="idea", text="Nell'orto i pomodori vicino al muro.")   # 0001
+        self.accettata(integrates="0001", text="E la goccia per l'irrigazione.")
+        # La 0001 ha preso «irrigazione» solo con l'integrazione: un'idea sull'irrigazione passa.
+        self.assertEqual(self.accettata(kind="idea", text="Nell'orto la goccia sotto il pacciame."), "0002")
+        self.assertIn("(0001, sub-branch orto/pomodori)", self.motivi(kind="idea", text="Pomodori nell'orto."))
+
+    def test_nomina_la_piu_recente_e_le_altre(self):
+        self.senza_rami()
+        self.accettata(kind="idea", text="Nell'orto i pomodori A.")
+        self.accettata(kind="idea", text="Nell'orto i pomodori B.")
+        self.scrivi_lista(LISTA)
+        motivi = self.motivi(kind="idea", text="Nell'orto i pomodori C.")
+        self.assertIn("this idea already has its note (0002, sub-branch orto/pomodori)", motivi)
+        self.assertIn("Also in this sub-branch: 0001.", motivi)
+
+    def test_senza_rami_come_nella_0_9_0(self):
+        self.senza_rami()
+        self.accettata(kind="idea", text="Nell'orto i pomodori A.")
+        self.assertEqual(self.accettata(kind="idea", text="Nell'orto i pomodori B."), "0002")
+
+    def test_i_fatti_hanno_solo_il_suggerimento(self):
+        self.accettata(kind="fact", text="Nell'orto i pomodori sono dodici.")
+        esito = self.proponi(kind="fact", text="Nell'orto i pomodori sono San Marzano.")
+        self.assertTrue(esito.accettata)
+        self.assertEqual(esito.integrazione, ("0001", "orto/pomodori"))
+        file = self.cartella / "p.json"
+        file.write_text('{"date": "2026-01-15", "source": "s", "author": "user", "knowledge": "stated", '
+                        '"kind": "fact", "text": "Nell\'orto i pomodori rossi."}', encoding="utf-8")
+        codice, uscita = self.comando("propose", str(file))
+        self.assertEqual(codice, 0)
+        self.assertIn("ACCETTATA: la nota 0003", uscita)
+        self.assertIn("SUGGERIMENTO (non cambia niente): there is already fact 0002 in this sub-branch "
+                      "(orto/pomodori): is this an integration? («integrates»: «0002»)", uscita)
+        # Un fatto in un altro sotto-ramo, o un'idea accanto a un fatto: niente suggerimento.
+        self.assertIsNone(self.proponi(kind="fact", text="Nell'orto la goccia alle sei.").integrazione)
+        self.assertEqual(self.accettata(kind="idea", text="Nell'orto i pomodori in fila."), "0005")
 
 
 if __name__ == "__main__":
