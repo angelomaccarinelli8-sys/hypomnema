@@ -1,0 +1,74 @@
+$ hypomnema search --about limone
+Trovate 2 note con le etichette cosa: limone (dalla più recente).
+
+--- Nota D0005 ---
+data: 2026-01-12
+fonte: chat del 12 gennaio 2026
+autore: user
+tipo: stated
+natura: decision
+cosa: limone
+etichette dal testo (messe dallo sportello): cosa limone
+verifica: author not verified (witness off)
+testo:
+  Il limone resta sul balcone.
+
+--- Nota T0002 ---
+data: 2026-01-10
+fonte: chat del 10 gennaio 2026
+autore: user
+tipo: stated
+natura: todo
+cosa: limone
+etichette dal testo (messe dallo sportello): cosa limone
+verifica: author not verified (witness off)
+testo:
+  Rinvasare il limone.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema labels
+Etichette CHI:
+- Anna: 0 note
+- Marco: 0 note
+Etichette COSA:
+- serra: 1 nota (1 aperta): 1 dal testo, 0 proposte
+- limone: 2 note (1 aperta): 2 dal testo, 0 proposte
+- terriccio: 1 nota (1 aperta): 1 dal testo, 0 proposte
+Etichette usate in qualche nota ma non nella lista: COSA «orto».
+(Si contano le note per la loro ultima versione; «aperte»: open, todo e promemoria non chiusi; le COSA «dal testo» le ha messe lo sportello.)
+[codice di uscita: 0]
+
+$ hypomnema matches
+Riscontri delle etichette COSA: 5 righe (solo lettura: non giudica e non cambia niente).
+«dal testo»: messa dallo sportello, con il pezzo di frase dove l'ha trovata (tra [ ] la parola); «a mano, non nel testo»: proposta a mano, e nel testo non c'è.
+- T0003.1 · serra · dal testo: «Pulire la [serra].»
+- T0002 · limone · dal testo: «Rinvasare il [limone].»
+- D0005 · limone · dal testo: «Il [limone] resta sul balcone.»
+- T0001.1 · terriccio · dal testo: «Comprare il [terriccio] universale.»
+- T0003.1 · orto · a mano, non nel testo
+[codice di uscita: 0]
+
+$ hypomnema recap --cosa serra
+Dove eravamo rimasti (recap del 2026-01-15, solo le note con le etichette cosa: serra).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [T0003.1] 2026-01-05: Pulire la serra. · cosa: orto, serra
+    ↳ T0003.1 2026-01-15 · claude: cosa → orto
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: non mostrate (il diario non ha etichette).
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 5 note e 3 versioni, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

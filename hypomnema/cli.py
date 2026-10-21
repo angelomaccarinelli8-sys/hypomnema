@@ -184,6 +184,14 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _leggi(config, uscita: TextIO) -> Quaderno:
+    """Il quaderno per un comando che legge; se etichette.toml è scritto male, una riga di avviso e si va avanti."""
+    quaderno = cercatore.leggi(config)
+    if quaderno.avviso:
+        print(quaderno.avviso, file=uscita)
+    return quaderno
+
+
 def _descrivi(storia: Storia, quaderno: Quaderno, segno: str, conferme, titolo: str = "") -> list[str]:
     """L'ultima versione di una nota per intero, poi la sua storia."""
     ultima = storia.ultima
@@ -341,7 +349,7 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
     if not parola and not filtro:
         print("ERRORE: serve una parola da cercare (oppure un filtro: --chi, --cosa).", file=uscita)
         return 2
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     if not _controlla_filtro(argomenti, config, archivio_note, uscita):
         return 2
     trovate = cercatore.cerca(archivio_note, parola, argomenti.tutte, argomenti.chi, argomenti.cosa)
@@ -379,7 +387,7 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
 
 def _promemoria(config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: i promemoria scaduti, dal più vecchio."""
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     oggi = adesso.date()
     scaduti = promemoria.scaduti(archivio_note, oggi)
     in_arrivo = promemoria.in_arrivo(archivio_note, oggi)
@@ -450,7 +458,7 @@ def _recap(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     suo ✓). Con un filtro per etichette (--chi, --cosa) restano solo le note che le hanno tutte, e il diario,
     che non ha etichette, non si mostra.
     """
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     if not _controlla_filtro(argomenti, config, archivio_note, uscita):
         return 2
     filtro = bool(argomenti.chi or argomenti.cosa)
@@ -527,7 +535,7 @@ def _recap(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
 def _etichette(config, uscita: TextIO) -> int:
     """Solo lettura: le etichette della lista, con quante note (ultima versione) ha ognuna."""
     lista = etichette.leggi(config.cartella_quaderno)
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     storie = archivio_note.elenco()
 
     def aperta(storia: Storia) -> bool:
@@ -571,7 +579,7 @@ def _etichette(config, uscita: TextIO) -> int:
 
 def _revisione(config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: che cosa conviene guardare. 0 = niente, 1 = qualcosa da guardare."""
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     oggi = adesso.date()
     segnalazioni = revisione.rivedi(archivio_note, oggi, config.giorni_revisione, config.segno_chiusa)
     if not segnalazioni:
@@ -646,7 +654,7 @@ def _riscontri(argomenti, config, uscita: TextIO) -> int:
     il codice, l'etichetta e «a mano, non nel testo». Non giudica e non cambia niente.
     """
     lista = etichette.leggi(config.cartella_quaderno)
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     storie = archivio_note.elenco()
     segno = config.segno_chiusa
     usate = sorted({e for s in storie for e in (s.ultima.contenuto.cosa or ())} - set(lista.cosa if lista else ()))
@@ -681,7 +689,7 @@ def _riscontri(argomenti, config, uscita: TextIO) -> int:
 
 def _schemi(argomenti, config, uscita: TextIO) -> int:
     """Solo lettura (dalla 0.9.0): gli schemi del modo di parlare dell'utente, e se si chiede la misura."""
-    note = schemi.note_dell_utente(cercatore.leggi(config))
+    note = schemi.note_dell_utente(_leggi(config, uscita))
     conti = schemi.Conti.da(note)
     print(f"Schemi del modo di parlare dell'utente: {len(note)} note dell'utente (prima versione di ogni nota; le note "
           "di Claude non contano).", file=uscita)

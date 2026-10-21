@@ -450,6 +450,12 @@ progetti o argomenti) proposte a mano. L'intestazione le mostra dopo la priorit�
   tocca.
 - Il permesso «Claude può mettere etichette a una nota dell'utente solo se non ne ha» conta solo quelle
   proposte a mano.
+- **Dalla 0.9.0 le COSA dal testo si calcolano anche al momento della lettura** (recap, search, labels, matches,
+  review, patterns), per tutte le versioni di tutte le note, anche quelle scritte prima: quelle proposte a mano più
+  quelle trovate oggi nel testo con la lista di oggi. Un'etichetta aggiunta alla lista vale subito per tutte le note
+  che la nominano; nessun file si scrive (niente versioni di sole etichette). Se `etichette.toml` è scritto male, i
+  comandi che leggono vanno avanti senza le COSA dal testo, con una prima riga «Attenzione: etichette.toml è scritto
+  male (…)»; lo sportello invece si ferma, come nella 0.8.0.
 - **`matches`** (`riscontri`), in sola lettura: per ogni COSA messa dallo sportello, una riga con il
   codice della nota, l'etichetta e il pezzo di frase dove l'ha trovata (fino a 4 parole prima e dopo,
   la parola tra `[ ]`); per ogni COSA proposta a mano che nel testo non c'è, una riga «a mano, non nel
