@@ -329,8 +329,8 @@ class TestQuadernoVecchio(unittest.TestCase):
 
 class TestVersioneEDocumenti(unittest.TestCase):
     def test_versione(self):
-        self.assertEqual(__version__, "0.9.0")
-        self.assertIn('version = "0.9.0"', (RADICE / "pyproject.toml").read_text(encoding="utf-8"))
+        self.assertEqual(__version__, "0.10.0")
+        self.assertIn('version = "0.10.0"', (RADICE / "pyproject.toml").read_text(encoding="utf-8"))
 
     def test_comando_recap_del_plugin(self):
         testo = (RADICE / "commands" / "recap.md").read_text(encoding="utf-8")
