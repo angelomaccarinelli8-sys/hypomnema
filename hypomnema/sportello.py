@@ -14,8 +14,8 @@ from datetime import datetime
 from pathlib import Path
 
 from hypomnema import (
-    archivio as testimone_archivio, blocco, etichette, fuso_del_sistema, quaderno, registro, regole, risposte as testimone_risposte,
-    testimone, versioni,
+    archivio as testimone_archivio, blocco, etichette, fuso_del_sistema, quaderno, registro, regole,
+    risposte as testimone_risposte, schemi, testimone, versioni,
 )
 from hypomnema.configurazione import Configurazione
 from hypomnema.nota import Cambio, Nota, numeri
@@ -29,6 +29,9 @@ class Esito:
     motivi: list[str]
     # Tutte le note o versioni scritte: (numero, percorso). Più di una solo con «done» su più note.
     scritte: tuple[tuple[str, Path], ...] = ()
+    # Dalla 0.9.0: un altro tipo che suona meglio, dagli schemi del modo di parlare dell'utente: (tipo, sequenze).
+    # Solo un suggerimento: non entra nella nota né nel registro e non cambia niente.
+    suggerimento: tuple[str, list[str], str] | None = None  # (tipo che suona meglio, sequenze, tipo proposto)
 
 
 class _CampoDoppio(Exception):
@@ -69,6 +72,18 @@ def _leggi_proposta(contenuto: bytes) -> tuple[dict | None, list[str]]:
 def _facoltativo(proposta: dict, campo: str) -> str | None:
     valore = proposta.get(campo)
     return valore.strip() if valore is not None else None
+
+
+def _suggerimento(proposta: dict | None, note_esistenti) -> tuple[str, list[str], str] | None:
+    """Per una nota nuova dell'utente: un altro tipo che suona meglio, con gli schemi del quaderno di prima."""
+    if (proposta is None or not isinstance(proposta.get("author"), str) or proposta["author"].strip() != "user"
+            or not isinstance(proposta.get("text"), str) or not isinstance(proposta.get("kind"), str)
+            or any(proposta.get(c) is not None for c in regole.CAMPI_CAMBIAMENTO)):
+        return None
+    conti = schemi.Conti.da(schemi.note_dell_utente(versioni.Quaderno(note_esistenti)))
+    proposto = proposta["kind"].strip()
+    trovato = schemi.suggerimento(conti, proposta["text"], proposto)
+    return (*trovato, proposto) if trovato is not None else None
 
 
 def _etichette(proposta: dict, campo: str) -> tuple[str, ...] | None:
@@ -116,9 +131,10 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
         motivi += regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte,
                                    config.segno_chiusa, lista)
 
+    consiglio = _suggerimento(proposta, note_esistenti)
     if motivi:
         registro.annota(config, adesso, origine, None, motivi)
-        return Esito(accettata=False, id_nota=None, percorso=None, motivi=motivi)
+        return Esito(accettata=False, id_nota=None, percorso=None, motivi=motivi, suggerimento=consiglio)
 
     id_nota = quaderno.prossimo_id(note_esistenti, config.cifre_numero_nota)
     citazione = _facoltativo(proposta, "quote")
@@ -176,7 +192,8 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
             numero += 1
     id_nota = nota.id
     registro.annota(config, adesso, origine, id_nota, [])
-    return Esito(accettata=True, id_nota=id_nota, percorso=percorso, motivi=[], scritte=((id_nota, percorso),))
+    return Esito(accettata=True, id_nota=id_nota, percorso=percorso, motivi=[], scritte=((id_nota, percorso),),
+                 suggerimento=consiglio)
 
 
 def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura, lista) -> Esito:

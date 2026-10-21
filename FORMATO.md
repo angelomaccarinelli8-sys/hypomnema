@@ -481,6 +481,31 @@ progetti o argomenti) proposte a mano. L'intestazione le mostra dopo la priorit�
   quante sono aperte (open, todo e promemoria non chiusi); per le COSA anche quante dal testo e quante
   proposte (dalla 0.8.0); poi le etichette usate in qualche nota ma non più nella lista.
 
+## Gli schemi del modo di parlare (dalla 0.9.0)
+
+Il comando `patterns` (`schemi`), in sola lettura, ricava dal quaderno le sequenze di parole tipiche di ogni tipo di
+nota, con le regole fisse dello script del 21/10/2026 (decisione D0210), scritte in un posto solo (`hypomnema/schemi.py`):
+
+- si guardano solo le note dell'utente, ognuna con la sua prima versione (tipo e testo di quando è nata); le note di
+  Claude non contano;
+- il testo si porta in minuscolo e si spezza in parole fatte di lettere (anche à è é ì ò ù) e apostrofi; di ogni nota
+  si prendono le sequenze di 2 e 3 parole consecutive, ognuna una volta sola;
+- una sequenza è tipica di un tipo se compare in almeno 2 note di quel tipo e almeno il 60% delle note in cui compare
+  è di quel tipo, e non è una coppia «vuota»: una parola grammaticale (di, a, e, il, la, lo, le, i, che, per, in, un,
+  una, non, è, da, con, su) seguita da una parola, o una parola seguita da una di quelle (tranne non, è);
+- il tipo che suona un testo è quello con più sequenze tipiche; a parità vale l'ordine decision, idea, todo, open,
+  fact; con nessuna, nessuno.
+
+Gli schemi si ricalcolano dal quaderno ogni volta: nessun file salvato. `patterns` mostra le 12 più frequenti per tipo
+(`--all` tutte, a parità in ordine alfabetico); `--measure` (`--misura`) dice quante volte gli schemi indovinano il
+tipo delle note dell'utente, sulle stesse note (ottimista) e a turno (ogni nota tolta dal calcolo prima di indovinarla:
+il numero onesto).
+
+**Il suggerimento dello sportello.** Per una nota nuova dell'utente (non per i cambiamenti), se un altro tipo ha più
+sequenze tipiche del tipo proposto (gli schemi del quaderno di prima della proposta), `propose` stampa in fondo una
+riga «SUGGERIMENTO (non cambia niente): suona come una decisione (decision: «d'ora in poi»). È giusto il tipo idea? …».
+A parità niente. Il suggerimento non entra nella nota né nel registro, non cambia il codice di uscita e non blocca.
+
 ## La revisione
 
 Il comando `review` (o `revisione`) dice che cosa conviene guardare nel quaderno. È solo lettura:

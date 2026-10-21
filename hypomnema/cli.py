@@ -39,7 +39,7 @@ from typing import TextIO
 
 from hypomnema import (
     __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
-    fuso_del_sistema, promemoria, registro, revisione, risposte, sportello, testimone,
+    fuso_del_sistema, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
 from hypomnema.versioni import LEGENDA, Quaderno, Storia
@@ -52,13 +52,13 @@ INGLESE = {
     "stato": "status", "istantanea": "snapshot", "cambiati": "changed", "controlla": "check",
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
-    "revisione": "review", "etichette": "labels", "riscontri": "matches",
+    "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
 # I comandi che leggono il quaderno: aspettano che un passaggio dello sportello finisca (vedi blocco).
 LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary", "labels",
-           "matches")
+           "matches", "patterns")
 
 
 def _filtri(comando: argparse.ArgumentParser) -> None:
@@ -107,6 +107,14 @@ def _parser() -> argparse.ArgumentParser:
     )
     riscontri.add_argument("--about", "--cosa", dest="cosa", action="append", default=[], metavar="ETICHETTA",
                            help="solo queste etichette COSA (si può ripetere)")
+    schemi_parser = comandi.add_parser(
+        "patterns", aliases=["schemi"],
+        help="le sequenze di parole tipiche di ogni tipo di nota, dalle note dell'utente (solo lettura)",
+    )
+    schemi_parser.add_argument("--all", "--tutti", dest="tutti", action="store_true",
+                               help="mostra tutte le sequenze tipiche, non solo le più frequenti")
+    schemi_parser.add_argument("--measure", "--misura", dest="misura", action="store_true",
+                               help="quante volte gli schemi indovinano il tipo: sulle stesse note e a turno")
     comandi.add_parser(
         "review", aliases=["revisione"],
         help="che cosa conviene guardare nel quaderno: rami, note ferme, promemoria scaduti, note nominate (solo lettura)",
@@ -244,6 +252,7 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
         print(f"ACCETTATA: {cosa} è stata salvata nel quaderno ({relativo}).", file=uscita)
     if esito.accettata:
         print("Il passaggio è annotato nel registro.", file=uscita)
+        _stampa_suggerimento(esito, uscita)
         return 0
     print("RIFIUTATA: la nota non è stata salvata." if not esito.scritte
           else "RIFIUTATA: il resto del cambiamento non è stato salvato.", file=uscita)
@@ -253,7 +262,23 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
         # (per esempio un finto "ACCETTATA") può comparire nella risposta che legge Claude.
         print(f"- {registro.su_una_riga(motivo)}", file=uscita)
     print("Il passaggio è annotato nel registro.", file=uscita)
+    _stampa_suggerimento(esito, uscita)
     return 1
+
+
+# Come si dice il tipo nel suggerimento: «suona come una decisione».
+COME_SUONA = {"decision": "una decisione", "idea": "un'idea", "todo": "una cosa da fare",
+              "open": "una questione aperta", "fact": "un fatto"}
+
+
+def _stampa_suggerimento(esito, uscita: TextIO) -> None:
+    """Dalla 0.9.0: il tipo che suona meglio secondo gli schemi dell'utente. Solo un suggerimento."""
+    if esito.suggerimento is None:
+        return
+    tipo, trovate, proposto = esito.suggerimento
+    citate = ", ".join(f"«{s}»" for s in trovate)
+    print(f"SUGGERIMENTO (non cambia niente): suona come {COME_SUONA[tipo]} ({tipo}: {citate}). È giusto il tipo "
+          f"{proposto}? Per cambiarlo serve updates.", file=uscita)
 
 
 def _mostra_con_collegate(storia: Storia, quaderno: Quaderno, segno: str, conferme, gia_mostrate: set[str],
@@ -651,6 +676,34 @@ def _riscontri(argomenti, config, uscita: TextIO) -> int:
           "«a mano, non nel testo»: proposta a mano, e nel testo non c'è.", file=uscita)
     for riga in righe:
         print(riga, file=uscita)
+    return 0
+
+
+def _schemi(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura (dalla 0.9.0): gli schemi del modo di parlare dell'utente, e se si chiede la misura."""
+    note = schemi.note_dell_utente(cercatore.leggi(config))
+    conti = schemi.Conti.da(note)
+    print(f"Schemi del modo di parlare dell'utente: {len(note)} note dell'utente (prima versione di ogni nota; le note "
+          "di Claude non contano).", file=uscita)
+    print(f"Una sequenza di 2 o 3 parole è tipica di un tipo se compare in almeno {schemi.MIN_NOTE} note di quel tipo "
+          f"e almeno il {schemi.QUOTA:.0%} delle sue note è di quel tipo.", file=uscita)
+    for tipo in schemi.TIPI:
+        trovati = conti.schemi(tipo)
+        mostrati = trovati if argomenti.tutti else trovati[:schemi.DA_MOSTRARE]
+        quante = "1 nota" if conti.note_per_tipo[tipo] == 1 else f"{conti.note_per_tipo[tipo]} note"
+        elenco = ", ".join(f"«{s}» {n}" for s, n in mostrati) or "nessuno schema"
+        resto = len(trovati) - len(mostrati)
+        altri = f" (e altri {resto}: --all per vederli)" if resto else ""
+        print(f"- {tipo} ({quante}): {elenco}{altri}", file=uscita)
+    if argomenti.misura:
+        print("", file=uscita)
+        for titolo, a_turno in (("sulle stesse note (ottimista: gli schemi vengono anche dalla nota da indovinare)",
+                                 False),
+                                ("a turno (onesta: ogni nota tolta dal calcolo prima di indovinarla)", True)):
+            m = schemi.misura(note, a_turno)
+            print(f"Misura {titolo}: {m.note} note, tipo giusto {m.giuste}, nessuno schema {m.senza}, "
+                  f"tipo sbagliato {m.note - m.giuste - m.senza}.", file=uscita)
+        print("È una prova, non una garanzia: il tipo lo sceglie sempre chi propone.", file=uscita)
     return 0
 
 
@@ -1054,6 +1107,8 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
         return _etichette(config, uscita)
     if comando == "matches":
         return _riscontri(argomenti, config, uscita)
+    if comando == "patterns":
+        return _schemi(argomenti, config, uscita)
     if comando == "review":
         return _revisione(config, adesso, uscita)
     if comando == "claude-settings":

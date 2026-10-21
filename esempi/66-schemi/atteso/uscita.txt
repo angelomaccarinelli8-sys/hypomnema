@@ -1,0 +1,90 @@
+$ hypomnema propose 01-decisione.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 02-decisione.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 03-decisione.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 04-idea.json
+ACCETTATA: la nota 0004 è stata salvata nel quaderno (note/0004.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 05-idea.json
+ACCETTATA: la nota 0005 è stata salvata nel quaderno (note/0005.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 06-idea.json
+ACCETTATA: la nota 0006 è stata salvata nel quaderno (note/0006.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 07-da-fare.json
+ACCETTATA: la nota 0007 è stata salvata nel quaderno (note/0007.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 08-da-fare.json
+ACCETTATA: la nota 0008 è stata salvata nel quaderno (note/0008.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 09-claude.json
+ACCETTATA: la nota 0009 è stata salvata nel quaderno (note/0009.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema patterns
+Schemi del modo di parlare dell'utente: 8 note dell'utente (prima versione di ogni nota; le note di Claude non contano).
+Una sequenza di 2 o 3 parole è tipica di un tipo se compare in almeno 2 note di quel tipo e almeno il 60% delle sue note è di quel tipo.
+- decision (3 note): «d'ora in poi» 3
+- idea (3 note): «magari un giorno» 3
+- todo (2 note): «devo ricordarmi» 2, «devo ricordarmi di» 2
+- open (0 note): nessuno schema
+- fact (0 note): nessuno schema
+[codice di uscita: 0]
+
+$ hypomnema schemi --misura
+Schemi del modo di parlare dell'utente: 8 note dell'utente (prima versione di ogni nota; le note di Claude non contano).
+Una sequenza di 2 o 3 parole è tipica di un tipo se compare in almeno 2 note di quel tipo e almeno il 60% delle sue note è di quel tipo.
+- decision (3 note): «d'ora in poi» 3
+- idea (3 note): «magari un giorno» 3
+- todo (2 note): «devo ricordarmi» 2, «devo ricordarmi di» 2
+- open (0 note): nessuno schema
+- fact (0 note): nessuno schema
+
+Misura sulle stesse note (ottimista: gli schemi vengono anche dalla nota da indovinare): 8 note, tipo giusto 8, nessuno schema 0, tipo sbagliato 0.
+Misura a turno (onesta: ogni nota tolta dal calcolo prima di indovinarla): 8 note, tipo giusto 6, nessuno schema 2, tipo sbagliato 0.
+È una prova, non una garanzia: il tipo lo sceglie sempre chi propone.
+[codice di uscita: 0]
+
+$ hypomnema propose 10-idea-che-suona-decisione.json
+ACCETTATA: la nota 0010 è stata salvata nel quaderno (note/0010.md).
+Il passaggio è annotato nel registro.
+SUGGERIMENTO (non cambia niente): suona come una decisione (decision: «d'ora in poi»). È giusto il tipo idea? Per cambiarlo serve updates.
+[codice di uscita: 0]
+
+$ hypomnema propose 11-decisione-giusta.json
+ACCETTATA: la nota 0011 è stata salvata nel quaderno (note/0011.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema patterns
+Schemi del modo di parlare dell'utente: 10 note dell'utente (prima versione di ogni nota; le note di Claude non contano).
+Una sequenza di 2 o 3 parole è tipica di un tipo se compare in almeno 2 note di quel tipo e almeno il 60% delle sue note è di quel tipo.
+- decision (4 note): «d'ora in poi» 4, «in poi il» 2
+- idea (4 note): «magari un giorno» 3
+- todo (2 note): «devo ricordarmi» 2, «devo ricordarmi di» 2
+- open (0 note): nessuno schema
+- fact (0 note): nessuno schema
+[codice di uscita: 0]
+

@@ -372,6 +372,11 @@ because the witness did not record them).
    - `RIFIUTATA`: read the reasons (in English). If it is a format mistake of yours, fix it and
      propose again. **Never get around a rule** (for example by changing the author to get a
      decision through): if the rule blocks the note, the note does not get in.
+   - `SUGGERIMENTO (non cambia niente): suona come una decisione (…)` (from 0.9.0, only for the user's new
+     notes): the patterns of the user's way of speaking, counted from the notebook with fixed rules, say
+     that the text sounds like another kind. It changes nothing. Tell the user in one line («Lo schema
+     dice che suona come una decisione: la lascio idea?») and **never change the kind by yourself**: if
+     the user says so, propose an `updates` by the user. `P patterns` shows the patterns.
 4. You can delete the temporary proposal file: it is not part of the notebook.
 
 Do not modify, rename or delete the notebook's files (`note/`, `registro.md`, `etichette.toml`). The
