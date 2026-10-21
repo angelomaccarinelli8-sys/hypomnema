@@ -23,6 +23,11 @@ Hypomnema e come aggiornarsi.
   intatto; la nota integrata esce dal recap ma resta nel quaderno e nella ricerca con `--all`.
 - **Annullare una nota** (I0168), con `cancels` (`annulla`): una nota che non vale più, anche un'idea o una decisione,
   diversa da «fatto». Il codice prende una C davanti: `CD0156.1`. Si fa valere di nuovo con `reopens`.
+- **La revisione propone le sistemazioni** (I0167). `review` segnala anche le note integrabili (stesso autore, una COSA
+  in comune, una nomina l'altra, anche di tipo diverso), e `review --proposte` stampa le proposte pronte: le completi
+  con le tue parole e le passi allo sportello una alla volta, se le vuoi.
+- **Il grafo del taccuino** (I0204). `graph grafo.html` scrive una pagina, fuori dal quaderno, con le note colorate per
+  tipo, le etichette e i rimandi tra le note.
 
 Le note già scritte non si toccano e il quaderno della 0.8.0 si legge come prima. Aggiorna tutte e due le copie del
 programma (plugin di Claude Code e `programma-chat`).

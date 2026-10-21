@@ -79,7 +79,7 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 
 | File | Ruolo |
 |---|---|
-| `hypomnema/cli.py` | Riga di comando, messaggi a schermo (in italiano). Dalla 0.5.0 i comandi hanno il nome inglese e quello italiano come sinonimo per sempre (`INGLESE`): `propose`/`proponi`, `search`/`cerca` (`--all`/`--tutte`), `reminders`/`promemoria`, `recap`, `witness`/`testimone`, `status`/`stato`, `snapshot`/`istantanea`, `changed`/`cambiati`, `check`/`controlla`, `compare`/`confronta`, `replies`/`risposte`, `fingerprint`/`impronta`, `diary`/`diario` (`--last`/`--ultimi`, `--around`/`--intorno`), `archive`/`archivio`, `start`/`avvio`, `protect`/`protezione`, `claude-settings`/`impostazioni-claude`, `review`/`revisione` (0.6.0), `labels`/`etichette` (0.7.0; `search` e `recap` hanno `--who`/`--chi` e `--about`/`--cosa`), `matches`/`riscontri` (0.8.0), `patterns`/`schemi` (0.9.0, `--all`, `--misura`). `confronta` (due file identici byte per byte?) non usa la configurazione. |
+| `hypomnema/cli.py` | Riga di comando, messaggi a schermo (in italiano). Dalla 0.5.0 i comandi hanno il nome inglese e quello italiano come sinonimo per sempre (`INGLESE`): `propose`/`proponi`, `search`/`cerca` (`--all`/`--tutte`), `reminders`/`promemoria`, `recap`, `witness`/`testimone`, `status`/`stato`, `snapshot`/`istantanea`, `changed`/`cambiati`, `check`/`controlla`, `compare`/`confronta`, `replies`/`risposte`, `fingerprint`/`impronta`, `diary`/`diario` (`--last`/`--ultimi`, `--around`/`--intorno`), `archive`/`archivio`, `start`/`avvio`, `protect`/`protezione`, `claude-settings`/`impostazioni-claude`, `review`/`revisione` (0.6.0), `labels`/`etichette` (0.7.0; `search` e `recap` hanno `--who`/`--chi` e `--about`/`--cosa`), `matches`/`riscontri` (0.8.0), `patterns`/`schemi` (0.9.0, `--all`, `--misura`), `graph`/`grafo` (0.9.0); `review --proposals`/`--proposte` (0.9.0). `confronta` (due file identici byte per byte?) non usa la configurazione. |
 | `hypomnema/cambiamenti.py` | `istantanea` e `cambiati` (solo lettura): i file del quaderno da riportare dopo una proposta, con il controllo che sia successo solo ciò che fa lo sportello. |
 | `chat/hypomnema-chat.toml` | Modello della configurazione per la chat: testimone spento e `modalita = "chat"` (note dell'utente marcate «chat, senza testimone»). |
 | `hypomnema/controllo.py` | `controlla` (solo lettura): ogni nota ha la sua riga ACCETTATA nel registro, e viceversa; righe del registro estranee (con il numero) e registro senza a capo finale. Segnala, non ripara. |
@@ -110,6 +110,7 @@ nessun pezzo del codice di Sophia. Negli esempi e nei test solo dati inventati.
 | `hypomnema/etichette.py` | Le etichette CHI e COSA (0.7.0): la lista `etichette.toml` nella cartella del quaderno, scritta dall'utente; errore chiaro se è scritta male. Dalla 0.8.0 `trova_nel_testo` (le COSA trovate nel `text`, parola intera come `search`), `cosa_finali`, `cosa_a_mano`, `pezzo_di_frase` (per `matches`); la lista si legge a ogni proposta. |
 | `hypomnema/fuso_del_sistema.py` | Il fuso orario dal sistema operativo dell'utente (0.7.0): sul computer dell'utente vale il sistema e il nome del fuso si scrive in `quaderno/fuso-del-sistema.jsonl` quando cambia; le macchine in UTC (chat, cloud) usano la riga `fuso`, poi il file, poi UTC. Riconosce le macchine in UTC dal nome del fuso. Le prove fissano una macchina in UTC (`tests/__init__.py`); un esempio con `sistema-operativo.txt` gira come sul computer dell'utente. |
 | `hypomnema/schemi.py` | Gli schemi del modo di parlare dell'utente (0.9.0, D0210): le sequenze di 2-3 parole tipiche di ogni tipo, dalle note dell'utente (prima versione), con le regole fisse dello script del 21/10 (soglie in cima al file); la misura sulle stesse note e a turno; il suggerimento dello sportello (solo se un altro tipo vince). |
+| `hypomnema/grafo.py` | Il grafo del taccuino (0.9.0, I0204): pagina HTML con SVG, disposizione fissa, fuori dal quaderno; rimandi tra note e legami con le etichette. |
 | `hypomnema/_cldr/` | Copia non modificata di `windowsZones.xml` di Unicode CLDR (release-46, licenza Unicode): i nomi dei fusi di Windows → `Europe/Rome`, con la regione. |
 | `hypomnema/aggiunta.py` | Una riga in fondo a un file con una sola scrittura in aggiunta (0.6.1): `O_APPEND` su Linux e macOS, il solo permesso di aggiungere (`FILE_APPEND_DATA`) su Windows. La usano registro, testimoni e archivio. |
 | `hypomnema/_tomli/` | Copia non modificata di tomli 2.0.1 (MIT), solo per Python 3.10. |
@@ -187,8 +188,9 @@ Prossimo passo proposto:
 - **Riordino** (0.9.0, decisioni di Angelo del 21/10/2026): le COSA dal testo si calcolano alla lettura per tutte le
   note (`cercatore.leggi`, con avviso se la lista è scritta male); `integrates` in due casi, (a) parole nuove dello
   stesso autore, (b) `from_note` senza `text`, con la provenienza di B in `### From note`, e B esce dal recap senza file
-  nuovi (`Storia.integrata_in`); `cancels` con `status: cancelled` e la C nel codice. Il pezzo 5 (proposte della
-  revisione e grafo) è rimandato. I file di lavoro di Angelo per le prossime volte stanno in
+  nuovi (`Storia.integrata_in`); `cancels` con `status: cancelled` e la C nel codice. Pezzo 5: la revisione segnala
+  le integrabili (stesso autore, una COSA in comune, una nomina l'altra nel testo o nel contesto, tipi anche diversi)
+  e `review --proposte` stampa proposte pronte con `source`/`text` vuoti; `graph` scrive la pagina del grafo. I file di lavoro di Angelo per le prossime volte stanno in
   `C:\Users\ajmac\Hypomnema\scambio`.
 - **Il quaderno in valigia** (idea parcheggiata l'11/10/2026 sera): portare il quaderno con sé
   tra computer diversi. Non si fa per ora; da riprendere più avanti.

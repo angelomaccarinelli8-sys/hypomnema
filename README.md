@@ -672,6 +672,10 @@ ferma: semplicemente non aggiunge le COSA dal testo. Aggiornale tutte e due.
 - `integrates` (`integra`) aggiunge parole nuove in fondo a una nota, oppure (con `from_note`) il testo di un'altra nota
   sulla stessa cosa, che esce dal recap.
 - `cancels` (`annulla`) annulla una nota che non vale più (codice con la C: `CD0156.1`); `reopens` la fa valere di nuovo.
+- `review` segnala anche le note **integrabili** (stesso autore, una COSA in comune, una nomina l'altra);
+  `review --proposte` stampa le proposte pronte, da completare con le tue parole e proporre una alla volta.
+- `graph grafo.html` (`grafo`) scrive, fuori dal quaderno, una pagina con il grafo del taccuino: note, etichette e
+  rimandi. Si apre con il browser.
 
 ### Le tue parole e quelle di Claude restano separate
 

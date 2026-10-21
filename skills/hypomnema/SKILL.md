@@ -104,7 +104,12 @@ anything**: the register only grows and the decision is theirs. Then carry on no
    note, «ricordamelo» without a date, old branches, old chains not allowed today). If it finds something, **tell the user in
    one line**, for example «La revisione segnala 2 cose: la T0006 ha il promemoria scaduto e la
    O0004 è ferma da 46 giorni.» Do not change anything by yourself: each line says what *can* be
-   done, the user decides.
+   done, the user decides. From 0.9.0 it also lists notes **integrable** into another (same author, a COSA
+   in common, one names the other), and `P review --proposals` prints ready-made proposals with `source`
+   (and `text`) left empty: if the user accepts one, fill them with **the user's words** (never invented)
+   and propose it as usual, one at a time.
+   `P graph <file.html>` writes, outside the notebook, a page with the graph of the notebook: offer it when
+   the user wants to see the notebook as a whole.
 2. When a specific topic is needed later, run `P search <word>`. The search is by exact word,
    case-insensitive: try singular/plural too if needed. It also finds words inside compound names
    (`orto` finds `orto_balcone.py`). Notes come **from the most recent to the oldest**. **Closed

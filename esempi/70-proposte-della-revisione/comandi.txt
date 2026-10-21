@@ -1,0 +1,9 @@
+propose 1-idea-pozzo.json
+propose 2-decisione-pozzo.json
+propose 3-todo-promemoria.json
+propose 4-todo-senza-data.json
+propose 5-idea-gioco.json
+review
+revisione --proposte
+propose 6-integra-completata.json
+review

@@ -565,7 +565,26 @@ niente, con 1 se c'è qualcosa da guardare. Le regole sono fisse:
    «in … days/day/weeks/week»;
 6. **catena vecchia non permessa oggi**: una nota vecchia cambiava ciò che oggi non avrebbe il
    permesso di cambiare (vedi «Le note di prima delle versioni»): resta nella storia ma non vale, e la
-   riga dice con quale proposta l'utente può fare il cambiamento, se lo vuole.
+   riga dice con quale proposta l'utente può fare il cambiamento, se lo vuole;
+7. **integrabile** (dalla 0.9.0): due note dello stesso autore, non chiuse, non annullate e non già integrate, con
+   almeno una COSA in comune, e il testo o il contesto di una delle due nomina l'altra (anche di tipo diverso). Si
+   propone di integrare la più vecchia (numero più basso) nella più recente.
+
+**Le proposte pronte** (dalla 0.9.0): `review --proposals` (`--proposte`) stampa, dopo le segnalazioni, una proposta
+JSON per ogni segnalazione che ha una regola fissa: `done` per le ferme, i promemoria scaduti e le nominate, `updates`
+con `remind` per quelle senza data, `integrates` + `from_note` per le integrabili. Hanno la data di oggi, autore
+`user`, e `source` e `text` vuoti: le parole dell'utente non si inventano, e lo sportello rifiuta una proposta finché
+non sono scritte. Non passano da sole allo sportello: si completano e si propongono una alla volta.
+
+## Il grafo del taccuino (dalla 0.9.0)
+
+`graph FILE.html` (`grafo`) scrive una pagina HTML, fuori dalla cartella del quaderno, con il disegno del taccuino: le
+note come punti colorati per tipo con il codice accanto, le etichette (CHI con il bordo tratteggiato, COSA) come punti
+grandi su un cerchio, le linee per i rimandi tra le note (conferme; chiusure e correzioni delle note vecchie;
+integrazioni; un numero di nota scritto nel testo o nel contesto, tratteggiato) e, più chiare, per i legami con le
+etichette. Le note chiuse, annullate o integrate sono sbiadite. La disposizione è fissa (stesso quaderno, stessa
+pagina), la pagina non usa internet. Il comando non scrive mai dentro il quaderno e sovrascrive solo un file che è già
+una pagina del grafo.
 
 Il programma non capisce il senso delle parole: non sa se una nota dice «è fatta» o «è superata», e
 non legge le date scritte a parole. Per questo segnala soltanto, e decide l'utente.

@@ -39,7 +39,7 @@ from typing import TextIO
 
 from hypomnema import (
     __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
-    fuso_del_sistema, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
+    fuso_del_sistema, grafo, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
 from hypomnema.versioni import LEGENDA, Quaderno, Storia
@@ -52,13 +52,13 @@ INGLESE = {
     "stato": "status", "istantanea": "snapshot", "cambiati": "changed", "controlla": "check",
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
-    "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns",
+    "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns", "grafo": "graph",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
 # I comandi che leggono il quaderno: aspettano che un passaggio dello sportello finisca (vedi blocco).
 LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary", "labels",
-           "matches", "patterns")
+           "matches", "patterns", "graph")
 
 
 def _filtri(comando: argparse.ArgumentParser) -> None:
@@ -115,10 +115,17 @@ def _parser() -> argparse.ArgumentParser:
                                help="mostra tutte le sequenze tipiche, non solo le più frequenti")
     schemi_parser.add_argument("--measure", "--misura", dest="misura", action="store_true",
                                help="quante volte gli schemi indovinano il tipo: sulle stesse note e a turno")
-    comandi.add_parser(
+    disegna = comandi.add_parser(
+        "graph", aliases=["grafo"],
+        help="scrive una pagina HTML con il grafo del taccuino (note, etichette, rimandi), fuori dal quaderno",
+    )
+    disegna.add_argument("file", help="il file .html da scrivere, fuori dalla cartella del quaderno")
+    rivedi = comandi.add_parser(
         "review", aliases=["revisione"],
         help="che cosa conviene guardare nel quaderno: rami, note ferme, promemoria scaduti, note nominate (solo lettura)",
     )
+    rivedi.add_argument("--proposals", "--proposte", dest="proposte", action="store_true",
+                        help="mostra anche le proposte pronte, da completare e passare allo sportello una alla volta")
 
     registra = comandi.add_parser(
         "witness", aliases=["testimone"], help="registra un messaggio dell'utente (lo lancia Claude Code a ogni messaggio)"
@@ -588,7 +595,7 @@ def _etichette(config, uscita: TextIO) -> int:
     return 0
 
 
-def _revisione(config, adesso: datetime, uscita: TextIO) -> int:
+def _revisione(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: che cosa conviene guardare. 0 = niente, 1 = qualcosa da guardare."""
     archivio_note = _leggi(config, uscita)
     oggi = adesso.date()
@@ -600,6 +607,15 @@ def _revisione(config, adesso: datetime, uscita: TextIO) -> int:
     print(f"Revisione del quaderno ({oggi.isoformat()}): {quante}. Non è stato cambiato niente.", file=uscita)
     for voce in segnalazioni:
         print(f"- {voce.storia.ultima.etichetta(config.segno_chiusa)}: {voce.testo}", file=uscita)
+    proposte = [v for v in segnalazioni if v.proposta is not None] if argomenti.proposte else []
+    if proposte:
+        print("", file=uscita)
+        print(f"Proposte pronte: {len(proposte)}. Non sono state passate allo sportello: ognuna va completata con "
+              "«source» e, dove c'è, «text» (le parole dell'utente, mai inventate), e poi proposta una alla volta "
+              "con propose. Se manca qualcosa lo sportello la rifiuta.", file=uscita)
+        for numero, voce in enumerate(proposte, start=1):
+            print(f"Proposta {numero} ({voce.storia.ultima.etichetta(config.segno_chiusa)}):", file=uscita)
+            print(json.dumps(voce.proposta, ensure_ascii=False), file=uscita)
     print("", file=uscita)
     print(f"Legenda: {_legenda(archivio_note, config.segno_chiusa)}", file=uscita)
     return 1
@@ -723,6 +739,37 @@ def _schemi(argomenti, config, uscita: TextIO) -> int:
             print(f"Misura {titolo}: {m.note} note, tipo giusto {m.giuste}, nessuno schema {m.senza}, "
                   f"tipo sbagliato {m.note - m.giuste - m.senza}.", file=uscita)
         print("È una prova, non una garanzia: il tipo lo sceglie sempre chi propone.", file=uscita)
+    return 0
+
+
+def _grafo(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura sul quaderno (dalla 0.9.0): scrive la pagina del grafo in un file fuori dal quaderno.
+
+    Sovrascrive solo un file che è già una pagina del grafo di Hypomnema: un altro file non lo tocca.
+    """
+    file = Path(argomenti.file).resolve()
+    if config.cartella_quaderno.resolve() in (file, *file.parents):
+        print("ERRORE: la pagina del grafo non va dentro la cartella del quaderno: scegli un file fuori.", file=uscita)
+        return 2
+    if file.exists():
+        try:
+            inizio = file.read_text(encoding="utf-8")[:200]
+        except (OSError, UnicodeDecodeError):
+            inizio = ""
+        if grafo.SEGNO_PAGINA not in inizio:
+            print(f"ERRORE: il file «{file}» c'è già e non è una pagina del grafo di Hypomnema: non lo tocco. Scegli "
+                  "un altro nome.", file=uscita)
+            return 2
+    archivio_note = _leggi(config, uscita)
+    try:
+        lista = etichette.leggi(config.cartella_quaderno)
+    except etichette.ErroreEtichette:
+        lista = None  # l'avviso l'ha già dato _leggi
+    testo = grafo.pagina(archivio_note, lista, config.segno_chiusa)
+    file.write_text(testo, encoding="utf-8", newline="\n")
+    note = len(archivio_note.elenco())
+    print(f"Grafo del taccuino scritto in «{file}»: {note} note, {len(grafo.collegamenti(archivio_note))} rimandi. "
+          "Aprilo con il browser. Il quaderno non è stato toccato.", file=uscita)
     return 0
 
 
@@ -1128,8 +1175,10 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
         return _riscontri(argomenti, config, uscita)
     if comando == "patterns":
         return _schemi(argomenti, config, uscita)
+    if comando == "graph":
+        return _grafo(argomenti, config, uscita)
     if comando == "review":
-        return _revisione(config, adesso, uscita)
+        return _revisione(argomenti, config, adesso, uscita)
     if comando == "claude-settings":
         return _impostazioni_claude(argomenti, config, uscita)
     return _cerca(argomenti, config, uscita)

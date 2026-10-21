@@ -221,5 +221,81 @@ class TestAnnullare(ConLista):
         self.assertIn("closed or already integrated", self.motivi(integrates="0004", from_note="0001"))
 
 
+class TestProposteDellaRevisione(ConLista):
+    def setUp(self):
+        super().setUp()
+        self.accettata(kind="idea", text="Un pozzo per l'orto.")                                   # 0001
+        self.accettata(kind="decision", text="Il pozzo dell'orto lo scaviamo a marzo.",
+                       context="Conferma dell'idea 0001.")                                         # 0002
+        self.accettata(kind="idea", text="Un gioco con le corde, come nella nota 0001.")         # 0003
+        self.accettata(kind="idea", text="L'orto di Claude, come la nota 0001.",
+                       author="claude", knowledge="inferred")                                        # 0004
+
+    def test_integrabili(self):
+        codice, uscita = self.comando("review")
+        self.assertEqual(codice, 1)
+        # Stesso autore, COSA in comune (orto), e il contesto della 0002 nomina la 0001: anche se i tipi sono diversi.
+        self.assertIn("- I0001: integrabile nella nota D0002: stesso autore, stessa COSA (orto) e una delle due nomina "
+                      "l'altra. Si può integrare con integrates: 0002 e from_note: 0001", uscita)
+        self.assertNotIn("nella nota I0003", uscita)  # nomina la 0001 ma non ha COSA in comune
+        self.assertNotIn("nella nota I0004", uscita)  # stessa COSA, ma un altro autore
+        self.assertNotIn("Proposte pronte", uscita)
+
+    def test_proposte_pronte_da_completare(self):
+        self.accettata(kind="todo", text="Comprare i semi, ricordamelo tra una settimana.")  # 0005
+        _, uscita = self.comando("review", "--proposte")
+        self.assertIn("Proposte pronte: 2.", uscita)
+        self.assertIn('{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "updates": "0005", '
+                      '"remind": "", "text": ""}', uscita)
+        self.assertIn('{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "integrates": '
+                      '"0002", "from_note": "0001"}', uscita)
+        # Così com'è, una proposta pronta è rifiutata: «source» (e «text») li scrive l'utente.
+        file = self.cartella / "p.json"
+        file.write_text('{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", '
+                        '"integrates": "0002", "from_note": "0001"}', encoding="utf-8")
+        self.assertEqual(self.comando("propose", str(file))[0], 1)
+        file.write_text('{"date": "2026-01-15", "source": "chat del 15 gennaio 2026", "author": "user", '
+                        '"knowledge": "stated", "integrates": "0002", "from_note": "0001"}', encoding="utf-8")
+        self.assertEqual(self.comando("propose", str(file))[0], 0)
+        self.assertNotIn("integrabile", self.comando("review")[1])
+
+
+class TestGrafo(ConLista):
+    def setUp(self):
+        super().setUp()
+        self.accettata(kind="idea", text="Un pozzo per l'orto.", who="Anna")         # 0001
+        self.accettata(kind="decision", text="Sì, come nella nota 0001.", confirms="0001")  # 0002
+        self.accettata(kind="todo", text="Comprare il pane.")                        # 0003
+        self.pagina = self.cartella / "fuori" / "grafo.html"
+        self.pagina.parent.mkdir()
+
+    def test_pagina_fissa_e_quaderno_intatto(self):
+        prima = self.file_del_quaderno()
+        codice, uscita = self.comando("graph", str(self.pagina))
+        self.assertEqual(codice, 0, uscita)
+        testo = self.pagina.read_text(encoding="utf-8")
+        self.assertTrue(testo.startswith("<!doctype html>\n<!-- Hypomnema: grafo del taccuino -->"))
+        self.assertIn("<title>Grafo del taccuino</title>", testo)
+        self.assertIn("<title>I0001: Un pozzo per l&#x27;orto.</title>", testo)
+        self.assertIn("<title>0002 conferma 0001</title>", testo)
+        self.assertIn("<title>0002 nomina 0001</title>", testo)
+        self.assertIn(">Anna</text>", testo)
+        self.assertIn(">orto</text>", testo)
+        self.assertNotIn("http", testo.replace('xmlns="http', ""))  # niente internet
+        self.assertEqual(self.file_del_quaderno(), prima)
+        # Stesso quaderno, stessa pagina; con il nome italiano sovrascrive solo una pagina del grafo.
+        self.assertEqual(self.comando("grafo", str(self.pagina))[0], 0)
+        self.assertEqual(self.pagina.read_text(encoding="utf-8"), testo)
+
+    def test_non_dentro_il_quaderno_e_non_su_altri_file(self):
+        codice, uscita = self.comando("graph", str(self.config.cartella_quaderno / "grafo.html"))
+        self.assertEqual(codice, 2)
+        self.assertIn("non va dentro la cartella del quaderno", uscita)
+        altro = self.cartella / "fuori" / "mio.html"
+        altro.write_text("<p>mio</p>", encoding="utf-8")
+        self.assertEqual(self.comando("graph", str(altro))[0], 2)
+        self.assertEqual(altro.read_text(encoding="utf-8"), "<p>mio</p>")
+
+
 if __name__ == "__main__":
     unittest.main()
