@@ -3,6 +3,31 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.10.0 (prototipo) — l'albero delle etichette e la regola dell'integrazione
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **Rami e sotto-rami** (I0213). Nel file `etichette.toml` una COSA può avere dei sotto-rami, gli argomenti, ognuno con
+  le sue parole: una tabella `[rami.orto]` con le righe `pomodori = ["pomodori", "pomodoro"]`. Conta solo la lista di
+  parole, non il nome; una nota prende un sotto-ramo solo se ha già la COSA del ramo. I sotto-rami si calcolano quando
+  si legge, anche per le note di prima. Un file senza `[rami…]` funziona come prima.
+- **Il comando `tree`** (`albero`), in sola lettura: ramo → sotto-rami → note, con le catene di integrazione su una riga
+  sola (`I0005.2 ← I0002 ← I0001`) e la voce «senza argomento» per le note del ramo che nessun sotto-ramo prende: lì
+  mancano parole. `--cosa orto` per un ramo solo, `--all` anche per le note chiuse e annullate.
+
+Le note già scritte non si toccano e il quaderno della 0.9.0 si legge come prima. Aggiorna tutte e due le copie del
+programma (plugin di Claude Code e `programma-chat`).
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+e su Windows, nella cartella Hypomnema: `git -C programma-chat pull`.
+
+**Nella chat di claude.ai:** scarica il nuovo `hypomnema-skill.zip` e caricalo tra le skill nelle impostazioni di
+Claude, sostituendo quello vecchio.
+
 ## 0.9.0 (prototipo) — gli schemi del modo di parlare e il riordino del taccuino
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*

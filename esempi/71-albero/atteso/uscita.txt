@@ -1,0 +1,52 @@
+$ hypomnema tree
+Albero del taccuino: 2 rami. Non è stato cambiato niente.
+
+orto · 4 note
+  pomodori · 2
+    I0002  nell'orto i pomodori li legherei con lo spago
+    I0001  per i pomodori dell'orto userei i tutori di bambù
+  irrigazione · 1
+    F0003  nell'orto l'irrigazione a goccia parte alle 6
+  senza argomento · 1
+    I0004  nell'orto metterei una panchina
+
+bilancio · 1 nota
+  senza argomento · 1
+    I0005  il bilancio lo chiuderei ogni mese
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa · ← integrata nella nota a sinistra
+[codice di uscita: 0]
+
+$ hypomnema propose 1-integra-pomodori.json
+ACCETTATA: la versione 0002.1 della nota 0002 è stata salvata nel quaderno (note/0002.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema albero --cosa orto
+Albero del taccuino: 1 ramo. Non è stato cambiato niente.
+
+orto · 3 note
+  pomodori · 1
+    I0002.1 ← I0001  nell'orto i pomodori li legherei con lo spago …
+  irrigazione · 1
+    F0003  nell'orto l'irrigazione a goccia parte alle 6
+  senza argomento · 1
+    I0004  nell'orto metterei una panchina
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa · ← integrata nella nota a sinistra
+[codice di uscita: 0]
+
+$ hypomnema tree --cosa bilancio
+Albero del taccuino: 1 ramo. Non è stato cambiato niente.
+
+bilancio · 1 nota
+  senza argomento · 1
+    I0005  il bilancio lo chiuderei ogni mese
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa · ← integrata nella nota a sinistra
+[codice di uscita: 0]
+
+$ hypomnema tree --cosa Orto
+ERRORE: la COSA «Orto» non è nella lista e nessuna nota la usa (le COSA sono: orto, bilancio). Il confronto è esatto: maiuscole e minuscole contano.
+[codice di uscita: 2]
+

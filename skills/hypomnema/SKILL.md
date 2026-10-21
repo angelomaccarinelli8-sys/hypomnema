@@ -361,6 +361,10 @@ search, respect it as a rule of the notebook.
   the user's notes you propose them and say them to the user; the user can change them.
 - Labels change with `updates`. You can add labels to one of the user's notes **only if it has none
   proposed by hand yet**; once set, only the user changes them.
+- **Sub-branches** (from 0.10.0): a COSA can have sub-branches (topics) with their words, in `[rami.<cosa>]` of
+  `etichette.toml` (only the user writes them). `P tree` (`albero`, `--cosa X` for one branch) shows branch →
+  sub-branches → notes, integration chains on one line (`I0005.2 ← I0002 ← I0001`), and «senza argomento» for the
+  notes of the branch that no sub-branch catches: tell the user when that list is long, words are missing.
 - `P search --about orto`, `P recap --about orto` (`--who`, `--chi`, `--cosa` too), `P labels` (counts),
   `P matches` (where the desk found each COSA, read only). If `P status` says `ERRORE` on the labels
   line, tell the user: until the file is fixed the desk saves nothing.

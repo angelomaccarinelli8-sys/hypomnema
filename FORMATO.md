@@ -522,6 +522,41 @@ progetti o argomenti) proposte a mano. L'intestazione le mostra dopo la priorit�
   quante sono aperte (open, todo e promemoria non chiusi); per le COSA anche quante dal testo e quante
   proposte (dalla 0.8.0); poi le etichette usate in qualche nota ma non più nella lista.
 
+## L'albero delle etichette: rami e sotto-rami (dalla 0.10.0)
+
+Una COSA (il **ramo**) può avere dei **sotto-rami**, gli argomenti, ognuno con le sue parole. Si scrivono in
+`etichette.toml`, sotto la lista, con una tabella `[rami.<COSA>]` (idea di Angelo I0213, decisione del 21/10/2026):
+
+```toml
+chi = ["Anna", "Marco"]
+cosa = ["orto", "bilancio"]
+
+[rami.orto]
+pomodori = ["pomodori", "pomodoro"]
+irrigazione = ["irrigazione", "goccia"]
+```
+
+- Un file **senza** `[rami…]` funziona esattamente come prima. Le parole le scrive solo l'utente.
+- **Conta solo la lista di parole**: il nome del sotto-ramo non si cerca (può essere descrittivo, per esempio
+  `"schema ad albero" = ["albero", "rami"]`). Le parole si cercano come le COSA: parola intera, maiuscole indifferenti,
+  solo nel `text`, mai nel contesto di Claude.
+- Una nota prende un sotto-ramo **solo se ha già la COSA del ramo** (a mano o dal testo); può averne più d'uno.
+- I sotto-rami si calcolano **al momento della lettura**, per tutte le note (anche quelle scritte prima): nessun file
+  si scrive.
+- **Due modi di calcolarli.** Per *vedere* (`tree`, `graph --albero`) dal testo dell'ultima versione, con le parti
+  integrate. Per *decidere* (la regola dello sportello e le catene della revisione) dal **testo proprio**: il testo
+  della prima versione o della sua ultima correzione (`corrects`), mai le parti aggiunte con `integrates`. Così una nota
+  che riceve integrazioni non si allarga a tutto il ramo.
+- **Scritto male** (errore chiaro, come per la lista): una tabella `[rami.X]` con una X che non è nella lista `cosa`;
+  un sotto-ramo senza parole o che non è una lista di testi; una parola vuota, con spazi ai lati, ripetuta, o presente in
+  due sotto-rami dello stesso ramo (maiuscole indifferenti). La stessa parola in due rami diversi va bene.
+- **`tree`** (`albero`), in sola lettura: per ogni ramo (nell'ordine della lista, poi le COSA usate ma fuori lista in
+  ordine alfabetico) i sotto-rami con le loro note, dalla più recente, e per ultima la voce **«senza argomento»**: le
+  note con la COSA ma senza nessun sotto-ramo (così si vede dove mancano parole). Un sotto-ramo senza note dice
+  «nessuna nota». Una **catena di integrazione** sta su una riga: la nota che contiene le altre in testa, poi quelle
+  integrate in lei, dalla più recente (`I0005.2 ← I0002 ← I0001`); le note integrate non compaiono da sole. Le note
+  chiuse (tranne le decisioni) e le annullate si vedono solo con `--all`; `--cosa X` (`--about`) mostra solo quel ramo.
+
 ## Gli schemi del modo di parlare (dalla 0.9.0)
 
 Il comando `patterns` (`schemi`), in sola lettura, ricava dal quaderno le sequenze di parole tipiche di ogni tipo di

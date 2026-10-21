@@ -21,6 +21,7 @@
     python -m hypomnema protezione              # ferma gli strumenti di Claude sul quaderno (lo lancia Claude Code)
     python -m hypomnema etichette               # le etichette CHI e COSA, con quante note ha ognuna
     python -m hypomnema cerca --cosa orto       # anche search e recap filtrano per etichette (--chi, --cosa)
+    python -m hypomnema albero --cosa orto      # ramo → sotto-rami → note, con le catene di integrazione
 
 Anche il comando "risposte", come "testimone", non esce mai con 2: per Claude Code, alla fine
 di una risposta, il codice 2 vorrebbe dire costringere Claude a continuare.
@@ -38,7 +39,7 @@ from pathlib import Path
 from typing import TextIO
 
 from hypomnema import (
-    __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
+    __version__, albero, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
     fuso_del_sistema, grafo, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
@@ -53,12 +54,13 @@ INGLESE = {
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
     "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns", "grafo": "graph",
+    "albero": "tree",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
 # I comandi che leggono il quaderno: aspettano che un passaggio dello sportello finisca (vedi blocco).
 LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary", "labels",
-           "matches", "patterns", "graph")
+           "matches", "patterns", "graph", "tree")
 
 
 def _filtri(comando: argparse.ArgumentParser) -> None:
@@ -120,6 +122,14 @@ def _parser() -> argparse.ArgumentParser:
         help="scrive una pagina HTML con il grafo del taccuino (note, etichette, rimandi), fuori dal quaderno",
     )
     disegna.add_argument("file", help="il file .html da scrivere, fuori dalla cartella del quaderno")
+    pianta = comandi.add_parser(
+        "tree", aliases=["albero"],
+        help="l'albero delle etichette: ramo (COSA) → sotto-rami → note, con le catene di integrazione (solo lettura)",
+    )
+    pianta.add_argument("--about", "--cosa", dest="cosa", action="append", default=[], metavar="ETICHETTA",
+                        help="solo questo ramo (si può ripetere)")
+    pianta.add_argument("--all", "--tutte", dest="tutte", action="store_true",
+                        help="mostra anche le note chiuse e annullate")
     rivedi = comandi.add_parser(
         "review", aliases=["revisione"],
         help="che cosa conviene guardare nel quaderno: rami, note ferme, promemoria scaduti, note nominate (solo lettura)",
@@ -773,6 +783,52 @@ def _grafo(argomenti, config, uscita: TextIO) -> int:
     return 0
 
 
+def _albero(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura (dalla 0.10.0): l'albero delle etichette, ramo → sotto-rami → note."""
+    archivio_note = _leggi(config, uscita)
+    try:
+        lista = etichette.leggi(config.cartella_quaderno)
+    except etichette.ErroreEtichette:
+        lista = None  # l'avviso l'ha già dato _leggi
+    rami = albero.albero(archivio_note, lista, argomenti.tutte)
+    if not rami:
+        print(f"L'albero è vuoto: nessuna nota ha un'etichetta COSA (la lista è nel file {etichette.NOME_FILE} della "
+              "cartella del quaderno).", file=uscita)
+        return 0
+    nomi = [r for r, _ in rami]
+    for scelta in argomenti.cosa:
+        if scelta not in nomi:
+            print(f"ERRORE: la COSA «{scelta}» non è nella lista e nessuna nota la usa (le COSA sono: "
+                  f"{', '.join(nomi)}). Il confronto è esatto: maiuscole e minuscole contano.", file=uscita)
+            return 2
+    if argomenti.cosa:
+        rami = [(r, sotto) for r, sotto in rami if r in argomenti.cosa]
+    segno = config.segno_chiusa
+    quanti = "1 ramo" if len(rami) == 1 else f"{len(rami)} rami"
+    print(f"Albero del taccuino: {quanti}. Non è stato cambiato niente.", file=uscita)
+    for ramo, sotto in rami:
+        teste = {s.base for _, note in sotto for s in note}
+        print("", file=uscita)
+        print(f"{ramo} · {len(teste)} {'nota' if len(teste) == 1 else 'note'}", file=uscita)
+        for nome, note in sotto:
+            print(f"  {nome} · {len(note)}" if note else f"  {nome} · nessuna nota", file=uscita)
+            for storia in note:
+                filo = albero.catena(archivio_note, storia)
+                codici = " ← ".join(s.ultima.codice(segno) for s in filo)
+                print(f"    {codici}  {_prima_riga(storia.ultima.contenuto.testo)}", file=uscita)
+    nascoste = 0 if argomenti.tutte else sum(
+        1 for s in archivio_note.elenco() if s.integrata_in is None and s.nascosta
+        and set(argomenti.cosa or nomi) & set(s.ultima.contenuto.cosa or ()))
+    if nascoste:
+        quante = "1 nota chiusa o annullata non mostrata" if nascoste == 1 \
+            else f"{nascoste} note chiuse o annullate non mostrate"
+        print("", file=uscita)
+        print(f"({quante}: aggiungi --all per vederle.)", file=uscita)
+    print("", file=uscita)
+    print(f"Legenda: {_legenda(archivio_note, segno)} · ← integrata nella nota a sinistra", file=uscita)
+    return 0
+
+
 def _riga_etichette(config) -> str:
     """La lista delle etichette (dalla 0.8.0): letta bene? Se è scritta male lo dice, senza fermarsi."""
     try:
@@ -1177,6 +1233,8 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
         return _schemi(argomenti, config, uscita)
     if comando == "graph":
         return _grafo(argomenti, config, uscita)
+    if comando == "tree":
+        return _albero(argomenti, config, uscita)
     if comando == "review":
         return _revisione(argomenti, config, adesso, uscita)
     if comando == "claude-settings":

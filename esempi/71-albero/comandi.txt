@@ -1,0 +1,5 @@
+tree
+propose 1-integra-pomodori.json
+albero --cosa orto
+tree --cosa bilancio
+tree --cosa Orto
