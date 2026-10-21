@@ -70,6 +70,24 @@ I valori vanno scritti esattamente così, in minuscolo. Gli spazi all'inizio e a
 Lo sportello li porta all'inglese e la nota nuova si scrive in inglese. Lo stesso campo non può
 comparire due volte, nemmeno con i due nomi (per esempio `data` e `date`).
 
+## I modelli delle mosse (dalla 0.10.0)
+
+Ogni mossa ha i suoi campi, e soltanto quelli. `template <mossa>` (`modello`), in sola lettura e senza bisogno della
+configurazione, stampa la proposta vuota con la data di oggi, autore `user`, `knowledge: stated` e gli altri valori
+vuoti (lo sportello rifiuta un campo vuoto: si riempie o si toglie); sotto, i campi facoltativi. Le mosse si possono
+chiamare anche in italiano (`nuova`, `integra`, `aggiorna`, `chiudi`, `annulla`).
+
+| Mossa | Campi | Facoltativi |
+|---|---|---|
+| nota nuova (`new`) | `date`, `source`, `author`, `knowledge`, `kind`, `text` | `context` (utente) o `quote` (Claude), `remind`, `priority` (utente), `who`, `about`, `confirms` (decisione) |
+| integrazione (`integrates`) | `date`, `source`, `author`, `knowledge`, `integrates`, e `text` (parole nuove) **oppure** `from_note` | nessuno: mai `kind`, `about`, `who`, `priority`, `remind`, `context` |
+| aggiornamento (`updates`) | `date`, `source`, `author`, `knowledge`, `updates`, `text` (il motivo), e almeno uno tra `kind`, `priority`, `remind`, `who`, `about` | `context` (utente) |
+| chiusura (`done`) | `date`, `source`, `author`, `knowledge`, `done`, `text` (il motivo) | `kind` (`decision`, `fact`, `idea`), `context` (utente) |
+| annullamento (`cancels`) | `date`, `source`, `author`, `knowledge`, `cancels`, `text` (il motivo) | `context` (utente) |
+
+Gli stessi modelli, compilati con un esempio, sono nella skill (`skills/hypomnema/moves.md`). Le altre mosse
+(`corrects`, `reopens`, `confirms`) sono descritte in «Le versioni» e «Chiudere e riaprire».
+
 ## Le regole dello sportello
 
 La nota viene **rifiutata** se (i motivi sono scritti in inglese, perché li legge Claude):
@@ -113,8 +131,20 @@ La nota viene **rifiutata** se (i motivi sono scritti in inglese, perché li leg
 24. cambia la natura in `decision` senza `author: user`, cambia la natura di una decisione o di una
     nota dell'utente senza `author: user`, oppure fa diventare decisione un'idea (per questo c'è
     `confirms`).
+25. (dalla 0.10.0, I0213) è un'**idea nuova** (non un cambiamento) e nel quaderno c'è già un'idea **viva** (non
+    chiusa, non annullata, non integrata) dello **stesso autore** con un **sotto-ramo** in comune (dal testo proprio,
+    vedi «L'albero delle etichette»): «this idea already has its note (0002, sub-branch orto/pomodori): propose it as
+    an integration of 0002 …». Il motivo nomina la più recente e le altre dello stesso sotto-ramo. Vale solo sul
+    sotto-ramo, mai sul ramo intero: senza `[rami…]` nella lista non cambia niente. Se sono davvero idee diverse, la
+    soluzione sono parole più precise nei sotto-rami, che scrive l'utente; non c'è un campo per aggirare la regola.
 
 Tutti i motivi trovati vengono elencati insieme, sempre nello stesso ordine.
+
+**I fatti, con un suggerimento** (dalla 0.10.0, decisione di Angelo del 21/10): un **fatto nuovo** nel sotto-ramo di un
+fatto vivo dello stesso autore **passa**, e `propose` aggiunge la riga «SUGGERIMENTO (non cambia niente): there is
+already fact 0003 in this sub-branch (orto/irrigazione): is this an integration? («integrates»: «0003»)». Due fatti
+diversi restano due note («una nota = una cosa sola»): decide chi propone. Decisioni, domande aperte e cose da fare
+restano fuori dalla regola (una decisione nuova può superarne una vecchia: per quello ci sono `updates` e `cancels`).
 
 ## Il testimone
 
@@ -522,6 +552,41 @@ progetti o argomenti) proposte a mano. L'intestazione le mostra dopo la priorit�
   quante sono aperte (open, todo e promemoria non chiusi); per le COSA anche quante dal testo e quante
   proposte (dalla 0.8.0); poi le etichette usate in qualche nota ma non più nella lista.
 
+## L'albero delle etichette: rami e sotto-rami (dalla 0.10.0)
+
+Una COSA (il **ramo**) può avere dei **sotto-rami**, gli argomenti, ognuno con le sue parole. Si scrivono in
+`etichette.toml`, sotto la lista, con una tabella `[rami.<COSA>]` (idea di Angelo I0213, decisione del 21/10/2026):
+
+```toml
+chi = ["Anna", "Marco"]
+cosa = ["orto", "bilancio"]
+
+[rami.orto]
+pomodori = ["pomodori", "pomodoro"]
+irrigazione = ["irrigazione", "goccia"]
+```
+
+- Un file **senza** `[rami…]` funziona esattamente come prima. Le parole le scrive solo l'utente.
+- **Conta solo la lista di parole**: il nome del sotto-ramo non si cerca (può essere descrittivo, per esempio
+  `"schema ad albero" = ["albero", "rami"]`). Le parole si cercano come le COSA: parola intera, maiuscole indifferenti,
+  solo nel `text`, mai nel contesto di Claude.
+- Una nota prende un sotto-ramo **solo se ha già la COSA del ramo** (a mano o dal testo); può averne più d'uno.
+- I sotto-rami si calcolano **al momento della lettura**, per tutte le note (anche quelle scritte prima): nessun file
+  si scrive.
+- **Due modi di calcolarli.** Per *vedere* (`tree`, `graph --albero`) dal testo dell'ultima versione, con le parti
+  integrate. Per *decidere* (la regola dello sportello e le catene della revisione) dal **testo proprio**: il testo
+  della prima versione o della sua ultima correzione (`corrects`), mai le parti aggiunte con `integrates`. Così una nota
+  che riceve integrazioni non si allarga a tutto il ramo.
+- **Scritto male** (errore chiaro, come per la lista): una tabella `[rami.X]` con una X che non è nella lista `cosa`;
+  un sotto-ramo senza parole o che non è una lista di testi; una parola vuota, con spazi ai lati, ripetuta, o presente in
+  due sotto-rami dello stesso ramo (maiuscole indifferenti). La stessa parola in due rami diversi va bene.
+- **`tree`** (`albero`), in sola lettura: per ogni ramo (nell'ordine della lista, poi le COSA usate ma fuori lista in
+  ordine alfabetico) i sotto-rami con le loro note, dalla più recente, e per ultima la voce **«senza argomento»**: le
+  note con la COSA ma senza nessun sotto-ramo (così si vede dove mancano parole). Un sotto-ramo senza note dice
+  «nessuna nota». Una **catena di integrazione** sta su una riga: la nota che contiene le altre in testa, poi quelle
+  integrate in lei, dalla più recente (`I0005.2 ← I0002 ← I0001`); le note integrate non compaiono da sole. Le note
+  chiuse (tranne le decisioni) e le annullate si vedono solo con `--all`; `--cosa X` (`--about`) mostra solo quel ramo.
+
 ## Gli schemi del modo di parlare (dalla 0.9.0)
 
 Il comando `patterns` (`schemi`), in sola lettura, ricava dal quaderno le sequenze di parole tipiche di ogni tipo di
@@ -569,6 +634,15 @@ niente, con 1 se c'è qualcosa da guardare. Le regole sono fisse:
 7. **integrabile** (dalla 0.9.0): due note dello stesso autore, non chiuse, non annullate e non già integrate, con
    almeno una COSA in comune, e il testo o il contesto di una delle due nomina l'altra (anche di tipo diverso). Si
    propone di integrare la più vecchia (numero più basso) nella più recente.
+   **Dalla 0.10.0 a catena, e il contesto non basta più** (decisione di Angelo del 21/10):
+   - per una COSA **con sotto-rami**: le note vive dello stesso autore e dello **stesso tipo** nello stesso sotto-ramo
+     (dal testo proprio) formano un gruppo; si propone di integrarle tutte nella più recente, una proposta per nota,
+     dalla più vecchia. Una nota che sta in due sotto-rami va solo nel primo, nell'ordine del file. Il rimando tra le
+     note non serve;
+   - per una COSA **senza sotto-rami**: la regola della 0.9.0, ma il rimando conta solo se è nel **testo** (non nel
+     contesto di Claude, che nomina altre note per riferimento), e anche qui a catena: le note legate tra loro, anche
+     attraverso altre note (A nominata da B, B da C), vanno tutte nella più recente. I tipi possono essere diversi.
+   Così ogni nota compare in una proposta sola, e le proposte si possono fare tutte una dopo l'altra.
 
 **Le proposte pronte** (dalla 0.9.0): `review --proposals` (`--proposte`) stampa, dopo le segnalazioni, una proposta
 JSON per ogni segnalazione che ha una regola fissa: `done` per le ferme, i promemoria scaduti e le nominate, `updates`
@@ -585,6 +659,15 @@ integrazioni; un numero di nota scritto nel testo o nel contesto, tratteggiato) 
 etichette. Le note chiuse, annullate o integrate sono sbiadite. La disposizione è fissa (stesso quaderno, stessa
 pagina), la pagina non usa internet. Il comando non scrive mai dentro il quaderno e sovrascrive solo un file che è già
 una pagina del grafo.
+
+**Il grafo ad albero** (dalla 0.10.0): `graph FILE.html --albero` (`--tree`) scrive la stessa pagina, con le stesse
+regole (sola lettura, fuori dal quaderno, senza internet, disposizione fissa), ma disposta ad albero: ogni COSA è il
+centro di un grappolo e i grappoli stanno su un cerchio (nell'ordine della lista, poi le COSA fuori lista in ordine
+alfabetico, e per ultimo «senza COSA» per le note senza etichette COSA); intorno a ogni COSA i suoi sotto-rami e
+«senza argomento»; intorno a ogni sotto-ramo le sue note, a ventaglio verso l'esterno, con le catene di integrazione
+una accanto all'altra. Ogni nota compare una volta sola, nel primo ramo e nel primo sotto-ramo della sua ultima
+versione; verso gli altri suoi sotto-rami ha una linea chiara tratteggiata. Le CHI non si disegnano. Senza `--albero`
+la pagina è quella della 0.9.0, byte per byte.
 
 Il programma non capisce il senso delle parole: non sa se una nota dice «è fatta» o «è superata», e
 non legge le date scritte a parole. Per questo segnala soltanto, e decide l'utente.

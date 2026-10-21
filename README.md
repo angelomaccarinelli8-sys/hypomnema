@@ -677,6 +677,28 @@ ferma: semplicemente non aggiunge le COSA dal testo. Aggiornale tutte e due.
 - `graph grafo.html` (`grafo`) scrive, fuori dal quaderno, una pagina con il grafo del taccuino: note, etichette e
   rimandi. Si apre con il browser.
 
+### L'albero delle etichette e la regola dell'integrazione (dalla 0.10.0)
+
+- In `etichette.toml` una COSA (il ramo) può avere dei **sotto-rami**, gli argomenti, ognuno con le sue parole:
+
+  ```toml
+  [rami.orto]
+  pomodori = ["pomodori", "pomodoro"]
+  irrigazione = ["irrigazione", "goccia"]
+  ```
+
+  Conta solo la lista di parole, non il nome; una nota prende un sotto-ramo solo se ha già la COSA del ramo. Le parole
+  le scrivi solo tu. Senza sotto-rami tutto funziona come nella 0.9.0.
+- `tree --cosa orto` (`albero`) mostra, in sola lettura, ramo → sotto-rami → note, con le catene di integrazione su una
+  riga (`I0005.2 ← I0002 ← I0001`) e la voce «senza argomento»: lì mancano parole.
+- **Un'idea, una nota per sotto-ramo**: se c'è già un'idea tua ancora viva nello stesso sotto-ramo, lo sportello
+  rifiuta l'idea nuova e chiede di proporla come integrazione di quella. Per i fatti solo un suggerimento. Se due idee
+  sono davvero diverse, servono parole più precise nei sotto-rami.
+- `review --proposte` propone le integrazioni **a catena**: le note dello stesso sotto-ramo (stesso autore, stesso
+  tipo) vanno tutte nella più recente; senza sotto-rami conta solo il rimando scritto nel testo, non nel contesto.
+- `graph grafo.html --albero` disegna il taccuino ad albero; `template integrates` (`modello integra`) stampa la
+  proposta vuota per una mossa, con solo i campi ammessi.
+
 ### Le tue parole e quelle di Claude restano separate
 
 In una nota con `author: user`, il `text` sono **le tue parole esatte**. Se Claude vuole

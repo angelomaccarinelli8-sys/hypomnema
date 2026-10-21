@@ -3,6 +3,50 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.10.0 (prototipo) — l'albero delle etichette e la regola dell'integrazione
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **Rami e sotto-rami** (I0213). Nel file `etichette.toml` una COSA può avere dei sotto-rami, gli argomenti, ognuno con
+  le sue parole: una tabella `[rami.orto]` con le righe `pomodori = ["pomodori", "pomodoro"]`. Conta solo la lista di
+  parole, non il nome; una nota prende un sotto-ramo solo se ha già la COSA del ramo. I sotto-rami si calcolano quando
+  si legge, anche per le note di prima. Un file senza `[rami…]` funziona come prima.
+- **Il comando `tree`** (`albero`), in sola lettura: ramo → sotto-rami → note, con le catene di integrazione su una riga
+  sola (`I0005.2 ← I0002 ← I0001`) e la voce «senza argomento» per le note del ramo che nessun sotto-ramo prende: lì
+  mancano parole. `--cosa orto` per un ramo solo, `--all` anche per le note chiuse e annullate.
+- **Un'idea, una nota per sotto-ramo** (I0213). Se nel quaderno c'è già un'idea viva dello stesso autore nello stesso
+  sotto-ramo, lo sportello rifiuta l'idea nuova e dice di proporla come integrazione di quella nota. Per i **fatti**
+  solo un suggerimento: la nota passa. Decisioni, domande aperte e cose da fare restano fuori. Il sotto-ramo che conta
+  è quello del testo proprio della nota (prima versione o ultima correzione): una nota che riceve integrazioni non si
+  allarga a tutto il ramo. Senza sotto-rami nella lista non cambia niente. Se due idee sono davvero diverse, servono
+  parole più precise nei sotto-rami.
+- **Le proposte della revisione a catena.** `review --proposte` non propone più coppie (A in B, B in C, A in C): le note
+  dello stesso sotto-ramo, dello stesso autore e dello stesso tipo vanno tutte nella più recente, una proposta per nota.
+  Senza sotto-rami resta la regola della 0.9.0, ma il rimando a un'altra nota conta solo se è nel testo, non nel
+  contesto scritto da Claude, e anche lì a catena. Sul quaderno inventato dell'esempio 73: 4 proposte invece di 8.
+- **Il grafo ad albero.** `graph grafo.html --albero` disegna il taccuino ad albero: ogni COSA al centro del suo
+  grappolo, intorno i sotto-rami, intorno a ogni sotto-ramo le sue note. Senza `--albero` il grafo è quello di prima.
+- **I modelli delle mosse.** Il comando nuovo `template` (`modello`) stampa la proposta vuota per una mossa (nota nuova,
+  integrazione, aggiornamento, chiusura, annullamento), con soltanto i campi ammessi. Gli stessi modelli sono in
+  FORMATO e nella skill.
+- **La skill, rivista con l'esperienza della chat.** L'inizio della chat è più leggero: il recap delle cose aperte, poi
+  solo il ramo di cui si parla (`tree --cosa`), e la revisione in una riga. Prima di proporre un'idea o un fatto Claude
+  guarda il sotto-ramo e, se la nota c'è già, propone l'integrazione (senza `kind` né `about`). Nel taccuino
+  dell'assistente, senza `etichette.toml`, Claude non mette etichette.
+
+Le note già scritte non si toccano e il quaderno della 0.9.0 si legge come prima. Aggiorna tutte e due le copie del
+programma (plugin di Claude Code e `programma-chat`).
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+e su Windows, nella cartella Hypomnema: `git -C programma-chat pull`.
+
+**Nella chat di claude.ai:** scarica il nuovo `hypomnema-skill.zip` e caricalo tra le skill nelle impostazioni di
+Claude, sostituendo quello vecchio.
+
 ## 0.9.0 (prototipo) — gli schemi del modo di parlare e il riordino del taccuino
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*

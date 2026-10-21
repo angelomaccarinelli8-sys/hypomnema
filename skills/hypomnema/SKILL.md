@@ -32,7 +32,7 @@ commands or scripts: its whole value lies in the fact that you do not touch it.
 
 **The other files of this skill**, next to this one, read only when they are needed: `chat-mode.md`
 (the chat, C0-C5), `labels.md` (the labels CHI and COSA, in full), `replies.md` (saving your
-replies), `diary.md` (section 6, what was said).
+replies), `diary.md` (section 6, what was said), `moves.md` (the models of the moves, from 0.10.0).
 
 ## How to run the programs (Claude Code)
 
@@ -92,46 +92,86 @@ First check that notes and register match: `P check` (in chat: `H check`, point 
 «ATTENZIONE», tell the user which notes do not match the register and why. **Do not repair
 anything**: the register only grows and the decision is theirs. Then carry on normally.
 
+Since 0.10.0 the start is **light**: you do not reread the whole notebook, only what is open and then the
+branch you are talking about.
+
 1. **Where we left off**: run `P recap` (in chat `H recap`). With fixed rules it shows the overdue
    reminders, the open questions, the things to do, the latest decisions and the last lines of
    the diary, high priority first in each block: you do not choose the words to search for.
    In each block, after the priority, the notes go from the most recently changed (the day of their
    last version; a version that only sets labels does not count). Reminders go by their date.
-   Report to the user **in a few lines, in Italian**, what is there, keeping the notes (chosen by
-   the user) apart from the diary (only the conversation).
-   Then run `P review` (in chat `H review`): read only, it lists with fixed rules what is worth
-   looking at (questions or todos stuck for a long time, overdue reminders, todos named in a later
-   note, «ricordamelo» without a date, old branches, old chains not allowed today). If it finds something, **tell the user in
-   one line**, for example «La revisione segnala 2 cose: la T0006 ha il promemoria scaduto e la
-   O0004 è ferma da 46 giorni.» Do not change anything by yourself: each line says what *can* be
-   done, the user decides. From 0.9.0 it also lists notes **integrable** into another (same author, a COSA
-   in common, one names the other), and `P review --proposals` prints ready-made proposals with `source`
-   (and `text`) left empty: if the user accepts one, fill them with **the user's words** (never invented)
-   and propose it as usual, one at a time.
-   `P graph <file.html>` writes, outside the notebook, a page with the graph of the notebook: offer it when
-   the user wants to see the notebook as a whole.
-2. When a specific topic is needed later, run `P search <word>`. The search is by exact word,
+   Report to the user **in three lines at most, in Italian**, what is there, keeping the notes (chosen
+   by the user) apart from the diary (only the conversation).
+2. **The branch we are talking about**: as soon as the topic of the chat is clear (usually from the
+   first message), run `P tree --cosa <COSA>` (in chat `H tree --cosa <COSA>`) for that branch only:
+   its sub-branches and their notes, one line each, integration chains on one line. Read in full
+   (`P search`) only the notes you need. Do not run `tree` without `--cosa` at the start: it is the
+   whole notebook.
+3. **The review, in one line**: run `P review` (in chat `H review`): read only, it lists with fixed
+   rules what is worth looking at (questions or todos stuck for a long time, overdue reminders, todos
+   named in a later note, «ricordamelo» without a date, old branches, old chains not allowed today,
+   integrable notes). Tell the user only **how many** things it found and the one or two most urgent,
+   for example «La revisione segnala 5 cose: la T0006 ha il promemoria scaduto e la O0004 è ferma da
+   46 giorni.» Details only if the user asks. Do not change anything by yourself: each line says what
+   *can* be done, the user decides. Integrable notes come as **chains** (from 0.10.0): all the live
+   notes of the same author and kind in one sub-branch go into the most recent one (without
+   sub-branches: a COSA in common and one names the other **in its text**). `P review --proposals`
+   prints them as ready-made proposals with `source` (and `text`) left empty: if the user accepts,
+   fill them with **the user's words** (never invented) and propose them **in the printed order**, one
+   at a time.
+   `P graph <file.html>` writes, outside the notebook, a page with the graph of the notebook (with
+   `--albero`, as a tree: COSA → sub-branches → notes): offer it when the user wants to see the
+   notebook as a whole.
+4. When a specific topic is needed later, run `P search <word>`. The search is by exact word,
    case-insensitive: try singular/plural too if needed. It also finds words inside compound names
    (`orto` finds `orto_balcone.py`). Notes come **from the most recent to the oldest**. **Closed
    notes** are not shown: the output says how many were hidden, and `P search <word> --all` shows
    them too.
-3. Every note is shown at its **last version**, in full, followed by its **history**: one line per
+5. Every note is shown at its **last version**, in full, followed by its **history**: one line per
    version (what changed, who, when, why). **The last version is what counts**; the history tells
    you what was wrong before, so you do not repeat it. Under a note come, indented, the notes that
    **confirm** it.
-4. Use the notes found respecting what they are:
+6. Use the notes found respecting what they are:
    - a user's **decision** counts as a decision;
    - an **idea** is only a proposal, not a decision;
    - an **inferred** note is a hypothesis: do not present it as certain;
    - cite the note by its code when you use it («dalla nota T0004.2 …»). The code is the letter of
      its kind (F fact, I idea, D decision, O open, T todo), with `✓` in front if it is closed, then
      the number and the version: `✓T0049.3`. The recap ends with this legend.
-5. Do not invent notes the search did not return.
+7. Do not invent notes the search did not return.
 
 ## 2. During the chat: prepare the notes
 
 Propose a note when something comes up that will be useful in a future chat: a fact, a
 preference, an idea, a decision, an open question, something to do. One note = one thing.
+
+**Every move has its model** (from 0.10.0): new note, integration, update, closure, cancellation. Before
+writing a proposal, take the model: `P template <move>` (`new`, `integrates`, `updates`, `done`,
+`cancels`; in chat `H template …`) prints the empty proposal with **only the allowed fields**; the five
+models, filled in, are in `moves.md`. Fill the empty values, remove the empty optional fields, propose.
+
+**Before proposing an idea or a fact, look at its sub-branch** (from 0.10.0). If the list of labels has
+sub-branches for the COSA of the note, run `P tree --cosa <COSA>` (or `P search <word>`) and look in the
+note's sub-branch for a **live note of the same author and the same kind**. If it is there, the new words
+are **an integration of that note**, not a new note: propose `"integrates": "<number>"` with only the
+new words in `text`, **without `kind` and without `about`** (the desk rejects them: the note keeps its
+own). Example:
+
+```json
+{
+  "date": "2026-01-15",
+  "source": "chat del 15 gennaio 2026 sull'orto",
+  "author": "user",
+  "knowledge": "stated",
+  "integrates": "0002",
+  "text": "i pomodori dell'orto li coprirei con la rete antigrandine"
+}
+```
+
+For an idea the desk enforces it (it rejects the new idea and names the note); for a fact it only prints
+a SUGGERIMENTO and the note passes: two different facts stay two notes, ask the user when in doubt.
+Decisions, open questions and todos are outside the rule. If the two ideas are really different, do not
+get around the rule: tell the user that the sub-branch needs more precise words in `etichette.toml`.
 
 Format (JSON, UTF-8), with **all** these fields:
 
@@ -352,7 +392,9 @@ search, respect it as a rule of the notebook.
 
 - The list is the file `etichette.toml` **in the notebook folder** (`chi = [...]`, `cosa = [...]`),
   shared by Claude Code and the chat. **The user writes it; you never write it.** Without the file no
-  note can have labels. In a notebook where only you write (for example Claude Code's «diario di
+  note can have labels: `who` and `about` are rejected, there are no COSA from the text, no sub-branches, and
+  `tree` is empty. So in **your own notebook** (the assistant's, without `etichette.toml`) never put `who` or
+  `about` in a proposal. In a notebook where only you write (for example Claude Code's «diario di
   cantiere» on a project), propose the list **in your message**, ready to paste, and the user saves it.
 - **COSA labels are added by the desk** (from 0.8.0): it finds the COSA of the list in the note's
   `text` (whole word, any case) and adds them. You no longer need to remember them. Propose `about`
@@ -361,6 +403,11 @@ search, respect it as a rule of the notebook.
   the user's notes you propose them and say them to the user; the user can change them.
 - Labels change with `updates`. You can add labels to one of the user's notes **only if it has none
   proposed by hand yet**; once set, only the user changes them.
+- **Sub-branches** (from 0.10.0): a COSA can have sub-branches (topics) with their words, in `[rami.<cosa>]` of
+  `etichette.toml` (only the user writes them). `P tree` (`albero`, `--cosa X` for one branch) shows branch →
+  sub-branches → notes, integration chains on one line (`I0005.2 ← I0002 ← I0001`), and «senza argomento» for the
+  notes of the branch that no sub-branch catches: tell the user when that list is long, words are missing.
+- **One idea, one note per sub-branch** (I0213): see «Before proposing an idea or a fact» in section 2.
 - `P search --about orto`, `P recap --about orto` (`--who`, `--chi`, `--cosa` too), `P labels` (counts),
   `P matches` (where the desk found each COSA, read only). If `P status` says `ERRORE` on the labels
   line, tell the user: until the file is fixed the desk saves nothing.

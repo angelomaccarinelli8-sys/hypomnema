@@ -21,6 +21,8 @@
     python -m hypomnema protezione              # ferma gli strumenti di Claude sul quaderno (lo lancia Claude Code)
     python -m hypomnema etichette               # le etichette CHI e COSA, con quante note ha ognuna
     python -m hypomnema cerca --cosa orto       # anche search e recap filtrano per etichette (--chi, --cosa)
+    python -m hypomnema albero --cosa orto      # ramo → sotto-rami → note, con le catene di integrazione
+    python -m hypomnema modello integra         # la proposta vuota per una mossa (non serve configurazione)
 
 Anche il comando "risposte", come "testimone", non esce mai con 2: per Claude Code, alla fine
 di una risposta, il codice 2 vorrebbe dire costringere Claude a continuare.
@@ -38,8 +40,8 @@ from pathlib import Path
 from typing import TextIO
 
 from hypomnema import (
-    __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
-    fuso_del_sistema, grafo, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
+    __version__, albero, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
+    fuso_del_sistema, grafo, modelli, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
 from hypomnema.versioni import LEGENDA, Quaderno, Storia
@@ -53,12 +55,13 @@ INGLESE = {
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
     "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns", "grafo": "graph",
+    "albero": "tree", "modello": "template",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
 # I comandi che leggono il quaderno: aspettano che un passaggio dello sportello finisca (vedi blocco).
 LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary", "labels",
-           "matches", "patterns", "graph")
+           "matches", "patterns", "graph", "tree")
 
 
 def _filtri(comando: argparse.ArgumentParser) -> None:
@@ -120,6 +123,16 @@ def _parser() -> argparse.ArgumentParser:
         help="scrive una pagina HTML con il grafo del taccuino (note, etichette, rimandi), fuori dal quaderno",
     )
     disegna.add_argument("file", help="il file .html da scrivere, fuori dalla cartella del quaderno")
+    disegna.add_argument("--tree", "--albero", dest="albero", action="store_true",
+                         help="disposto ad albero: COSA al centro, sotto-rami intorno, note intorno al loro sotto-ramo")
+    pianta = comandi.add_parser(
+        "tree", aliases=["albero"],
+        help="l'albero delle etichette: ramo (COSA) → sotto-rami → note, con le catene di integrazione (solo lettura)",
+    )
+    pianta.add_argument("--about", "--cosa", dest="cosa", action="append", default=[], metavar="ETICHETTA",
+                        help="solo questo ramo (si può ripetere)")
+    pianta.add_argument("--all", "--tutte", dest="tutte", action="store_true",
+                        help="mostra anche le note chiuse e annullate")
     rivedi = comandi.add_parser(
         "review", aliases=["revisione"],
         help="che cosa conviene guardare nel quaderno: rami, note ferme, promemoria scaduti, note nominate (solo lettura)",
@@ -149,6 +162,12 @@ def _parser() -> argparse.ArgumentParser:
         "check", aliases=["controlla"],
         help="controlla che note e registro corrispondano e che il registro abbia solo righe dello sportello",
     )
+    modello = comandi.add_parser(
+        "template", aliases=["modello"],
+        help="la proposta vuota per una mossa, con solo i campi ammessi (non legge il quaderno)",
+    )
+    modello.add_argument("mossa", nargs="?", choices=[*modelli.MOSSE, *modelli.NOMI_ITALIANI],
+                         help="new, integrates, updates, done o cancels (o nuova, integra, aggiorna, chiudi, annulla)")
     confronta = comandi.add_parser("compare", aliases=["confronta"], help="dice se due file sono identici, byte per byte")
     confronta.add_argument("file1")
     confronta.add_argument("file2")
@@ -298,7 +317,12 @@ COME_SUONA = {"decision": "una decisione", "idea": "un'idea", "todo": "una cosa 
 
 
 def _stampa_suggerimento(esito, uscita: TextIO) -> None:
-    """Dalla 0.9.0: il tipo che suona meglio secondo gli schemi dell'utente. Solo un suggerimento."""
+    """Dalla 0.9.0: il tipo che suona meglio secondo gli schemi dell'utente; dalla 0.10.0 il fatto che c'è già nello
+    stesso sotto-ramo. Solo suggerimenti: non cambiano niente."""
+    if esito.integrazione is not None:
+        numero, sotto = esito.integrazione
+        print(f"SUGGERIMENTO (non cambia niente): there is already fact {numero} in this sub-branch ({sotto}): is this "
+              f"an integration? («integrates»: «{numero}»)", file=uscita)
     if esito.suggerimento is None:
         return
     tipo, trovate, proposto = esito.suggerimento
@@ -599,7 +623,11 @@ def _revisione(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: che cosa conviene guardare. 0 = niente, 1 = qualcosa da guardare."""
     archivio_note = _leggi(config, uscita)
     oggi = adesso.date()
-    segnalazioni = revisione.rivedi(archivio_note, oggi, config.giorni_revisione, config.segno_chiusa)
+    try:
+        lista = etichette.leggi(config.cartella_quaderno)
+    except etichette.ErroreEtichette:
+        lista = None  # l'avviso l'ha già dato _leggi
+    segnalazioni = revisione.rivedi(archivio_note, oggi, config.giorni_revisione, config.segno_chiusa, lista)
     if not segnalazioni:
         print(f"Revisione del quaderno ({oggi.isoformat()}): niente da segnalare.", file=uscita)
         return 0
@@ -765,11 +793,57 @@ def _grafo(argomenti, config, uscita: TextIO) -> int:
         lista = etichette.leggi(config.cartella_quaderno)
     except etichette.ErroreEtichette:
         lista = None  # l'avviso l'ha già dato _leggi
-    testo = grafo.pagina(archivio_note, lista, config.segno_chiusa)
+    testo = (grafo.pagina_albero if argomenti.albero else grafo.pagina)(archivio_note, lista, config.segno_chiusa)
     file.write_text(testo, encoding="utf-8", newline="\n")
     note = len(archivio_note.elenco())
     print(f"Grafo del taccuino scritto in «{file}»: {note} note, {len(grafo.collegamenti(archivio_note))} rimandi. "
           "Aprilo con il browser. Il quaderno non è stato toccato.", file=uscita)
+    return 0
+
+
+def _albero(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura (dalla 0.10.0): l'albero delle etichette, ramo → sotto-rami → note."""
+    archivio_note = _leggi(config, uscita)
+    try:
+        lista = etichette.leggi(config.cartella_quaderno)
+    except etichette.ErroreEtichette:
+        lista = None  # l'avviso l'ha già dato _leggi
+    rami = albero.albero(archivio_note, lista, argomenti.tutte)
+    if not rami:
+        print(f"L'albero è vuoto: nessuna nota ha un'etichetta COSA (la lista è nel file {etichette.NOME_FILE} della "
+              "cartella del quaderno).", file=uscita)
+        return 0
+    nomi = [r for r, _ in rami]
+    for scelta in argomenti.cosa:
+        if scelta not in nomi:
+            print(f"ERRORE: la COSA «{scelta}» non è nella lista e nessuna nota la usa (le COSA sono: "
+                  f"{', '.join(nomi)}). Il confronto è esatto: maiuscole e minuscole contano.", file=uscita)
+            return 2
+    if argomenti.cosa:
+        rami = [(r, sotto) for r, sotto in rami if r in argomenti.cosa]
+    segno = config.segno_chiusa
+    quanti = "1 ramo" if len(rami) == 1 else f"{len(rami)} rami"
+    print(f"Albero del taccuino: {quanti}. Non è stato cambiato niente.", file=uscita)
+    for ramo, sotto in rami:
+        teste = {s.base for _, note in sotto for s in note}
+        print("", file=uscita)
+        print(f"{ramo} · {len(teste)} {'nota' if len(teste) == 1 else 'note'}", file=uscita)
+        for nome, note in sotto:
+            print(f"  {nome} · {len(note)}" if note else f"  {nome} · nessuna nota", file=uscita)
+            for storia in note:
+                filo = albero.catena(archivio_note, storia)
+                codici = " ← ".join(s.ultima.codice(segno) for s in filo)
+                print(f"    {codici}  {_prima_riga(storia.ultima.contenuto.testo)}", file=uscita)
+    nascoste = 0 if argomenti.tutte else sum(
+        1 for s in archivio_note.elenco() if s.integrata_in is None and s.nascosta
+        and set(argomenti.cosa or nomi) & set(s.ultima.contenuto.cosa or ()))
+    if nascoste:
+        quante = "1 nota chiusa o annullata non mostrata" if nascoste == 1 \
+            else f"{nascoste} note chiuse o annullate non mostrate"
+        print("", file=uscita)
+        print(f"({quante}: aggiungi --all per vederle.)", file=uscita)
+    print("", file=uscita)
+    print(f"Legenda: {_legenda(archivio_note, segno)} · ← integrata nella nota a sinistra", file=uscita)
     return 0
 
 
@@ -1126,6 +1200,11 @@ def main(
         return _protezione(argomenti, errori)
     if comando == "compare":
         return _confronta(argomenti, uscita)
+    if comando == "template":
+        # Non serve la configurazione: il modello non dipende dal quaderno.
+        mossa = modelli.NOMI_ITALIANI.get(argomenti.mossa, argomenti.mossa)
+        print(modelli.testo(mossa, adesso.date()), file=uscita)
+        return 0
     if comando == "fingerprint":
         return _impronta(argomenti, uscita)
     try:
@@ -1177,6 +1256,8 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
         return _schemi(argomenti, config, uscita)
     if comando == "graph":
         return _grafo(argomenti, config, uscita)
+    if comando == "tree":
+        return _albero(argomenti, config, uscita)
     if comando == "review":
         return _revisione(argomenti, config, adesso, uscita)
     if comando == "claude-settings":

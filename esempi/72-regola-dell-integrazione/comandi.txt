@@ -1,0 +1,6 @@
+propose 1-idea-pomodori.json
+propose 2-integra-la-rete.json
+propose 3-fatto-irrigazione.json
+propose 4-idea-irrigazione.json
+propose 5-decisione-pomodori.json
+tree --cosa orto

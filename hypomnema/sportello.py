@@ -14,7 +14,7 @@ from datetime import datetime
 from pathlib import Path
 
 from hypomnema import (
-    archivio as testimone_archivio, blocco, etichette, fuso_del_sistema, quaderno, registro, regole,
+    albero, archivio as testimone_archivio, blocco, etichette, fuso_del_sistema, quaderno, registro, regole,
     risposte as testimone_risposte, schemi, testimone, versioni,
 )
 from hypomnema.configurazione import Configurazione
@@ -32,6 +32,9 @@ class Esito:
     # Dalla 0.9.0: un altro tipo che suona meglio, dagli schemi del modo di parlare dell'utente: (tipo, sequenze).
     # Solo un suggerimento: non entra nella nota né nel registro e non cambia niente.
     suggerimento: tuple[str, list[str], str] | None = None  # (tipo che suona meglio, sequenze, tipo proposto)
+    # Dalla 0.10.0: per un fatto nuovo nel sotto-ramo di un fatto vivo dello stesso autore, (numero, ramo/sotto-ramo).
+    # Solo un suggerimento, come quello qui sopra: la nota passa (decisione di Angelo del 21/10).
+    integrazione: tuple[str, str] | None = None
 
 
 class _CampoDoppio(Exception):
@@ -86,6 +89,22 @@ def _suggerimento(proposta: dict | None, note_esistenti) -> tuple[str, list[str]
     return (*trovato, proposto) if trovato is not None else None
 
 
+def _suggerimento_integrazione(proposta: dict | None, note_esistenti, lista) -> tuple[str, str] | None:
+    """Per un fatto nuovo: il fatto vivo dello stesso autore nello stesso sotto-ramo, il più recente (dalla 0.10.0)."""
+    if (proposta is None or not isinstance(proposta.get("author"), str) or not isinstance(proposta.get("text"), str)
+            or not isinstance(proposta.get("kind"), str) or proposta["kind"].strip() != "fact"
+            or any(proposta.get(c) is not None for c in regole.CAMPI_CAMBIAMENTO)):
+        return None
+    about = proposta.get("about")
+    trovate = albero.gia_nel_sotto_ramo(note_esistenti, lista, proposta["author"].strip(), "fact",
+                                        proposta["text"].strip(),
+                                        etichette.separa(about.strip()) if isinstance(about, str) else None)
+    if not trovate:
+        return None
+    storia, (ramo, sotto) = trovate[0]
+    return storia.base, f"{ramo}/{sotto}"
+
+
 def _etichette(proposta: dict, campo: str) -> tuple[str, ...] | None:
     valore = _facoltativo(proposta, campo)
     return etichette.separa(valore) if valore is not None else None
@@ -132,9 +151,11 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
                                    config.segno_chiusa, lista)
 
     consiglio = _suggerimento(proposta, note_esistenti)
+    integrazione = _suggerimento_integrazione(proposta, note_esistenti, lista)
     if motivi:
         registro.annota(config, adesso, origine, None, motivi)
-        return Esito(accettata=False, id_nota=None, percorso=None, motivi=motivi, suggerimento=consiglio)
+        return Esito(accettata=False, id_nota=None, percorso=None, motivi=motivi, suggerimento=consiglio,
+                     integrazione=integrazione)
 
     id_nota = quaderno.prossimo_id(note_esistenti, config.cifre_numero_nota)
     citazione = _facoltativo(proposta, "quote")
@@ -194,7 +215,7 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
     id_nota = nota.id
     registro.annota(config, adesso, origine, id_nota, [])
     return Esito(accettata=True, id_nota=id_nota, percorso=percorso, motivi=[], scritte=((id_nota, percorso),),
-                 suggerimento=consiglio)
+                 suggerimento=consiglio, integrazione=integrazione)
 
 
 def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura, lista) -> Esito:

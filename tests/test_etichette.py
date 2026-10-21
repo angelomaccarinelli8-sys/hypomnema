@@ -339,7 +339,7 @@ class TestSkillDivisa(unittest.TestCase):
     def test_skill_corta_e_file_citati(self):
         skill = (self.CARTELLA / "SKILL.md").read_text(encoding="utf-8")
         self.assertLess(len(skill.splitlines()), 500)
-        for nome in ("chat-mode.md", "labels.md", "replies.md", "diary.md"):
+        for nome in ("chat-mode.md", "labels.md", "replies.md", "diary.md", "moves.md"):
             with self.subTest(file=nome):
                 self.assertIn(f"`{nome}`", skill)
                 self.assertTrue((self.CARTELLA / nome).is_file())

@@ -138,7 +138,7 @@ class TestLingua(ConQuaderno):
                 self.assertIn(f"/hypomnema:{nome}", testo)
 
     def test_versione(self):
-        self.assertEqual(__version__, "0.9.0")
+        self.assertEqual(__version__, "0.10.0")
 
 
 class TestPausaInInglese(ConQuaderno):

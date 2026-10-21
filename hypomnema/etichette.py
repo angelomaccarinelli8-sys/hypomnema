@@ -18,6 +18,17 @@ Dalla 0.8.0 lo sportello aggiunge da solo le etichette COSA che trova nel testo 
 (``trova_nel_testo``): parola intera, come la ricerca, senza badare alle maiuscole, scritte come nella
 lista, una volta sola e senza limite di numero. Le CHI restano solo proposte a mano. Per questo il file
 si legge a ogni proposta (oltre che per un filtro e per il comando ``labels``).
+
+Dalla 0.10.0 una COSA può avere dei **sotto-rami** (gli argomenti), ognuno con le sue parole, in una tabella
+``[rami.<COSA>]`` (decisione di Angelo del 21/10, I0213)::
+
+    [rami.orto]
+    pomodori = ["pomodori", "pomodoro"]
+    irrigazione = ["irrigazione", "goccia"]
+
+Il nome del sotto-ramo non conta come parola: contano solo le parole della lista. Le parole si cercano come le COSA
+(parola intera, maiuscole indifferenti), solo nel testo della nota, e una nota prende un sotto-ramo solo se ha già la
+COSA del ramo (``sotto_rami``). Un file senza ``[rami]`` funziona come prima.
 """
 
 import re
@@ -44,6 +55,12 @@ class ErroreEtichette(Exception):
 class Etichette:
     chi: tuple[str, ...]
     cosa: tuple[str, ...]
+    # Dalla 0.10.0: per ogni COSA con sotto-rami, (COSA, ((sotto-ramo, parole), ...)), nell'ordine del file.
+    rami: tuple[tuple[str, tuple[tuple[str, tuple[str, ...]], ...]], ...] = ()
+
+    def sotto_rami_di(self, cosa: str) -> tuple[tuple[str, tuple[str, ...]], ...]:
+        """I sotto-rami di una COSA, con le loro parole (vuoto se non ne ha)."""
+        return next((sotto for ramo, sotto in self.rami if ramo == cosa), ())
 
     def ammesse(self, campo: str) -> tuple[str, ...]:
         """Le etichette ammesse per il campo della nota (``who`` o ``about``)."""
@@ -81,9 +98,9 @@ def leggi(cartella_quaderno: Path) -> Etichette | None:
         raise ErroreEtichette(f"il file delle etichette «{file}» non è scritto correttamente: {errore}. "
                               "Non ho scritto niente.")
     for chiave in dati:
-        if chiave not in ("chi", "cosa"):
-            raise ErroreEtichette(f"il file delle etichette «{file}» non prevede «{chiave}»: ci sono solo chi e "
-                                  "cosa. Non ho scritto niente.")
+        if chiave not in ("chi", "cosa", "rami"):
+            raise ErroreEtichette(f"il file delle etichette «{file}» non prevede «{chiave}»: ci sono solo chi, cosa "
+                                  "e le tabelle [rami.<cosa>]. Non ho scritto niente.")
     liste = {}
     for chiave, _ in CAMPI:
         valore = dati.get(chiave, [])
@@ -102,7 +119,57 @@ def leggi(cartella_quaderno: Path) -> Etichette | None:
                                       f"{problema}. Non ho scritto niente.")
             viste.add(etichetta)
         liste[chiave] = tuple(valore)
-    return Etichette(chi=liste["chi"], cosa=liste["cosa"])
+    return Etichette(chi=liste["chi"], cosa=liste["cosa"], rami=_rami(dati.get("rami", {}), liste["cosa"], file))
+
+
+def _rami(dati, cosa: tuple[str, ...], file: Path) -> tuple:
+    """Le tabelle [rami.<COSA>] (dalla 0.10.0), controllate: errore chiaro se sono scritte male."""
+    def errore(testo: str) -> ErroreEtichette:
+        return ErroreEtichette(f"nel file delle etichette «{file}» {testo}. Non ho scritto niente.")
+    if not isinstance(dati, dict):
+        raise errore("«rami» deve essere una tabella per ogni COSA, per esempio  [rami.orto]  e sotto le righe "
+                     'pomodori = ["pomodori", "pomodoro"]')
+    rami = []
+    for ramo, sotto in dati.items():
+        if ramo not in cosa:
+            raise errore(f"la tabella [rami.{ramo}] non corrisponde a nessuna COSA della lista (le COSA sono: "
+                         f"{', '.join(cosa) if cosa else 'nessuna'})")
+        if not isinstance(sotto, dict):
+            raise errore(f"[rami.{ramo}] deve avere una riga per sotto-ramo, per esempio  pomodori = "
+                         '["pomodori", "pomodoro"]')
+        parole_del_ramo: dict[str, str] = {}
+        elenco = []
+        for nome, parole in sotto.items():
+            problema = problema_di(nome)
+            if problema is not None:
+                raise errore(f"il sotto-ramo «{nome}» di [rami.{ramo}] {problema}")
+            if not isinstance(parole, list) or not all(isinstance(p, str) for p in parole):
+                raise errore(f"il sotto-ramo «{nome}» di [rami.{ramo}] deve essere una lista di parole tra virgolette, "
+                             f'per esempio  {nome} = ["{nome}"]')
+            if not parole:
+                raise errore(f"il sotto-ramo «{nome}» di [rami.{ramo}] non ha parole: senza parole nessuna nota lo "
+                             "prende")
+            for parola in parole:
+                problema = problema_di(parola)
+                if problema is None and parola.casefold() in parole_del_ramo:
+                    altro = parole_del_ramo[parola.casefold()]
+                    problema = ("è ripetuta" if altro == nome
+                                else f"è anche nel sotto-ramo «{altro}»: una parola sta in un sotto-ramo solo")
+                if problema is not None:
+                    raise errore(f"la parola «{parola}» del sotto-ramo «{nome}» di [rami.{ramo}] {problema}")
+                parole_del_ramo[parola.casefold()] = nome
+            elenco.append((nome, tuple(parole)))
+        rami.append((ramo, tuple(elenco)))
+    return tuple(rami)
+
+
+def sotto_rami(testo: str, cosa_della_nota: tuple[str, ...] | None, lista: "Etichette | None") -> tuple[tuple[str, str], ...]:
+    """I sotto-rami di una nota (dalla 0.10.0): (COSA, sotto-ramo) nell'ordine del file, solo per le COSA che la nota
+    ha già, quando una parola del sotto-ramo compare nel testo (parola intera, come le COSA)."""
+    if lista is None or not cosa_della_nota:
+        return ()
+    return tuple((ramo, nome) for ramo, sotto in lista.rami if ramo in cosa_della_nota
+                 for nome, parole in sotto if any(schema(p).search(testo) for p in parole))
 
 
 def schema(etichetta: str) -> re.Pattern:

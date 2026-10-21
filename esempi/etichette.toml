@@ -15,5 +15,16 @@
 # - Lo scrivi tu: Claude non lo scrive mai. Può proporti la lista nel suo messaggio, e tu la salvi qui.
 # - Togliere un'etichetta dalla lista non cambia le note che la hanno già (labels le mostra a parte).
 
+# - Dalla 0.10.0 una COSA può avere dei SOTTO-RAMI (gli argomenti), in una tabella [rami.<cosa>] qui sotto:
+#   una riga per sotto-ramo, con le parole che lo fanno riconoscere nel testo (parola intera, come le COSA).
+#   Conta solo la lista di parole, non il nome. Una nota prende un sotto-ramo solo se ha già la COSA del ramo.
+#   Senza tabelle [rami.…] tutto funziona come prima. `tree` mostra l'albero e le note «senza argomento».
+#   Due idee dello stesso autore nello stesso sotto-ramo non stanno in due note: la seconda si integra
+#   nella prima (lo sportello lo dice). Se sono davvero idee diverse, serve un sotto-ramo più preciso.
+
 chi = ["Anna", "Marco"]
 cosa = ["orto", "bilancio", "gioco"]
+
+[rami.orto]
+pomodori = ["pomodori", "pomodoro"]
+irrigazione = ["irrigazione", "goccia", "annaffiare"]

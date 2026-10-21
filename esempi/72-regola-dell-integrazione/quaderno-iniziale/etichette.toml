@@ -1,0 +1,7 @@
+# Lista inventata per l'esempio dell'albero (0.10.0).
+chi = ["Anna"]
+cosa = ["orto", "bilancio"]
+
+[rami.orto]
+pomodori = ["pomodori", "pomodoro"]
+irrigazione = ["irrigazione", "goccia", "annaffio"]
