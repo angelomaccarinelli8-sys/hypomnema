@@ -206,6 +206,9 @@ def _descrivi(storia: Storia, quaderno: Quaderno, segno: str, conferme, titolo: 
     ]
     if ultima.chiusa:
         righe.append(f"stato: chiusa ({ultima.data})")
+    if storia.integrata_in is not None:
+        righe.append(f"stato: integrata nella nota {storia.integrata_in.etichetta(segno)} "
+                     f"({storia.integrata_in.data}): il suo testo è in fondo a quella nota")
     if nota.priorita is not None:
         righe.append(f"priorità: {nota.priorita}")
     if nota.chi is not None:

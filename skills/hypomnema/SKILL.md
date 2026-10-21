@@ -233,6 +233,8 @@ new note number.
 | change kind, priority, reminder date or labels | `"updates": "0049"` with `kind`, `priority`, `remind`, `who` and/or `about` | the reason |
 | close an open question, a todo or a reminder | `"done": "0049"` or `"done": "0012, 0015"` | the reason |
 | reopen a closed note | `"reopens": "0049"` | the reason |
+| add new words at the end of a note (0.9.0) | `"integrates": "0049"` | the new words (same author as the note) |
+| put another note about the same thing at the end of this one (0.9.0) | `"integrates": "0049", "from_note": "0052"` | **no `text`**: the desk copies the text of 0052 |
 
 - In a change `kind` is optional: without it the kind stays as it is (with `reopens`, it goes back to
   the kind before the closure). With `done` it can say what the question became: `decision`,
@@ -244,6 +246,12 @@ new note number.
   explanation next to their reason (for example what «fatto» refers to). It is saved apart, as
   «contesto scritto da Claude». Never in your own changes; never `from_reply` in a change.
 - **A correction does not close**: correcting a todo leaves it to do. To say it is done, use `done`.
+- **`integrates`** (from 0.9.0) keeps the text of the note **intact** and adds a piece at the end: new words
+  (verified like any note, and only by the note's author: never your words in a user's note), or with
+  `from_note` the text of another note **as it is**, with that note's date, source and verification. Only
+  notes with a COSA label in common, with the same author, and only the user integrates a user's note
+  (it leaves the recap; with `search --all` it shows «integrata nella nota …»). No `kind`: use `updates`.
+  Propose it when the user says that two notes are the same idea growing; never on your own initiative.
 - `done: 0012, 0015` creates one closed version for each note, with the same reason.
 - Who can do what:
   - **only the user** closes, reopens or changes the kind of an `open`, makes a note a

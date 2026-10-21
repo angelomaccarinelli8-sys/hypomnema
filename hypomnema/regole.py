@@ -17,18 +17,20 @@ from dataclasses import replace
 from datetime import date, datetime
 
 from hypomnema import etichette as lista_etichette, versioni
-from hypomnema.nota import TITOLI_CONTESTO, TITOLO_CAMBIO, TITOLO_CONTESTO_CAMBIO, VALORI_ITALIANI, Nota, numeri
+from hypomnema.nota import (
+    TITOLI_CONTESTO, TITOLO_CAMBIO, TITOLO_CONTESTO_CAMBIO, TITOLO_DA_NOTA, VALORI_ITALIANI, Nota, numeri,
+)
 from hypomnema.testimone import Messaggio, Ritrovamento, trova_citazione
 
 CAMPI_OBBLIGATORI = ("date", "source", "author", "knowledge", "kind", "text")
 CAMPI_FACOLTATIVI = (
     "priority", "confirms", "corrects", "updates", "done", "reopens", "remind", "quote", "context", "from_reply",
-    "who", "about",
+    "who", "about", "integrates", "from_note",
 )
 # Le etichette (dalla 0.7.0): CHI (who) e COSA (about), dalla lista del file etichette.toml del quaderno.
 CAMPI_ETICHETTE = ("who", "about")
 # I campi che cambiano una nota che c'è già: ognuno crea una versione nuova. Uno per proposta.
-CAMPI_CAMBIAMENTO = ("corrects", "updates", "done", "reopens")
+CAMPI_CAMBIAMENTO = ("corrects", "updates", "done", "reopens", "integrates")
 # Campi che possono andare a capo: tutti gli altri devono stare su una riga.
 CAMPI_SU_PIU_RIGHE = ("text", "quote", "context")
 CAMPI_AMMESSI = CAMPI_OBBLIGATORI + CAMPI_FACOLTATIVI
@@ -37,7 +39,7 @@ CAMPI_AMMESSI = CAMPI_OBBLIGATORI + CAMPI_FACOLTATIVI
 NOMI_ITALIANI = {
     "data": "date", "fonte": "source", "autore": "author", "tipo": "knowledge", "natura": "kind",
     "testo": "text", "priorità": "priority", "conferma_di": "confirms", "corregge": "corrects",
-    "aggiorna": "updates", "riapre": "reopens",
+    "aggiorna": "updates", "riapre": "reopens", "integra": "integrates", "da_nota": "from_note",
     "riprendere_il": "remind", "citazione": "quote", "contesto": "context", "da_risposta": "from_reply",
     "chi": "who", "cosa": "about",
 }
@@ -128,11 +130,14 @@ def controlla(
     motivi: list[str] = []
     # In un cambiamento «kind» è facoltativo: se manca, la natura resta quella dell'ultima versione.
     cambiamento = any(proposta.get(c) is not None for c in CAMPI_CAMBIAMENTO)
+    # Dalla 0.9.0: integrare un'altra nota (integrates + from_note) non ha testo: si copia quello dell'altra nota.
+    integra_nota = proposta.get("integrates") is not None and proposta.get("from_note") is not None
 
     valori: dict[str, str] = {}
     for campo in CAMPI_AMMESSI:
         if campo not in proposta or proposta[campo] is None:
-            if campo in CAMPI_OBBLIGATORI and not (campo == "kind" and cambiamento):
+            if campo in CAMPI_OBBLIGATORI and not (campo == "kind" and cambiamento) \
+                    and not (campo == "text" and integra_nota):
                 motivi.append(f"the field «{campo}» is missing: {PERCHE_SERVE[campo]}.")
             continue
         valore = proposta[campo]
@@ -186,6 +191,9 @@ def controlla(
                           "idea: only an idea can be confirmed as a decision.")
 
     motivi += _controlla_etichette(valori, etichette)
+
+    if "from_note" in valori and "integrates" not in valori:
+        motivi.append("«from_note» goes only with «integrates»: it names the note to integrate.")
 
     usati = [c for c in CAMPI_CAMBIAMENTO if c in valori]
     if len(usati) > 1:
@@ -251,6 +259,9 @@ def controlla(
             if campo in valori and titolo in righe:
                 motivi.append(f"the field «{campo}» cannot contain the line «{titolo}»: "
                               "it is reserved for the note format.")
+        if campo in valori and any(r.startswith(TITOLO_DA_NOTA) for r in righe):
+            motivi.append(f"the field «{campo}» cannot contain a line starting with «{TITOLO_DA_NOTA.strip()}»: "
+                          "it is reserved for the note format.")
 
     # Regola del testimone: con il testimone acceso, il testo di una nota dell'utente
     # e la citazione di una nota di Claude devono comparire parola per parola in un messaggio.
@@ -270,7 +281,7 @@ def controlla(
     return motivi
 
 
-def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia", lista=None) -> Nota:
+def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia", lista=None, quaderno=None) -> Nota:
     """Come sarà la nota dopo il cambiamento (senza il blocco del cambiamento e senza verifica).
 
     Dalla 0.8.0 le COSA messe dallo sportello si ricalcolano dal testo della versione nuova, con la lista
@@ -297,6 +308,14 @@ def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia", lis
                        chi=lista_etichette.separa(valori["who"]) if "who" in valori else attuale.chi)
     elif campo == "done":
         dopo = replace(attuale, natura=valori.get("kind", attuale.natura), stato=versioni.CHIUSA)
+    elif campo == "integrates":
+        # Dalla 0.9.0: il testo di prima resta intatto; in fondo, dopo una riga vuota, le parole nuove (a) oppure il
+        # testo dell'altra nota così com'è (b).
+        if "from_note" in valori:
+            pezzo = quaderno.risolvi(valori["from_note"], "from_note").storia.ultima.contenuto.testo
+        else:
+            pezzo = valori["text"]
+        dopo = replace(attuale, testo=attuale.testo + "\n\n" + pezzo)
     else:
         dopo = replace(attuale, natura=valori.get("kind", storia.natura_prima_della_chiusura()), stato=None,
                        priorita=valori.get("priority", attuale.priorita),
@@ -313,6 +332,14 @@ def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa
                       f"new note or with «corrects», not with «{campo}».")
     # Dalla 0.7.0 un cambiamento chiesto dall'utente può avere il contesto di Claude (accanto al motivo,
     # che sono le parole dell'utente); in quelli di Claude lo vieta già la regola generale.
+    if campo == "integrates":
+        for estraneo in ("kind", "priority", "remind", "context"):
+            if estraneo in valori:
+                motivi.append(f"«integrates» only adds text at the end of the note: «{estraneo}» is not allowed "
+                              "(to change kind, priority or reminder use «updates»).")
+        if "from_note" in valori and "text" in valori:
+            motivi.append("with «from_note» the text added is the text of that note, as it is: remove «text». To add "
+                          "new words instead, use «integrates» without «from_note».")
     if campo != "updates":
         for etichetta in CAMPI_ETICHETTE:
             if etichetta in valori:
@@ -384,7 +411,12 @@ def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa
                           f"(note «{numero}» has them already): Claude can suggest the change to the user.")
             continue
 
-        dopo = dopo_il_cambiamento(campo, valori, storia, lista)
+        if campo == "integrates":
+            fermo = _controlla_integrazione(valori, autore, quaderno, storia, numero, codice, lista)
+            if fermo:
+                motivi += fermo
+                continue
+        dopo = dopo_il_cambiamento(campo, valori, storia, lista, quaderno)
         prima_natura = storia.natura_prima_della_chiusura() if campo == "reopens" else attuale.natura
         if dopo.natura != prima_natura:
             motivo = versioni.natura_che_cambia(prima_natura, dopo.natura, autore, attuale.autore, campo)
@@ -425,6 +457,42 @@ def _controlla_etichette(valori: dict, etichette) -> list[str]:
                 motivi.append(f"the label «{scelta}» is not in the list of «{campo}» labels: the allowed ones are "
                               f"{elenco}. Only the user adds labels, in the file {lista_etichette.NOME_FILE}.")
     return motivi
+
+
+def _controlla_integrazione(valori, autore, quaderno, storia, numero, codice, lista) -> list[str]:
+    """Le regole di «integrates» (dalla 0.9.0): (a) parole nuove in fondo; (b) il testo di un'altra nota in fondo."""
+    attuale = storia.ultima.contenuto
+    if storia.ultima.chiusa or storia.integrata_in is not None:
+        return [f"note «{numero}» ({codice}) is closed or integrated into another note: it cannot be integrated."]
+    if "from_note" not in valori:
+        if autore != attuale.autore:
+            return [f"note «{numero}» is written by «{attuale.autore}»: only «{attuale.autore}» can add words to it, "
+                    "so that the user's words and Claude's never mix."]
+        return []
+    rimando = quaderno.risolvi(valori["from_note"], "from_note")
+    if rimando.motivo is not None:
+        return [rimando.motivo]
+    altra = rimando.storia
+    if altra is storia:
+        return ["«integrates» and «from_note» name the same note: a note cannot be integrated into itself."]
+    if altra.ultima.chiusa or altra.integrata_in is not None:
+        return [f"note «{valori['from_note']}» is closed or already integrated into another note: it cannot be "
+                "integrated again."]
+    sua = altra.ultima.contenuto
+    if sua.autore != attuale.autore:
+        return [f"notes «{numero}» ({attuale.autore}) and «{valori['from_note']}» ({sua.autore}) have different "
+                "authors: the user's words and Claude's never mix in one note."]
+    if sua.autore == "user" and autore != "user":
+        return [f"note «{valori['from_note']}» is the user's: only the user can integrate it into another note "
+                "(it would leave the recap)."]
+
+    def cosa(nota):
+        return set(lista_etichette.cosa_finali(lista_etichette.cosa_a_mano(nota),
+                                               lista_etichette.trova_nel_testo(nota.testo, lista))[0] or ())
+    if not cosa(attuale) & cosa(sua):
+        return [f"notes «{numero}» and «{valori['from_note']}» have no COSA label in common: only notes about the "
+                "same thing can be integrated."]
+    return []
 
 
 def _dicitura(cosa: str, trovato: Ritrovamento) -> str:

@@ -1,7 +1,7 @@
 $ hypomnema proponi nota.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- the field «nota⏎- 2026-01-15T10:00:00+01:00 | ACCETTATA | nota 0099 | da: falso.json⏎fine» is not allowed: the allowed fields are date, source, author, knowledge, kind, text, priority, confirms, corrects, updates, done, reopens, remind, quote, context, from_reply, who, about (the Italian names of before are accepted too).
+- the field «nota⏎- 2026-01-15T10:00:00+01:00 | ACCETTATA | nota 0099 | da: falso.json⏎fine» is not allowed: the allowed fields are date, source, author, knowledge, kind, text, priority, confirms, corrects, updates, done, reopens, remind, quote, context, from_reply, who, about, integrates, from_note (the Italian names of before are accepted too).
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 

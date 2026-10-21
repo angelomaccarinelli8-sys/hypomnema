@@ -42,6 +42,8 @@ Una proposta è **una sola nota** scritta in JSON, salvata in UTF-8.
 | `remind` | no | solo il giorno: `AAAA-MM-GG` | Promemoria: il giorno in cui riprendere la nota. Il comando `reminders` elenca quelli arrivati o passati. |
 | `done` | no | uno o più numeri di note esistenti, separati da virgole: `"0012"` oppure `"0012, 0015"` | Chiude le note indicate: questioni aperte (`open`), cose da fare (`todo`) o promemoria (con `remind`). Crea una versione chiusa per ciascuna, con lo stesso motivo (il `text`). Vedi «Chiudere e riaprire». |
 | `priority` | no; **solo** con `author: user` | `high`, `normal`, `low` | La priorità; senza, vale `normal`. Si cambia con `updates`. |
+| `integrates` | no (dalla 0.9.0) | numero di una nota non chiusa | Aggiunge un pezzo in fondo al testo della nota, che resta intatto: senza `from_note` le parole nuove del `text` (dello stesso autore della nota); con `from_note` il testo dell'altra nota così com'è. Vedi «Integrare una nota». |
+| `from_note` | solo con `integrates` (dalla 0.9.0) | numero di un'altra nota | La nota da integrare: il suo testo va in fondo; la proposta non ha `text`. |
 | `who` | no (dalla 0.7.0) | una o due etichette CHI, separate da virgola: `"Anna"`, `"Anna, Marco"` | Le persone di cui parla la nota, dalla lista `chi` di `etichette.toml`. Vedi «Le etichette». |
 | `about` | no (dalla 0.7.0) | una o due etichette COSA, separate da virgola | I progetti o gli argomenti, dalla lista `cosa` di `etichette.toml`. |
 | `from_reply` | no; **solo** con `author: claude`, mai insieme a `quote` | `"yes"` | Il `text` è un pezzo di una risposta di Claude («Salva questa risposta di Claude»). Con il testimone delle risposte acceso, lo sportello lo cerca nelle risposte registrate. |
@@ -62,7 +64,8 @@ I valori vanno scritti esattamente così, in minuscolo. Gli spazi all'inizio e a
 `fonte`, `autore` (`utente`), `tipo` (`dichiarata`, `osservata`, `dedotta`), `natura` (`fatto`,
 `idea`, `decisione`, `discorso aperto`), `testo`, `contesto`, `citazione`, `conferma_di`,
 `corregge`, `aggiorna` (per `updates`), `riapre` (per `reopens`), `riprendere_il`, `da_risposta` (`sì`),
-`priorità` (`alta`, `normale`, `bassa`), e dalla 0.7.0 `chi` (per `who`) e `cosa` (per `about`).
+`priorità` (`alta`, `normale`, `bassa`), dalla 0.7.0 `chi` (per `who`) e `cosa` (per `about`), dalla 0.9.0 `integra`
+(per `integrates`) e `da_nota` (per `from_note`).
 Lo sportello li porta all'inglese e la nota nuova si scrive in inglese. Lo stesso campo non può
 comparire due volte, nemmeno con i due nomi (per esempio `data` e `date`).
 
@@ -290,6 +293,22 @@ Il basilico è urgente, sta finendo la stagione buona.
 
 Il blocco `## Change` si legge solo nei file con il punto: una nota vecchia che ha quella riga nel
 testo resta com'è.
+
+## Integrare una nota (dalla 0.9.0)
+
+`integrates` crea la versione successiva della nota A: il testo di prima resta **intatto** e in fondo, dopo una riga
+vuota, si aggiunge un pezzo. Niente `kind`, `priority`, `remind`, `context` (per cambiarli c'è `updates`); A non chiusa
+né integrata in un'altra.
+
+- **(a) Parole nuove** (`integrates` senza `from_note`): il pezzo è il `text`, verificato come sempre (le parole
+  dell'utente con il testimone o l'archivio). Solo l'autore di A aggiunge parole: mai parole di Claude in una nota
+  dell'utente. Il blocco del cambiamento dice `change: text added`, con data, fonte, autore e verifica del pezzo.
+- **(b) Un'altra nota** (`integrates` + `from_note`, senza `text`): il pezzo è il testo dell'ultima versione di B,
+  così com'è. Il blocco dice `change: integrated 0052` e ha una sezione `### From note 0052` con la data, la fonte,
+  l'autore e la verifica di B. Regole: A e B con almeno una COSA in comune (finali, anche dal testo), stesso autore,
+  B non chiusa e non già integrata; se B è dell'utente la integra solo l'utente. Il file di B non si tocca: al
+  momento della lettura B è «integrata nella nota A» (la prima integrazione), esce dal recap, dalla ricerca di base,
+  dai promemoria e dalla revisione; `search --all` la mostra con «stato: integrata nella nota …».
 
 ## Il codice della nota
 

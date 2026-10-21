@@ -31,6 +31,9 @@ NATURE_DOPO_LA_CHIUSURA = ("decision", "fact", "idea")
 CHIUSA = "closed"
 RIAPERTA = "reopened"
 TESTO_CORRETTO = "text corrected"
+# Dalla 0.9.0, «integrates»: parole nuove in fondo al testo, oppure il testo di un'altra nota in fondo.
+TESTO_AGGIUNTO = "text added"
+INTEGRATA = "integrated"
 # Le voci dei cambiamenti delle etichette (dalla 0.7.0): «who → Anna», «about orto → orto, gioco».
 VOCI_ETICHETTE = ("who ", "about ")
 
@@ -59,6 +62,8 @@ class Versione:
     bloccati: tuple[str, ...] = ()
     # Dalla 0.7.0: il contesto scritto da Claude nel cambiamento chiesto dall'utente.
     contesto: str | None = None
+    # Dalla 0.9.0: la nota integrata in questa versione (integrates + from_note), con la provenienza del suo testo.
+    da_nota: tuple | None = None
 
     @property
     def id(self) -> str:
@@ -85,6 +90,8 @@ class Versione:
 class Storia:
     base: str
     versioni: list[Versione]
+    # Dalla 0.9.0: la versione di un'altra nota in cui questa è stata integrata (si sa al momento della lettura).
+    integrata_in: "Versione | None" = None
 
     @property
     def id(self) -> str:
@@ -115,6 +122,8 @@ class Storia:
         e il ✓ dice che è risolta, non che va nascosta. Si nascondono le cose da fare o da decidere
         ormai risolte (todo, open e promemoria chiusi, anche diventati fatti o idee).
         """
+        if self.integrata_in is not None:
+            return True  # dalla 0.9.0: integrata in un'altra nota, che la contiene
         return self.chiusa and self.ultima.contenuto.natura != "decision"
 
     def natura_prima_della_chiusura(self) -> str:
@@ -244,6 +253,13 @@ class Quaderno:
         for base, files in sorted(file_versioni.items(), key=lambda c: ordine(c[0])):
             primo = sorted(files, key=lambda n: ordine(n.id))
             self.storie[base] = self._storia(replace(primo[0], id=base), [], primo[1:])
+        # Dalla 0.9.0: le note integrate in un'altra (la prima integrazione, in ordine di nota e di versione).
+        for storia in self.elenco():
+            for versione in storia.versioni:
+                if versione.da_nota is not None:
+                    integrata = self.storia_di(versione.da_nota[0])
+                    if integrata is not None and integrata is not storia and integrata.integrata_in is None:
+                        integrata.integrata_in = versione
 
     def _storia(self, nota: Nota, avvenimenti, files: list[Nota]) -> Storia:
         prima = Versione(nota.id, 0, nota, nota.stato == CHIUSA, nota, nota.data, nota.fonte, nota.autore)
@@ -272,7 +288,7 @@ class Quaderno:
                 cambio.data if cambio else file.data, cambio.fonte if cambio else file.fonte,
                 cambio.autore if cambio else file.autore,
                 tuple(cambio.cambio.split("; ")) if cambio else (), cambio.motivo if cambio else None,
-                contesto=cambio.contesto if cambio else None,
+                contesto=cambio.contesto if cambio else None, da_nota=cambio.da_nota if cambio else None,
             ))
         return storia
 

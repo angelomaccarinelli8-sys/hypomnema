@@ -122,6 +122,8 @@ def priorita_in_vigore(storia: Storia) -> str:
 # Le voci dei cambiamenti (in inglese nel file) come le legge l'utente.
 VOCI_ITALIANE = (
     ("text corrected", "testo corretto"),
+    ("text added", "testo aggiunto in fondo"),
+    ("integrated ", "integrata in fondo la nota "),
     ("kind ", "natura "),
     ("priority ", "priorità "),
     ("remind ", "promemoria "),

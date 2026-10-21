@@ -1,0 +1,12 @@
+propose 1-todo-pozzo.json
+propose 2-todo-pompa.json
+propose 3-idea-gioco.json
+propose 4-integra-la-pompa-nel-pozzo.json
+propose 5-parole-nuove.json
+propose 6-senza-cosa-in-comune.json
+propose 7-claude-aggiunge-alla-nota-dell-utente.json
+propose 8-con-il-tipo.json
+recap
+search pompa
+search pompa --all
+check
