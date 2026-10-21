@@ -22,6 +22,7 @@
     python -m hypomnema etichette               # le etichette CHI e COSA, con quante note ha ognuna
     python -m hypomnema cerca --cosa orto       # anche search e recap filtrano per etichette (--chi, --cosa)
     python -m hypomnema albero --cosa orto      # ramo → sotto-rami → note, con le catene di integrazione
+    python -m hypomnema modello integra         # la proposta vuota per una mossa (non serve configurazione)
 
 Anche il comando "risposte", come "testimone", non esce mai con 2: per Claude Code, alla fine
 di una risposta, il codice 2 vorrebbe dire costringere Claude a continuare.
@@ -40,7 +41,7 @@ from typing import TextIO
 
 from hypomnema import (
     __version__, albero, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
-    fuso_del_sistema, grafo, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
+    fuso_del_sistema, grafo, modelli, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
 from hypomnema.versioni import LEGENDA, Quaderno, Storia
@@ -54,7 +55,7 @@ INGLESE = {
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
     "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns", "grafo": "graph",
-    "albero": "tree",
+    "albero": "tree", "modello": "template",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
@@ -161,6 +162,12 @@ def _parser() -> argparse.ArgumentParser:
         "check", aliases=["controlla"],
         help="controlla che note e registro corrispondano e che il registro abbia solo righe dello sportello",
     )
+    modello = comandi.add_parser(
+        "template", aliases=["modello"],
+        help="la proposta vuota per una mossa, con solo i campi ammessi (non legge il quaderno)",
+    )
+    modello.add_argument("mossa", nargs="?", choices=[*modelli.MOSSE, *modelli.NOMI_ITALIANI],
+                         help="new, integrates, updates, done o cancels (o nuova, integra, aggiorna, chiudi, annulla)")
     confronta = comandi.add_parser("compare", aliases=["confronta"], help="dice se due file sono identici, byte per byte")
     confronta.add_argument("file1")
     confronta.add_argument("file2")
@@ -1193,6 +1200,11 @@ def main(
         return _protezione(argomenti, errori)
     if comando == "compare":
         return _confronta(argomenti, uscita)
+    if comando == "template":
+        # Non serve la configurazione: il modello non dipende dal quaderno.
+        mossa = modelli.NOMI_ITALIANI.get(argomenti.mossa, argomenti.mossa)
+        print(modelli.testo(mossa, adesso.date()), file=uscita)
+        return 0
     if comando == "fingerprint":
         return _impronta(argomenti, uscita)
     try:

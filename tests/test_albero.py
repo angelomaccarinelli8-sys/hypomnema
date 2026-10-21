@@ -354,5 +354,105 @@ class TestGrafoAdAlbero(ConAlbero):
         self.assertEqual(len(set(posizioni)), len(posizioni))
 
 
+
+class TestModelli(ConAlbero):
+    """Pezzo 6 a): template stampa per ogni mossa la proposta vuota con solo i campi ammessi."""
+
+    def compila(self, mossa, forma=0, **valori):
+        """Il modello con i valori dati; i campi lasciati vuoti si tolgono, come farebbe Claude."""
+        from datetime import date
+        from hypomnema import modelli
+        proposta = {**modelli.modelli(mossa, date(2026, 1, 15))[forma][1], "source": "chat inventata", **valori}
+        return {k: v for k, v in proposta.items() if v != ""}
+
+    def proponi_modello(self, mossa, forma=0, **valori):
+        from hypomnema import sportello
+        from tests.test_versioni import ADESSO
+        import json
+        proposta = self.compila(mossa, forma, **valori)
+        return sportello.ricevi(json.dumps(proposta, ensure_ascii=False).encode("utf-8"), "p.json", self.config,
+                                ADESSO)
+
+    def test_ogni_modello_compilato_passa(self):
+        casi = (
+            ("new", 0, dict(kind="todo", text="Seminare il basilico nell'orto.")),          # 0001
+            ("new", 0, dict(kind="idea", text="Il bilancio di gennaio.")),                   # 0002
+            ("new", 0, dict(kind="idea", text="Il bilancio di febbraio.")),                  # 0003
+            ("integrates", 0, dict(integrates="0002", text="E anche quello di marzo.")),    # 0002.1
+            ("integrates", 1, dict(integrates="0002", from_note="0003")),                   # 0002.2
+            ("updates", 0, dict(updates="0001", priority="high", text="è urgente")),         # 0001.1
+            ("done", 0, dict(done="0001", text="fatto")),                                    # 0001.2
+            ("new", 0, dict(kind="idea", text="Una panchina nell'orto.")),                   # 0004
+            ("cancels", 0, dict(cancels="0004", text="non serve più")),                      # 0004.1
+        )
+        for mossa, forma, valori in casi:
+            with self.subTest(mossa=mossa, valori=valori):
+                esito = self.proponi_modello(mossa, forma, **valori)
+                self.assertTrue(esito.accettata, esito.motivi)
+
+    def test_vuoto_e_rifiutato(self):
+        from datetime import date
+        from hypomnema import modelli
+        from hypomnema import sportello
+        from tests.test_versioni import ADESSO
+        import json
+        for mossa in modelli.MOSSE:
+            for _, proposta in modelli.modelli(mossa, date(2026, 1, 15)):
+                with self.subTest(mossa=mossa):
+                    esito = sportello.ricevi(json.dumps(proposta).encode("utf-8"), "p.json", self.config, ADESSO)
+                    self.assertFalse(esito.accettata)
+
+    def test_integrazione_senza_kind_ne_about(self):
+        from datetime import date
+        from hypomnema import modelli
+        for _, proposta in modelli.modelli("integrates", date(2026, 1, 15)):
+            for campo in ("kind", "about", "who", "priority", "remind", "context"):
+                self.assertNotIn(campo, proposta)
+
+    def test_comando_senza_configurazione(self):
+        import io
+        from hypomnema.cli import main
+        from tests.test_versioni import ADESSO
+        uscita = io.StringIO()
+        self.assertEqual(main(["--config", str(self.cartella / "non-c-e.toml"), "modello", "integra"], adesso=ADESSO,
+                              uscita=uscita, errori=io.StringIO()), 0)
+        testo = uscita.getvalue()
+        self.assertIn('{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "integrates": "", '
+                      '"text": ""}', testo)
+        self.assertIn('"integrates": "", "from_note": ""}', testo)
+        uscita = io.StringIO()
+        main(["template"], adesso=ADESSO, uscita=uscita, errori=io.StringIO())
+        self.assertIn("- cancels: annullare una nota che non vale più", uscita.getvalue())
+
+
+
+class TestSkill(unittest.TestCase):
+    """Pezzi 5 e 6: la skill dice di guardare il sotto-ramo, i modelli delle mosse, l'inizio leggero."""
+
+    def test_regole_nella_skill(self):
+        from tests.esecutore import RADICE, testo_della_skill
+        skill = testo_della_skill()
+        for frammento in ("**Before proposing an idea or a fact, look at its sub-branch**",
+                          "**without `kind` and without `about`**", "run `P tree --cosa <COSA>`",
+                          "`P template <move>`", "never put `who` or\n  `about` in a proposal",
+                          "H tree --cosa <COSA>", "Since 0.10.0 the start is **light**"):
+            with self.subTest(frammento=frammento):
+                self.assertIn(frammento, skill)
+        self.assertLess(len((RADICE / "skills" / "hypomnema" / "SKILL.md").read_text(encoding="utf-8").splitlines()),
+                        500)
+
+    def test_i_modelli_della_skill_sono_json_con_i_campi_giusti(self):
+        import json
+        import re
+        from tests.esecutore import RADICE
+        testo = (RADICE / "skills" / "hypomnema" / "moves.md").read_text(encoding="utf-8")
+        modelli = [json.loads(b) for b in re.findall(r"```json\n(.*?)\n```", testo, re.DOTALL)]
+        self.assertEqual(len(modelli), 6)
+        for modello in modelli:
+            self.assertTrue({"date", "source", "author", "knowledge", "text"} <= set(modello) or "from_note" in modello)
+            if "integrates" in modello:
+                self.assertFalse({"kind", "about", "who", "priority", "remind", "context"} & set(modello))
+
+
 if __name__ == "__main__":
     unittest.main()

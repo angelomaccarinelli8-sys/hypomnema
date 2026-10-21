@@ -489,7 +489,7 @@ class TestDocumenti(unittest.TestCase):
 
     def test_skill_readme_storia_comandi(self):
         skill = testo_della_skill()
-        for frammento in ("Then run `P review`", "### Changing a note: versions", "**A correction does not close**",
+        for frammento in ("run `P review` (in chat `H review`)", "### Changing a note: versions", "**A correction does not close**",
                           "### The rules of the notebook, in short", "`note/0049.1.md`", "Then run\n   `H review`"):
             with self.subTest(frammento=frammento):
                 self.assertIn(frammento, skill)

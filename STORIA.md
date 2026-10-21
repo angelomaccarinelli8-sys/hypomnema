@@ -26,6 +26,13 @@ Hypomnema e come aggiornarsi.
   contesto scritto da Claude, e anche lì a catena. Sul quaderno inventato dell'esempio 73: 4 proposte invece di 8.
 - **Il grafo ad albero.** `graph grafo.html --albero` disegna il taccuino ad albero: ogni COSA al centro del suo
   grappolo, intorno i sotto-rami, intorno a ogni sotto-ramo le sue note. Senza `--albero` il grafo è quello di prima.
+- **I modelli delle mosse.** Il comando nuovo `template` (`modello`) stampa la proposta vuota per una mossa (nota nuova,
+  integrazione, aggiornamento, chiusura, annullamento), con soltanto i campi ammessi. Gli stessi modelli sono in
+  FORMATO e nella skill.
+- **La skill, rivista con l'esperienza della chat.** L'inizio della chat è più leggero: il recap delle cose aperte, poi
+  solo il ramo di cui si parla (`tree --cosa`), e la revisione in una riga. Prima di proporre un'idea o un fatto Claude
+  guarda il sotto-ramo e, se la nota c'è già, propone l'integrazione (senza `kind` né `about`). Nel taccuino
+  dell'assistente, senza `etichette.toml`, Claude non mette etichette.
 
 Le note già scritte non si toccano e il quaderno della 0.9.0 si legge come prima. Aggiorna tutte e due le copie del
 programma (plugin di Claude Code e `programma-chat`).

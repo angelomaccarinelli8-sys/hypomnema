@@ -73,8 +73,11 @@ python3 -B <HY>/programma-chat/programma.py --config <HY>/hypomnema-chat.toml
 **D3. At the start: check, recap, review on the real notebook.**
 - `H status` must say `Testimone: NON C'È (configurazione per la chat di Claude)`. If it says
   anything else you are using the wrong configuration: **save nothing**, and go back to D2.
-- Then `H check`, `H recap` and `H review`, with the rules of section 1 and of C2 point 4 (three
-  lines to the user about where you left off, one line for the review).
+- Then `H check`, `H recap`, `H tree --cosa <COSA>` for the branch of the chat and `H review`, with the
+  rules of section 1 and of C2 point 4 (three lines to the user about where you left off, one line for
+  the review). `H tree`, `H template` and the rule «one idea, one note per sub-branch» need `programma-chat`
+  0.10.0 or newer: with an older one there is no `tree`, and the old desk does not check the sub-branches
+  (look at them yourself before proposing).
 
 **D4. Saving a note.**
 1. If you have the chat archive, copy the new messages first (as in C5, step 2), writing the copy
@@ -183,7 +186,8 @@ python3 --version
    reminders, open questions, things to do, latest decisions and last lines of the diary, chosen
    with fixed rules. Then tell the user, **in three lines at most**, in Italian, where we left
    off: what was in progress, what had been decided (only from the notes), what was still open.
-   Keep the notes (chosen by the user) apart from the diary (only the conversation). Then run
+   Keep the notes (chosen by the user) apart from the diary (only the conversation). As soon as the
+   topic is clear, `H tree --cosa <COSA>` for that branch only (section 1, from 0.10.0). Then run
    `H review` and, if it finds something, say it in one line (section 1).
 
 **If you do not have the tools for the user's computer** (chat on the web, mobile app): it is

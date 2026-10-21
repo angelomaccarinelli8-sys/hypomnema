@@ -70,6 +70,24 @@ I valori vanno scritti esattamente così, in minuscolo. Gli spazi all'inizio e a
 Lo sportello li porta all'inglese e la nota nuova si scrive in inglese. Lo stesso campo non può
 comparire due volte, nemmeno con i due nomi (per esempio `data` e `date`).
 
+## I modelli delle mosse (dalla 0.10.0)
+
+Ogni mossa ha i suoi campi, e soltanto quelli. `template <mossa>` (`modello`), in sola lettura e senza bisogno della
+configurazione, stampa la proposta vuota con la data di oggi, autore `user`, `knowledge: stated` e gli altri valori
+vuoti (lo sportello rifiuta un campo vuoto: si riempie o si toglie); sotto, i campi facoltativi. Le mosse si possono
+chiamare anche in italiano (`nuova`, `integra`, `aggiorna`, `chiudi`, `annulla`).
+
+| Mossa | Campi | Facoltativi |
+|---|---|---|
+| nota nuova (`new`) | `date`, `source`, `author`, `knowledge`, `kind`, `text` | `context` (utente) o `quote` (Claude), `remind`, `priority` (utente), `who`, `about`, `confirms` (decisione) |
+| integrazione (`integrates`) | `date`, `source`, `author`, `knowledge`, `integrates`, e `text` (parole nuove) **oppure** `from_note` | nessuno: mai `kind`, `about`, `who`, `priority`, `remind`, `context` |
+| aggiornamento (`updates`) | `date`, `source`, `author`, `knowledge`, `updates`, `text` (il motivo), e almeno uno tra `kind`, `priority`, `remind`, `who`, `about` | `context` (utente) |
+| chiusura (`done`) | `date`, `source`, `author`, `knowledge`, `done`, `text` (il motivo) | `kind` (`decision`, `fact`, `idea`), `context` (utente) |
+| annullamento (`cancels`) | `date`, `source`, `author`, `knowledge`, `cancels`, `text` (il motivo) | `context` (utente) |
+
+Gli stessi modelli, compilati con un esempio, sono nella skill (`skills/hypomnema/moves.md`). Le altre mosse
+(`corrects`, `reopens`, `confirms`) sono descritte in «Le versioni» e «Chiudere e riaprire».
+
 ## Le regole dello sportello
 
 La nota viene **rifiutata** se (i motivi sono scritti in inglese, perché li legge Claude):
