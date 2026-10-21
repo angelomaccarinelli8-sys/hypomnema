@@ -25,12 +25,12 @@ from hypomnema.testimone import Messaggio, Ritrovamento, trova_citazione
 CAMPI_OBBLIGATORI = ("date", "source", "author", "knowledge", "kind", "text")
 CAMPI_FACOLTATIVI = (
     "priority", "confirms", "corrects", "updates", "done", "reopens", "remind", "quote", "context", "from_reply",
-    "who", "about", "integrates", "from_note",
+    "who", "about", "integrates", "from_note", "cancels",
 )
 # Le etichette (dalla 0.7.0): CHI (who) e COSA (about), dalla lista del file etichette.toml del quaderno.
 CAMPI_ETICHETTE = ("who", "about")
 # I campi che cambiano una nota che c'è già: ognuno crea una versione nuova. Uno per proposta.
-CAMPI_CAMBIAMENTO = ("corrects", "updates", "done", "reopens", "integrates")
+CAMPI_CAMBIAMENTO = ("corrects", "updates", "done", "reopens", "integrates", "cancels")
 # Campi che possono andare a capo: tutti gli altri devono stare su una riga.
 CAMPI_SU_PIU_RIGHE = ("text", "quote", "context")
 CAMPI_AMMESSI = CAMPI_OBBLIGATORI + CAMPI_FACOLTATIVI
@@ -40,6 +40,7 @@ NOMI_ITALIANI = {
     "data": "date", "fonte": "source", "autore": "author", "tipo": "knowledge", "natura": "kind",
     "testo": "text", "priorità": "priority", "conferma_di": "confirms", "corregge": "corrects",
     "aggiorna": "updates", "riapre": "reopens", "integra": "integrates", "da_nota": "from_note",
+    "annulla": "cancels",
     "riprendere_il": "remind", "citazione": "quote", "contesto": "context", "da_risposta": "from_reply",
     "chi": "who", "cosa": "about",
 }
@@ -308,6 +309,8 @@ def dopo_il_cambiamento(campo: str, valori: dict, storia: "versioni.Storia", lis
                        chi=lista_etichette.separa(valori["who"]) if "who" in valori else attuale.chi)
     elif campo == "done":
         dopo = replace(attuale, natura=valori.get("kind", attuale.natura), stato=versioni.CHIUSA)
+    elif campo == "cancels":
+        dopo = replace(attuale, stato=versioni.ANNULLATA)
     elif campo == "integrates":
         # Dalla 0.9.0: il testo di prima resta intatto; in fondo, dopo una riga vuota, le parole nuove (a) oppure il
         # testo dell'altra nota così com'è (b).
@@ -332,6 +335,10 @@ def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa
                       f"new note or with «corrects», not with «{campo}».")
     # Dalla 0.7.0 un cambiamento chiesto dall'utente può avere il contesto di Claude (accanto al motivo,
     # che sono le parole dell'utente); in quelli di Claude lo vieta già la regola generale.
+    if campo == "cancels":
+        for estraneo in ("kind", "priority", "remind"):
+            if estraneo in valori:
+                motivi.append(f"«cancels» only cancels the note (it no longer counts): «{estraneo}» is not allowed.")
     if campo == "integrates":
         for estraneo in ("kind", "priority", "remind", "context"):
             if estraneo in valori:
@@ -377,6 +384,17 @@ def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa
         attuale = ultima.contenuto
         codice = ultima.codice(segno_chiusa)
 
+        if ultima.annullata and campo != "reopens":
+            motivi.append(f"note «{numero}» is cancelled ({codice}): to make it count again use «reopens».")
+            continue
+        if campo == "cancels":
+            if ultima.chiusa:
+                motivi.append(f"note «{numero}» is closed ({codice}): it was done, it cannot be cancelled. To "
+                              "reopen it use «reopens».")
+                continue
+            if attuale.autore == "user" and autore != "user":
+                motivi.append(f"note «{numero}» is the user's: only the user can cancel it. Claude can suggest it.")
+                continue
         if campo == "done":
             if ultima.chiusa:
                 motivi.append(f"note «{numero}» is already closed ({codice}): to reopen it use «reopens».")
@@ -396,8 +414,12 @@ def _controlla_cambiamento(campo, valori, autore, natura, quaderno, segno_chiusa
                               "«updates».")
                 continue
         if campo == "reopens":
-            if not ultima.chiusa:
-                motivi.append(f"note «{numero}» is not closed ({codice}): only a closed note can be reopened.")
+            if not ultima.chiusa and not ultima.annullata:
+                motivi.append(f"note «{numero}» is not closed ({codice}): only a closed or cancelled note can be "
+                              "reopened.")
+                continue
+            if ultima.annullata and attuale.autore == "user" and autore != "user":
+                motivi.append(f"note «{numero}» is the user's: only the user can make it count again.")
                 continue
             if storia.natura_prima_della_chiusura() == "open" and autore != "user":
                 motivi.append(f"only the user can reopen an open note («{numero}»): Claude can suggest it.")
@@ -462,7 +484,7 @@ def _controlla_etichette(valori: dict, etichette) -> list[str]:
 def _controlla_integrazione(valori, autore, quaderno, storia, numero, codice, lista) -> list[str]:
     """Le regole di «integrates» (dalla 0.9.0): (a) parole nuove in fondo; (b) il testo di un'altra nota in fondo."""
     attuale = storia.ultima.contenuto
-    if storia.ultima.chiusa or storia.integrata_in is not None:
+    if storia.ultima.chiusa or storia.ultima.annullata or storia.integrata_in is not None:
         return [f"note «{numero}» ({codice}) is closed or integrated into another note: it cannot be integrated."]
     if "from_note" not in valori:
         if autore != attuale.autore:
@@ -475,7 +497,7 @@ def _controlla_integrazione(valori, autore, quaderno, storia, numero, codice, li
     altra = rimando.storia
     if altra is storia:
         return ["«integrates» and «from_note» name the same note: a note cannot be integrated into itself."]
-    if altra.ultima.chiusa or altra.integrata_in is not None:
+    if altra.ultima.chiusa or altra.ultima.annullata or altra.integrata_in is not None:
         return [f"note «{valori['from_note']}» is closed or already integrated into another note: it cannot be "
                 "integrated again."]
     sua = altra.ultima.contenuto

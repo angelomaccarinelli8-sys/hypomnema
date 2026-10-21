@@ -129,6 +129,7 @@ VOCI_ITALIANE = (
     ("remind ", "promemoria "),
     ("closed", "chiusa"),
     ("reopened", "riaperta"),
+    ("cancelled", "annullata"),
     ("who ", "chi "),
     ("about ", "cosa "),
 )
@@ -164,13 +165,15 @@ def descrivi_cambio(storia: Storia, versione: Versione, breve: bool) -> str:
             voci.append(f"riaperta il {versione.data}{perche}")
         elif voce == "closed":
             voci.append(f"chiusa il {versione.data}{perche}")
+        elif voce == "cancelled":
+            voci.append(f"annullata il {versione.data}{perche}")
         elif voce == "text corrected" and not breve:
             precedente = storia.versioni[storia.versioni.index(versione) - 1].contenuto
             voci.append(f"testo corretto (prima: «{prima_riga(precedente.testo)}»)")
         else:
             voci.append(in_italiano(voce))
     descrizione = ", ".join(voci)
-    con_motivo = {"reopened", "closed"} & set(versione.cambi)
+    con_motivo = {"reopened", "closed", "cancelled"} & set(versione.cambi)
     if versione.motivo and not con_motivo and not breve:
         descrizione += f". Motivo: «{taglia(versione.motivo)}»{contesto}"
     if versione.bloccati:

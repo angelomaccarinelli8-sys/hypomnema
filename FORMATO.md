@@ -43,6 +43,7 @@ Una proposta è **una sola nota** scritta in JSON, salvata in UTF-8.
 | `done` | no | uno o più numeri di note esistenti, separati da virgole: `"0012"` oppure `"0012, 0015"` | Chiude le note indicate: questioni aperte (`open`), cose da fare (`todo`) o promemoria (con `remind`). Crea una versione chiusa per ciascuna, con lo stesso motivo (il `text`). Vedi «Chiudere e riaprire». |
 | `priority` | no; **solo** con `author: user` | `high`, `normal`, `low` | La priorità; senza, vale `normal`. Si cambia con `updates`. |
 | `integrates` | no (dalla 0.9.0) | numero di una nota non chiusa | Aggiunge un pezzo in fondo al testo della nota, che resta intatto: senza `from_note` le parole nuove del `text` (dello stesso autore della nota); con `from_note` il testo dell'altra nota così com'è. Vedi «Integrare una nota». |
+| `cancels` | no (dalla 0.9.0) | numero di una nota non chiusa | Annulla la nota: non vale più (diverso da `done`, «fatto»). Crea una versione con `- status: cancelled`; il `text` è il motivo. |
 | `from_note` | solo con `integrates` (dalla 0.9.0) | numero di un'altra nota | La nota da integrare: il suo testo va in fondo; la proposta non ha `text`. |
 | `who` | no (dalla 0.7.0) | una o due etichette CHI, separate da virgola: `"Anna"`, `"Anna, Marco"` | Le persone di cui parla la nota, dalla lista `chi` di `etichette.toml`. Vedi «Le etichette». |
 | `about` | no (dalla 0.7.0) | una o due etichette COSA, separate da virgola | I progetti o gli argomenti, dalla lista `cosa` di `etichette.toml`. |
@@ -65,7 +66,7 @@ I valori vanno scritti esattamente così, in minuscolo. Gli spazi all'inizio e a
 `idea`, `decisione`, `discorso aperto`), `testo`, `contesto`, `citazione`, `conferma_di`,
 `corregge`, `aggiorna` (per `updates`), `riapre` (per `reopens`), `riprendere_il`, `da_risposta` (`sì`),
 `priorità` (`alta`, `normale`, `bassa`), dalla 0.7.0 `chi` (per `who`) e `cosa` (per `about`), dalla 0.9.0 `integra`
-(per `integrates`) e `da_nota` (per `from_note`).
+(per `integrates`), `da_nota` (per `from_note`) e `annulla` (per `cancels`).
 Lo sportello li porta all'inglese e la nota nuova si scrive in inglese. Lo stesso campo non può
 comparire due volte, nemmeno con i due nomi (per esempio `data` e `date`).
 
@@ -309,6 +310,21 @@ né integrata in un'altra.
   B non chiusa e non già integrata; se B è dell'utente la integra solo l'utente. Il file di B non si tocca: al
   momento della lettura B è «integrata nella nota A» (la prima integrazione), esce dal recap, dalla ricerca di base,
   dai promemoria e dalla revisione; `search --all` la mostra con «stato: integrata nella nota …».
+
+## Annullare una nota (dalla 0.9.0)
+
+`cancels` (in italiano `annulla`) dice che una nota **non vale più**: non è stata fatta, è superata. È diverso da
+`done` («è fatto»), che chiude solo questioni aperte, cose da fare e promemoria: si annulla ogni tipo di nota, anche
+un'idea, un fatto o una decisione. La versione nuova ha `- status: cancelled`, il blocco del cambiamento
+`change: cancelled` e il motivo. Il codice ha una **C** al posto del ✓, davanti alla lettera del tipo: `CD0156.1` è
+la decisione 0156 annullata; la legenda aggiunge «C annullata» quando nel quaderno c'è una nota annullata.
+
+- Solo l'utente annulla una nota dell'utente; Claude solo le sue.
+- Una nota annullata esce dal recap (anche una decisione), dalla ricerca di base, dai promemoria e dalla revisione;
+  `search --all` la mostra con «stato: annullata» e «annullata il …, perché «…»».
+- Non si chiude, non si annulla di nuovo, non si integra e non si integra in un'altra: per farla valere di nuovo
+  c'è `reopens` (per una nota dell'utente, solo l'utente), che riporta la nota com'era.
+- Una nota chiusa (fatta) non si annulla: si riapre.
 
 ## Il codice della nota
 

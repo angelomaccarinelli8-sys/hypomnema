@@ -30,6 +30,9 @@ LEGENDA = "F fatto · I idea · D decisione · O aperta · T da fare · {segno} 
 NATURE_DOPO_LA_CHIUSURA = ("decision", "fact", "idea")
 CHIUSA = "closed"
 RIAPERTA = "reopened"
+# Dalla 0.9.0: annullata («non vale più»), diversa da chiusa («è fatta»). Il codice ha una C davanti alla lettera.
+ANNULLATA = "cancelled"
+SEGNO_ANNULLATA = "C"
 TESTO_CORRETTO = "text corrected"
 # Dalla 0.9.0, «integrates»: parole nuove in fondo al testo, oppure il testo di un'altra nota in fondo.
 TESTO_AGGIUNTO = "text added"
@@ -78,8 +81,13 @@ class Versione:
         """Una versione che cambia soltanto le etichette (dalla 0.7.0)."""
         return self.numero > 0 and bool(self.cambi) and all(c.startswith(VOCI_ETICHETTE) for c in self.cambi)
 
+    @property
+    def annullata(self) -> bool:
+        return self.contenuto.stato == ANNULLATA
+
     def codice(self, segno: str = SEGNO_CHIUSA) -> str:
-        return (segno if self.chiusa else "") + LETTERE.get(self.contenuto.natura, "?") + self.id
+        davanti = segno if self.chiusa else SEGNO_ANNULLATA if self.annullata else ""
+        return davanti + LETTERE.get(self.contenuto.natura, "?") + self.id
 
     def etichetta(self, segno: str = SEGNO_CHIUSA) -> str:
         """Il codice, e per una versione virtuale il numero vero: «T0001.1 (nota 0002)»."""
@@ -106,6 +114,10 @@ class Storia:
         return self.ultima.chiusa
 
     @property
+    def annullata(self) -> bool:
+        return self.ultima.annullata
+
+    @property
     def data_del_contenuto(self) -> str:
         """La data dell'ultima versione che cambia qualcosa oltre alle etichette (dalla 0.7.0).
 
@@ -122,14 +134,14 @@ class Storia:
         e il ✓ dice che è risolta, non che va nascosta. Si nascondono le cose da fare o da decidere
         ormai risolte (todo, open e promemoria chiusi, anche diventati fatti o idee).
         """
-        if self.integrata_in is not None:
-            return True  # dalla 0.9.0: integrata in un'altra nota, che la contiene
+        if self.integrata_in is not None or self.annullata:
+            return True  # dalla 0.9.0: integrata in un'altra nota, che la contiene, o annullata (anche una decisione)
         return self.chiusa and self.ultima.contenuto.natura != "decision"
 
     def natura_prima_della_chiusura(self) -> str:
-        """La natura dell'ultima versione aperta prima della chiusura in corso."""
+        """La natura dell'ultima versione aperta prima della chiusura (o dell'annullamento) in corso."""
         for versione in reversed(self.versioni):
-            if not versione.chiusa:
+            if not versione.chiusa and not versione.annullata:
                 return versione.contenuto.natura
         return self.versioni[0].contenuto.natura
 

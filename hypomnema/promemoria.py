@@ -25,7 +25,7 @@ def aperti(quaderno: Quaderno) -> list[Promemoria]:
     """Tutti i promemoria ancora aperti, con la data in vigore."""
     return [
         Promemoria(s, s.ultima.contenuto.riprendere_il) for s in quaderno.elenco()
-        if s.ultima.contenuto.riprendere_il is not None and not s.chiusa and s.integrata_in is None
+        if s.ultima.contenuto.riprendere_il is not None and not s.chiusa and not s.annullata and s.integrata_in is None
     ]
 
 

@@ -184,6 +184,12 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _legenda(quaderno: Quaderno, segno: str) -> str:
+    """La legenda dei codici; «C annullata» solo se nel quaderno c'è una nota annullata (dalla 0.9.0)."""
+    annullate = any(v.annullata for s in quaderno.elenco() for v in s.versioni)
+    return LEGENDA.format(segno=segno) + (" · C annullata" if annullate else "")
+
+
 def _leggi(config, uscita: TextIO) -> Quaderno:
     """Il quaderno per un comando che legge; se etichette.toml è scritto male, una riga di avviso e si va avanti."""
     quaderno = cercatore.leggi(config)
@@ -206,6 +212,8 @@ def _descrivi(storia: Storia, quaderno: Quaderno, segno: str, conferme, titolo: 
     ]
     if ultima.chiusa:
         righe.append(f"stato: chiusa ({ultima.data})")
+    if ultima.annullata:
+        righe.append(f"stato: annullata ({ultima.data})")
     if storia.integrata_in is not None:
         righe.append(f"stato: integrata nella nota {storia.integrata_in.etichetta(segno)} "
                      f"({storia.integrata_in.data}): il suo testo è in fondo a quella nota")
@@ -384,7 +392,7 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
         _mostra_con_collegate(storia, archivio_note, config.segno_chiusa, conferme, gia_mostrate, uscita)
     if trovate:
         print("", file=uscita)
-        print(f"Legenda: {LEGENDA.format(segno=config.segno_chiusa)}", file=uscita)
+        print(f"Legenda: {_legenda(archivio_note, config.segno_chiusa)}", file=uscita)
     return 0
 
 
@@ -528,7 +536,7 @@ def _recap(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
             for voce in mostrate:
                 righe.append(f"- {voce.quando} · {voce.chi}: {_prima_riga(voce.testo, voce.dicitura)}")
             righe.append(f"(per leggerle intere: diary --last {len(mostrate)})")
-    righe += ["", f"Legenda: {LEGENDA.format(segno=segno)}"]
+    righe += ["", f"Legenda: {_legenda(archivio_note, segno)}"]
 
     for riga in righe:
         print(riga, file=uscita)
@@ -593,7 +601,7 @@ def _revisione(config, adesso: datetime, uscita: TextIO) -> int:
     for voce in segnalazioni:
         print(f"- {voce.storia.ultima.etichetta(config.segno_chiusa)}: {voce.testo}", file=uscita)
     print("", file=uscita)
-    print(f"Legenda: {LEGENDA.format(segno=config.segno_chiusa)}", file=uscita)
+    print(f"Legenda: {_legenda(archivio_note, config.segno_chiusa)}", file=uscita)
     return 1
 
 

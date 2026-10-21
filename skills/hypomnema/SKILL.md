@@ -234,6 +234,7 @@ new note number.
 | close an open question, a todo or a reminder | `"done": "0049"` or `"done": "0012, 0015"` | the reason |
 | reopen a closed note | `"reopens": "0049"` | the reason |
 | add new words at the end of a note (0.9.0) | `"integrates": "0049"` | the new words (same author as the note) |
+| cancel a note: it no longer counts, it was not done (0.9.0) | `"cancels": "0049"` | the reason |
 | put another note about the same thing at the end of this one (0.9.0) | `"integrates": "0049", "from_note": "0052"` | **no `text`**: the desk copies the text of 0052 |
 
 - In a change `kind` is optional: without it the kind stays as it is (with `reopens`, it goes back to
@@ -252,6 +253,9 @@ new note number.
   notes with a COSA label in common, with the same author, and only the user integrates a user's note
   (it leaves the recap; with `search --all` it shows «integrata nella nota …»). No `kind`: use `updates`.
   Propose it when the user says that two notes are the same idea growing; never on your own initiative.
+- **`cancels`** (from 0.9.0): the note **no longer counts** (any kind, decisions too), which is not «done». The code
+  gets a C in front: `CD0156.1`. It leaves the recap and the basic search; `reopens` makes it count again. Only the
+  user cancels (and makes count again) the user's notes; you only your own.
 - `done: 0012, 0015` creates one closed version for each note, with the same reason.
 - Who can do what:
   - **only the user** closes, reopens or changes the kind of an `open`, makes a note a

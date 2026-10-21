@@ -76,7 +76,7 @@ def _successive(quaderno: Quaderno, storia: Storia) -> list[tuple[Storia, Versio
 
 def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segnalazione]:
     segnalazioni: list[Segnalazione] = []
-    da_seguire = [s for s in quaderno.elenco() if not s.chiusa and s.integrata_in is None
+    da_seguire = [s for s in quaderno.elenco() if not s.chiusa and not s.annullata and s.integrata_in is None
                   and s.ultima.contenuto.natura in NATURE_DA_SEGUIRE]
 
     for versione, note in sorted(quaderno.rami, key=lambda r: ordine(r[0].id)):

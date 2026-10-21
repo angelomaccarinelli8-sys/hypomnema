@@ -234,6 +234,8 @@ def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura, 
             voci.insert(0, versioni.CHIUSA)
         elif campo == "reopens":
             voci.insert(0, versioni.RIAPERTA)
+        elif campo == "cancels":
+            voci.insert(0, versioni.ANNULLATA)
         id_versione = storia.prossima_versione()
         nota = replace(
             dopo, id=id_versione, corregge=None, done=None,

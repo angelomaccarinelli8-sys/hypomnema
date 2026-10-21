@@ -166,5 +166,60 @@ class TestIntegrare(ConLista):
         self.assertIn("is not found, word for word", self.motivi(integrates="0003", text="Parole mai dette."))
 
 
+class TestAnnullare(ConLista):
+    def setUp(self):
+        super().setUp()
+        self.accettata(kind="todo", text="Seminare l'orto.")              # 0001
+        self.accettata(kind="idea", text="Un pozzo.")                      # 0002
+        self.accettata(kind="decision", text="La regola del gioco vale.")  # 0003
+        self.claude = dict(author="claude", knowledge="inferred")
+
+    def test_k1_l_utente_annulla_la_sua_decisione(self):
+        self.assertEqual(self.accettata(cancels="0003", text="Non vale più."), "0003.1")
+        testo = self.file_nota("0003.1")
+        self.assertIn("- kind: decision\n- status: cancelled\n", testo)
+        self.assertIn("- change: cancelled\n", testo)
+        self.assertIn("### Reason\n\nNon vale più.\n", testo)
+        recap = self.comando("recap")[1]
+        self.assertIn("Ultime decisioni: nessuna.", recap)
+        self.assertIn("Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa · C annullata", recap)
+        _, base = self.comando("search", "regola")
+        self.assertIn("Nessuna nota aperta contiene «regola».", base)
+        _, tutte = self.comando("search", "regola", "--all")
+        self.assertIn("--- Nota CD0003.1 ---", tutte)
+        self.assertIn("stato: annullata (2026-01-15)", tutte)
+        self.assertIn("annullata il 2026-01-15, perché «Non vale più.»", tutte)
+        self.assertTrue(controllo.controlla(self.config).in_ordine)
+
+    def test_k2_claude_non_annulla_le_note_dell_utente(self):
+        self.assertIn("only the user can cancel it", self.motivi(cancels="0002", text="Superata.", **self.claude))
+
+    def test_k3_claude_annulla_una_sua_idea(self):
+        self.accettata(kind="idea", text="Un'aiuola.", **self.claude)  # 0004
+        self.assertEqual(self.accettata(cancels="0004", text="Superata.", **self.claude), "0004.1")
+
+    def test_k4_non_due_volte_e_non_le_chiuse(self):
+        self.accettata(cancels="0002", text="No.")
+        self.assertIn("is cancelled (CI0002.1)", self.motivi(cancels="0002", text="Ancora."))
+        self.accettata(done="0001", text="Fatto.")
+        self.assertIn("is closed (✓T0001.1): it was done", self.motivi(cancels="0001", text="No."))
+        self.assertIn("«kind» is not allowed", self.motivi(cancels="0003", kind="fact", text="No."))
+
+    def test_k5_riaprire_una_nota_annullata(self):
+        self.accettata(cancels="0003", text="Non vale più.")
+        self.assertIn("only the user can make it count again", self.motivi(reopens="0003", text="Vale.", **self.claude))
+        self.assertEqual(self.accettata(reopens="0003", text="Vale di nuovo."), "0003.2")
+        self.assertIn("- kind: decision\n", self.file_nota("0003.2"))
+        self.assertNotIn("- status:", self.file_nota("0003.2"))
+        self.assertIn("- [D0003.2]", self.comando("recap")[1])
+
+    def test_k6_niente_done_ne_integrazione_su_una_annullata(self):
+        self.accettata(cancels="0001", text="Non si fa più.")
+        self.assertIn("is cancelled (CT0001.1)", self.motivi(done="0001", text="Fatto."))
+        self.assertIn("is cancelled", self.motivi(integrates="0001", text="Ancora."))
+        self.accettata(kind="todo", text="Rifare l'orto.")  # 0004
+        self.assertIn("closed or already integrated", self.motivi(integrates="0004", from_note="0001"))
+
+
 if __name__ == "__main__":
     unittest.main()

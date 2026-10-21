@@ -1,0 +1,11 @@
+propose 1-decisione.json
+propose 2-idea-di-claude.json
+propose 3-claude-annulla-la-decisione.json
+propose 4-annullata-dall-utente.json
+propose 5-claude-annulla-la-sua-idea.json
+recap
+search spesa --all
+propose 6-chiudere-un-annullata.json
+propose 7-vale-di-nuovo.json
+recap
+check
