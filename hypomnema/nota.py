@@ -66,6 +66,9 @@ TITOLO_CAMBIO = "## Change"
 TITOLO_MOTIVO = "### Reason"
 # Dalla 0.7.0: il contesto scritto da Claude in un cambiamento chiesto dall'utente.
 TITOLO_CONTESTO_CAMBIO = "### Context written by Claude"
+# Dalla 0.9.0: in un'integrazione di un'altra nota, da dove viene il testo aggiunto (data, fonte, autore, verifica).
+TITOLO_DA_NOTA = "### From note "
+CAMPI_DA_NOTA = (("date", "data"), ("source", "fonte"), ("author", "autore"), ("verification", "verifica"))
 
 # I campi d'intestazione: il nome inglese (quello che si scrive), il nome italiano (che si legge
 # per sempre) e l'attributo della nota. Ordine fisso; i campi facoltativi compaiono solo se presenti.
@@ -150,6 +153,9 @@ class Cambio:
     motivo: str | None = None
     # Dalla 0.7.0: ciò che Claude aggiunge al motivo dell'utente (mai nelle parole dell'utente).
     contesto: str | None = None
+    # Dalla 0.9.0: la nota integrata (integrates + from_note) e la provenienza del suo testo:
+    # (numero, data, fonte, autore, verifica).
+    da_nota: tuple[str, str, str, str, str | None] | None = None
 
     def in_markdown(self) -> list[str]:
         righe = [TITOLO_CAMBIO, ""]
@@ -162,6 +168,11 @@ class Cambio:
             righe += [TITOLO_MOTIVO, "", self.motivo, ""]
         if self.contesto is not None:
             righe += [TITOLO_CONTESTO_CAMBIO, "", self.contesto, ""]
+        if self.da_nota is not None:
+            numero, *valori = self.da_nota
+            righe += [TITOLO_DA_NOTA + numero, ""]
+            righe += [f"- {nome}: {valore}" for (nome, _), valore in zip(CAMPI_DA_NOTA, valori) if valore is not None]
+            righe.append("")
         return righe
 
 
@@ -223,6 +234,18 @@ def numeri(valore: str) -> tuple[str, ...]:
 
 
 def _cambio(id_nota: str, righe: list[str]) -> Cambio:
+    da_nota = None
+    inizio_da_nota = next((i for i, r in enumerate(righe) if r.startswith(TITOLO_DA_NOTA)), None)
+    if inizio_da_nota is not None:
+        provenienza = {}
+        for riga in righe[inizio_da_nota + 1:]:
+            chiave, separatore, valore = riga[2:].partition(": ") if riga.startswith("- ") else ("", "", "")
+            for inglese, attributo in CAMPI_DA_NOTA:
+                if separatore and chiave == inglese:
+                    provenienza[attributo] = valore
+        da_nota = (righe[inizio_da_nota][len(TITOLO_DA_NOTA):].strip(), provenienza.get("data", ""),
+                   provenienza.get("fonte", ""), provenienza.get("autore", ""), provenienza.get("verifica"))
+        righe = righe[:inizio_da_nota]
     campi: dict[str, str] = {}
     fine = righe.index(TITOLO_MOTIVO) if TITOLO_MOTIVO in righe else len(righe)
     for riga in righe[:fine]:
@@ -241,7 +264,7 @@ def _cambio(id_nota: str, righe: list[str]) -> Cambio:
         contesto = "\n".join(resto[inizio + 1:]).strip()
         resto = resto[:inizio]
     motivo = "\n".join(resto).strip() if fine < len(righe) else None
-    return Cambio(motivo=motivo, contesto=contesto, **campi)
+    return Cambio(motivo=motivo, contesto=contesto, da_nota=da_nota, **campi)
 
 
 def da_markdown(id_nota: str, contenuto: str) -> Nota:

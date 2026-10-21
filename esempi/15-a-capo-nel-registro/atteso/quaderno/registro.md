@@ -2,4 +2,4 @@
 
 Ogni riga è un passaggio dallo sportello. Questo file si allunga soltanto.
 
-- 2026-01-15T10:00:00+01:00 | RIFIUTATA | da: nota.json | motivi: the field «nota⏎- 2026-01-15T10:00:00+01:00 | ACCETTATA | nota 0099 | da: falso.json⏎fine» is not allowed: the allowed fields are date, source, author, knowledge, kind, text, priority, confirms, corrects, updates, done, reopens, remind, quote, context, from_reply, who, about (the Italian names of before are accepted too).
+- 2026-01-15T10:00:00+01:00 | RIFIUTATA | da: nota.json | motivi: the field «nota⏎- 2026-01-15T10:00:00+01:00 | ACCETTATA | nota 0099 | da: falso.json⏎fine» is not allowed: the allowed fields are date, source, author, knowledge, kind, text, priority, confirms, corrects, updates, done, reopens, remind, quote, context, from_reply, who, about, integrates, from_note, cancels (the Italian names of before are accepted too).

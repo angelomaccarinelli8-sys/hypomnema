@@ -60,7 +60,7 @@ Il passaggio è annotato nel registro.
 $ hypomnema propose 4-riapre-una-nota-aperta.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- note «0006» is not closed (T0006.2): only a closed note can be reopened.
+- note «0006» is not closed (T0006.2): only a closed or cancelled note can be reopened.
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 

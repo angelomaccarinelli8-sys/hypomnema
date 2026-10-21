@@ -108,7 +108,8 @@ class TestLingua(ConQuaderno):
         self.nota(text="Il fico va potato a febbraio.")
         for italiano, inglese in INGLESE.items():
             if italiano in ("testimone", "risposte", "avvio", "protezione", "impronta", "confronta",
-                            "cambiati", "archivio", "proponi", "impostazioni-claude", "istantanea"):
+                            "cambiati", "archivio", "proponi", "impostazioni-claude", "istantanea",
+                            "grafo"):  # grafo scrive un file: test_riordino.TestGrafo
                 continue
             argomenti = ["fico"] if inglese == "search" else ["--last", "1"] if inglese == "diary" else []
             with self.subTest(comando=italiano):
@@ -137,7 +138,7 @@ class TestLingua(ConQuaderno):
                 self.assertIn(f"/hypomnema:{nome}", testo)
 
     def test_versione(self):
-        self.assertEqual(__version__, "0.8.0")
+        self.assertEqual(__version__, "0.9.0")
 
 
 class TestPausaInInglese(ConQuaderno):

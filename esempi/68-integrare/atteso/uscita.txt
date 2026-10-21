@@ -1,0 +1,128 @@
+$ hypomnema propose 1-todo-pozzo.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-todo-pompa.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 3-idea-gioco.json
+ACCETTATA: la nota 0003 è stata salvata nel quaderno (note/0003.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 4-integra-la-pompa-nel-pozzo.json
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 5-parole-nuove.json
+ACCETTATA: la versione 0003.1 della nota 0003 è stata salvata nel quaderno (note/0003.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 6-senza-cosa-in-comune.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- notes «0001» and «0003» have no COSA label in common: only notes about the same thing can be integrated.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 7-claude-aggiunge-alla-nota-dell-utente.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- note «0003» is written by «user»: only «user» can add words to it, so that the user's words and Claude's never mix.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 8-con-il-tipo.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- «integrates» only adds text at the end of the note: «kind» is not allowed (to change kind, priority or reminder use «updates»).
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [T0001.1] 2026-01-15: Scavare il pozzo nell'orto. … · cosa: orto
+    ↳ T0001.1 2026-01-15 · user: integrata in fondo la nota 0002
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema search pompa
+Trovata 1 nota con «pompa».
+(1 nota chiusa non mostrata: aggiungi --all per vederla.)
+
+--- Nota T0001.1 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: todo
+cosa: orto
+etichette dal testo (messe dallo sportello): cosa orto
+verifica: author not verified (witness off)
+testo:
+  Scavare il pozzo nell'orto.
+
+  Comprare la pompa a mano per l'orto.
+storia (dalla più vecchia):
+  T0001   2026-01-15 · user: creata
+  T0001.1 2026-01-15 · user: integrata in fondo la nota 0002
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema search pompa --all
+Trovate 2 note con «pompa» (dalla più recente).
+
+--- Nota T0002 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: todo
+stato: integrata nella nota T0001.1 (2026-01-15): il suo testo è in fondo a quella nota
+cosa: orto
+etichette dal testo (messe dallo sportello): cosa orto
+verifica: author not verified (witness off)
+testo:
+  Comprare la pompa a mano per l'orto.
+
+--- Nota T0001.1 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: todo
+cosa: orto
+etichette dal testo (messe dallo sportello): cosa orto
+verifica: author not verified (witness off)
+testo:
+  Scavare il pozzo nell'orto.
+
+  Comprare la pompa a mano per l'orto.
+storia (dalla più vecchia):
+  T0001   2026-01-15 · user: creata
+  T0001.1 2026-01-15 · user: integrata in fondo la nota 0002
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 3 note e 2 versioni, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

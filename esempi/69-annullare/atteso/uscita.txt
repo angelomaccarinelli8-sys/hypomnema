@@ -1,0 +1,111 @@
+$ hypomnema propose 1-decisione.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 2-idea-di-claude.json
+ACCETTATA: la nota 0002 è stata salvata nel quaderno (note/0002.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 3-claude-annulla-la-decisione.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- note «0001» is the user's: only the user can cancel it. Claude can suggest it.
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 4-annullata-dall-utente.json
+ACCETTATA: la versione 0001.1 della nota 0001 è stata salvata nel quaderno (note/0001.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema propose 5-claude-annulla-la-sua-idea.json
+ACCETTATA: la versione 0002.1 della nota 0002 è stata salvata nel quaderno (note/0002.1.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: nessuna.
+
+Ultime decisioni: nessuna.
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa · C annullata
+[codice di uscita: 0]
+
+$ hypomnema search spesa --all
+Trovate 2 note con «spesa» (dalla più recente).
+
+--- Nota CI0002.1 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: claude
+tipo: inferred
+natura: idea
+stato: annullata (2026-01-15)
+testo:
+  Un foglio condiviso per la spesa.
+storia (dalla più vecchia):
+  I0002    2026-01-15 · claude: creata
+  CI0002.1 2026-01-15 · claude: annullata il 2026-01-15, perché «Superata dalla decisione.»
+
+--- Nota CD0001.1 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026
+autore: user
+tipo: stated
+natura: decision
+stato: annullata (2026-01-15)
+verifica: author not verified (witness off)
+testo:
+  La lista della spesa la tiene Marco.
+storia (dalla più vecchia):
+  D0001    2026-01-15 · user: creata
+  CD0001.1 2026-01-15 · user: annullata il 2026-01-15, perché «Da oggi la spesa la facciamo insieme.»
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa · C annullata
+[codice di uscita: 0]
+
+$ hypomnema propose 6-chiudere-un-annullata.json
+RIFIUTATA: la nota non è stata salvata.
+Motivi:
+- note «0001» is cancelled (CD0001.1): to make it count again use «reopens».
+Il passaggio è annotato nel registro.
+[codice di uscita: 1]
+
+$ hypomnema propose 7-vale-di-nuovo.json
+ACCETTATA: la versione 0001.2 della nota 0001 è stata salvata nel quaderno (note/0001.2.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema recap
+Dove eravamo rimasti (recap del 2026-01-15).
+
+Promemoria scaduti: nessuno.
+
+Discorsi aperti: nessuno.
+
+Cose da fare: nessuna.
+
+Ultime decisioni: 1 di 1 (prima la priorità alta, poi dal più recente)
+- [D0001.2] 2026-01-15: La lista della spesa la tiene Marco.
+    ↳ D0001.2 2026-01-15 · user: riaperta il 2026-01-15, perché «Ci ho ripensato: la tiene Marco.»
+    ↳ CD0001.1 2026-01-15 · user: annullata il 2026-01-15, perché «Da oggi la spesa la facciamo insieme.»
+
+Ultime voci del diario: nessuna.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa · C annullata
+[codice di uscita: 0]
+
+$ hypomnema check
+Quaderno in ordine: 2 note e 3 versioni, tutte con la loro riga ACCETTATA nel registro.
+[codice di uscita: 0]
+

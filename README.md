@@ -662,6 +662,21 @@ Si possono ripetere i filtri, e devono valere tutti. I nomi italiani sono `--chi
 `etichette.toml`. Il file non cambia rispetto alla 0.7.0, quindi una copia rimasta alla 0.7.0 non si
 ferma: semplicemente non aggiunge le COSA dal testo. Aggiornale tutte e due.
 
+### Gli schemi del tuo modo di parlare e il riordino (dalla 0.9.0)
+
+- `patterns` (`schemi`) mostra, in sola lettura, le sequenze di parole tipiche di ogni tipo delle tue note, ricavate
+  dal quaderno con regole fisse (vedi FORMATO, «Gli schemi del modo di parlare»); `patterns --misura` dice quante volte
+  indovinano il tipo. Quando salvi una nota tua che suona come un altro tipo, `propose` aggiunge una riga
+  «SUGGERIMENTO (non cambia niente)»: il tipo lo scegli sempre tu.
+- Le COSA trovate nel testo valgono anche per le note scritte prima: un'etichetta aggiunta alla lista vale subito.
+- `integrates` (`integra`) aggiunge parole nuove in fondo a una nota, oppure (con `from_note`) il testo di un'altra nota
+  sulla stessa cosa, che esce dal recap.
+- `cancels` (`annulla`) annulla una nota che non vale più (codice con la C: `CD0156.1`); `reopens` la fa valere di nuovo.
+- `review` segnala anche le note **integrabili** (stesso autore, una COSA in comune, una nomina l'altra);
+  `review --proposte` stampa le proposte pronte, da completare con le tue parole e proporre una alla volta.
+- `graph grafo.html` (`grafo`) scrive, fuori dal quaderno, una pagina con il grafo del taccuino: note, etichette e
+  rimandi. Si apre con il browser.
+
 ### Le tue parole e quelle di Claude restano separate
 
 In una nota con `author: user`, il `text` sono **le tue parole esatte**. Se Claude vuole

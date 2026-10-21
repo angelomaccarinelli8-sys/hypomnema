@@ -14,8 +14,8 @@ from datetime import datetime
 from pathlib import Path
 
 from hypomnema import (
-    archivio as testimone_archivio, blocco, etichette, fuso_del_sistema, quaderno, registro, regole, risposte as testimone_risposte,
-    testimone, versioni,
+    archivio as testimone_archivio, blocco, etichette, fuso_del_sistema, quaderno, registro, regole,
+    risposte as testimone_risposte, schemi, testimone, versioni,
 )
 from hypomnema.configurazione import Configurazione
 from hypomnema.nota import Cambio, Nota, numeri
@@ -29,6 +29,9 @@ class Esito:
     motivi: list[str]
     # Tutte le note o versioni scritte: (numero, percorso). Più di una solo con «done» su più note.
     scritte: tuple[tuple[str, Path], ...] = ()
+    # Dalla 0.9.0: un altro tipo che suona meglio, dagli schemi del modo di parlare dell'utente: (tipo, sequenze).
+    # Solo un suggerimento: non entra nella nota né nel registro e non cambia niente.
+    suggerimento: tuple[str, list[str], str] | None = None  # (tipo che suona meglio, sequenze, tipo proposto)
 
 
 class _CampoDoppio(Exception):
@@ -69,6 +72,18 @@ def _leggi_proposta(contenuto: bytes) -> tuple[dict | None, list[str]]:
 def _facoltativo(proposta: dict, campo: str) -> str | None:
     valore = proposta.get(campo)
     return valore.strip() if valore is not None else None
+
+
+def _suggerimento(proposta: dict | None, note_esistenti) -> tuple[str, list[str], str] | None:
+    """Per una nota nuova dell'utente: un altro tipo che suona meglio, con gli schemi del quaderno di prima."""
+    if (proposta is None or not isinstance(proposta.get("author"), str) or proposta["author"].strip() != "user"
+            or not isinstance(proposta.get("text"), str) or not isinstance(proposta.get("kind"), str)
+            or any(proposta.get(c) is not None for c in regole.CAMPI_CAMBIAMENTO)):
+        return None
+    conti = schemi.Conti.da(schemi.note_dell_utente(versioni.Quaderno(note_esistenti)))
+    proposto = proposta["kind"].strip()
+    trovato = schemi.suggerimento(conti, proposta["text"], proposto)
+    return (*trovato, proposto) if trovato is not None else None
 
 
 def _etichette(proposta: dict, campo: str) -> tuple[str, ...] | None:
@@ -116,9 +131,10 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
         motivi += regole.controlla(proposta, note_esistenti, messaggi, config.segno_citazione, risposte,
                                    config.segno_chiusa, lista)
 
+    consiglio = _suggerimento(proposta, note_esistenti)
     if motivi:
         registro.annota(config, adesso, origine, None, motivi)
-        return Esito(accettata=False, id_nota=None, percorso=None, motivi=motivi)
+        return Esito(accettata=False, id_nota=None, percorso=None, motivi=motivi, suggerimento=consiglio)
 
     id_nota = quaderno.prossimo_id(note_esistenti, config.cifre_numero_nota)
     citazione = _facoltativo(proposta, "quote")
@@ -126,14 +142,15 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
         # Nel file della nota la citazione sta su una riga: spazi e a capo ridotti a uno.
         citazione = testimone.normalizza(citazione)
     autore = proposta["author"].strip()
-    testo = proposta["text"].strip()
+    # Senza testo solo l'integrazione di un'altra nota (dalla 0.9.0), che copia il testo di quella nota.
+    testo = proposta["text"].strip() if isinstance(proposta.get("text"), str) else ""
     da_risposta = _facoltativo(proposta, "from_reply")
     dicitura = regole.verifica(
         autore, testo, citazione, messaggi, config.segno_citazione, config.in_chat,
         da_risposta=da_risposta is not None, risposte=risposte, in_pausa=in_pausa,
         archivio=testimone_archivio.leggi_messaggi(config) if config.file_archivio else None,
         diario_chat=testimone_archivio.leggi_risposte(config) if config.file_archivio else None,
-    )
+    ) if testo else None
     campo = next((c for c in regole.CAMPI_CAMBIAMENTO if _facoltativo(proposta, c) is not None), None)
     if campo is not None:
         valori = {k: v.strip() for k, v in proposta.items() if isinstance(v, str)}
@@ -176,7 +193,8 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
             numero += 1
     id_nota = nota.id
     registro.annota(config, adesso, origine, id_nota, [])
-    return Esito(accettata=True, id_nota=id_nota, percorso=percorso, motivi=[], scritte=((id_nota, percorso),))
+    return Esito(accettata=True, id_nota=id_nota, percorso=percorso, motivi=[], scritte=((id_nota, percorso),),
+                 suggerimento=consiglio)
 
 
 def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura, lista) -> Esito:
@@ -186,8 +204,9 @@ def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura, 
     cambio = Cambio(
         data=valori["date"], fonte=valori["source"], autore=valori["author"], tipo=valori["knowledge"], cambio="",
         citazione=None if campo == "corrects" else valori.get("quote"), verifica=dicitura,
-        # In una correzione le parole nuove sono il testo stesso: non c'è un motivo a parte.
-        motivo=None if campo == "corrects" else valori["text"],
+        # In una correzione (e in un'integrazione, dalla 0.9.0) le parole nuove sono nel testo stesso: non c'è un
+        # motivo a parte.
+        motivo=None if campo in ("corrects", "integrates") else valori["text"],
         # In una correzione il contesto descrive il testo nuovo e sta nella nota; negli altri cambiamenti
         # dell'utente (dalla 0.7.0) accompagna il motivo.
         contesto=None if campo == "corrects" else valori.get("context"),
@@ -197,17 +216,31 @@ def _versioni(config, adesso, origine, note_esistenti, campo, valori, dicitura, 
     for numero in elenco:
         storia = archivio_note.risolvi(numero, campo).storia
         attuale = storia.ultima.contenuto
-        dopo = regole.dopo_il_cambiamento(campo, valori, storia, lista)
+        dopo = regole.dopo_il_cambiamento(campo, valori, storia, lista, archivio_note)
         voci = versioni.differenze(attuale, dopo)
+        cambio_qui = cambio
+        if campo == "integrates":
+            # Il testo di prima resta intatto: la voce dice che cosa si è aggiunto in fondo.
+            voci = [v for v in voci if v != versioni.TESTO_CORRETTO]
+            if "from_note" in valori:
+                integrata = archivio_note.risolvi(valori["from_note"], "from_note").storia
+                sua = integrata.ultima.contenuto
+                voci.insert(0, f"{versioni.INTEGRATA} {integrata.base}")
+                cambio_qui = replace(cambio, verifica=None,
+                                     da_nota=(integrata.base, sua.data, sua.fonte, sua.autore, sua.verifica))
+            else:
+                voci.insert(0, versioni.TESTO_AGGIUNTO)
         if campo == "done":
             voci.insert(0, versioni.CHIUSA)
         elif campo == "reopens":
             voci.insert(0, versioni.RIAPERTA)
+        elif campo == "cancels":
+            voci.insert(0, versioni.ANNULLATA)
         id_versione = storia.prossima_versione()
         nota = replace(
             dopo, id=id_versione, corregge=None, done=None,
             verifica=dicitura if campo == "corrects" else attuale.verifica,
-            cambio=replace(cambio, cambio="; ".join(voci)),
+            cambio=replace(cambio_qui, cambio="; ".join(voci)),
         )
         percorso = config.cartella_note / f"{id_versione}.md"
         try:

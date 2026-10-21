@@ -20,7 +20,7 @@ un'altra dice sempre com'è quella nota oggi, anche se è chiusa o è stata camb
 
 import re
 
-from hypomnema import quaderno as quaderno_su_disco
+from hypomnema import etichette, quaderno as quaderno_su_disco
 from hypomnema.configurazione import Configurazione
 from hypomnema.versioni import Quaderno, Storia, Versione, ultima_o_motivo
 from hypomnema.nota import ordine
@@ -57,7 +57,20 @@ def per_data(storie: list[Storia]) -> list[Storia]:
 
 
 def leggi(config: Configurazione) -> Quaderno:
-    return Quaderno(quaderno_su_disco.leggi_note(config))
+    """Il quaderno, con le COSA dal testo calcolate al momento della lettura (dalla 0.9.0).
+
+    Se etichette.toml è scritto male, si va avanti senza le COSA dal testo e ``quaderno.avviso`` lo dice.
+    """
+    quaderno = Quaderno(quaderno_su_disco.leggi_note(config))
+    quaderno.avviso = None
+    try:
+        lista = etichette.leggi(config.cartella_quaderno)
+    except etichette.ErroreEtichette as errore:
+        quaderno.avviso = (f"Attenzione: {etichette.NOME_FILE} è scritto male ({errore}): le COSA dal testo non sono "
+                           "calcolate.")
+        return quaderno
+    etichette.con_cosa_dal_testo(quaderno, lista)
+    return quaderno
 
 
 def cerca(quaderno: Quaderno | Configurazione, parola: str | None, tutte: bool = False,
@@ -109,11 +122,14 @@ def priorita_in_vigore(storia: Storia) -> str:
 # Le voci dei cambiamenti (in inglese nel file) come le legge l'utente.
 VOCI_ITALIANE = (
     ("text corrected", "testo corretto"),
+    ("text added", "testo aggiunto in fondo"),
+    ("integrated ", "integrata in fondo la nota "),
     ("kind ", "natura "),
     ("priority ", "priorità "),
     ("remind ", "promemoria "),
     ("closed", "chiusa"),
     ("reopened", "riaperta"),
+    ("cancelled", "annullata"),
     ("who ", "chi "),
     ("about ", "cosa "),
 )
@@ -149,13 +165,15 @@ def descrivi_cambio(storia: Storia, versione: Versione, breve: bool) -> str:
             voci.append(f"riaperta il {versione.data}{perche}")
         elif voce == "closed":
             voci.append(f"chiusa il {versione.data}{perche}")
+        elif voce == "cancelled":
+            voci.append(f"annullata il {versione.data}{perche}")
         elif voce == "text corrected" and not breve:
             precedente = storia.versioni[storia.versioni.index(versione) - 1].contenuto
             voci.append(f"testo corretto (prima: «{prima_riga(precedente.testo)}»)")
         else:
             voci.append(in_italiano(voce))
     descrizione = ", ".join(voci)
-    con_motivo = {"reopened", "closed"} & set(versione.cambi)
+    con_motivo = {"reopened", "closed", "cancelled"} & set(versione.cambi)
     if versione.motivo and not con_motivo and not breve:
         descrizione += f". Motivo: «{taglia(versione.motivo)}»{contesto}"
     if versione.bloccati:

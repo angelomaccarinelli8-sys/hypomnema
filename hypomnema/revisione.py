@@ -18,6 +18,13 @@ parole) segnala soltanto, e decide l'utente.
 6. **Catena vecchia non permessa oggi**: una nota vecchia cambiava ciò che oggi non avrebbe il permesso
    di cambiare (Claude che corregge il testo dell'utente, o che fa smettere un open di essere open).
    Resta nella storia ma non vale: lo dice la revisione, e decide l'utente.
+7. **Integrabile** (dalla 0.9.0, decisione di Angelo del 21/10): due note dello stesso autore, con almeno una COSA
+   in comune, e il testo o il contesto di una delle due nomina l'altra (anche di tipo diverso: un'idea che finisce in
+   una decisione). Si propone di integrare la più vecchia nella più recente; decide l'utente.
+
+Dalla 0.9.0 ogni segnalazione che ha una regola fissa porta anche una **proposta pronta** (``proposta``), da completare
+con le parole dell'utente: il programma non le inventa (``text`` e ``source`` restano vuoti, e lo sportello rifiuta
+una proposta finché non sono scritti).
 """
 
 import re
@@ -42,6 +49,17 @@ NATURE_DA_SEGUIRE = ("open", "todo")
 class Segnalazione:
     storia: Storia
     testo: str
+    # Dalla 0.9.0: la proposta pronta, da completare (vedi sopra), oppure None.
+    proposta: dict | None = None
+
+
+def _proposta(oggi: date, **campi) -> dict:
+    """Una proposta dell'utente da completare: «source» e (se serve) «text» vuoti, che scrive l'utente."""
+    return {"date": oggi.isoformat(), "source": "", "author": "user", "knowledge": "stated", **campi}
+
+
+def _vive(storia: Storia) -> bool:
+    return not storia.chiusa and not storia.annullata and storia.integrata_in is None
 
 
 def _giorno(data: str) -> date:
@@ -76,7 +94,8 @@ def _successive(quaderno: Quaderno, storia: Storia) -> list[tuple[Storia, Versio
 
 def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segnalazione]:
     segnalazioni: list[Segnalazione] = []
-    da_seguire = [s for s in quaderno.elenco() if not s.chiusa and s.ultima.contenuto.natura in NATURE_DA_SEGUIRE]
+    da_seguire = [s for s in quaderno.elenco() if not s.chiusa and not s.annullata and s.integrata_in is None
+                  and s.ultima.contenuto.natura in NATURE_DA_SEGUIRE]
 
     for versione, note in sorted(quaderno.rami, key=lambda r: ordine(r[0].id)):
         storia = quaderno.storie[versione.base]
@@ -93,13 +112,13 @@ def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segn
             segnalazioni.append(Segnalazione(storia, (
                 f"{come} da {fermo} giorni (ultima versione del {storia.data_del_contenuto[:10]}). Si può chiudere "
                 f"(done: {storia.base}), cambiare (updates: {storia.base}) o lasciarla com'è."
-            )))
+            ), _proposta(oggi, done=storia.base, text="")))
 
     for voce in promemoria.scaduti(quaderno, oggi):
         segnalazioni.append(Segnalazione(voce.storia, (
             f"promemoria scaduto il {voce.giorno}, ancora aperto. Si può chiudere (done: {voce.storia.base}) "
             f"o spostare (updates: {voce.storia.base} con remind)."
-        )))
+        ), _proposta(oggi, done=voce.storia.base, text="")))
 
     for storia in da_seguire:
         schema = _numero_nominato(_numeri_della_storia(storia))
@@ -114,7 +133,7 @@ def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segn
                 segnalazioni.append(Segnalazione(storia, (
                     f"nominata nella nota {versione.etichetta(segno)} ({versione.data[:10]}). Leggila: se dice che "
                     f"è fatta o risolta, si può chiudere con done: {storia.base}."
-                )))
+                ), _proposta(oggi, done=storia.base, text="")))
 
     for storia in da_seguire:
         contenuto = storia.ultima.contenuto
@@ -123,7 +142,7 @@ def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segn
             segnalazioni.append(Segnalazione(storia, (
                 f"nel testo c'è «{trovato.group(0)}» ma la nota non ha la data del promemoria. Si può "
                 f"aggiungere con updates: {storia.base} e remind."
-            )))
+            ), _proposta(oggi, updates=storia.base, remind="", text="")))
     for storia in quaderno.elenco():
         for versione in storia.versioni:
             if not versione.bloccati:
@@ -135,4 +154,29 @@ def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segn
                 f"{versione.data[:10]}) non vale «{', '.join(in_italiano(v) for v in versione.bloccati)}». Resta "
                 f"nella storia; se il cambiamento va fatto, lo decide l'utente ({campo}: {storia.base})."
             )))
+    segnalazioni += _integrabili(quaderno, segno, oggi)
+    return segnalazioni
+
+
+def _integrabili(quaderno: Quaderno, segno: str, oggi: date) -> list[Segnalazione]:
+    """Le coppie di note integrabili (regola 7): la più vecchia si propone dentro la più recente."""
+    vive = [s for s in quaderno.elenco() if _vive(s)]
+    schemi = {s.base: _numero_nominato(_numeri_della_storia(s)) for s in vive}
+
+    def nomina(chi: Storia, chi_e_nominata: Storia) -> bool:
+        nota = chi.ultima.contenuto
+        return any(t is not None and schemi[chi_e_nominata.base].search(t) for t in (nota.testo, nota.contesto))
+
+    segnalazioni = []
+    for i, vecchia in enumerate(vive):
+        for recente in vive[i + 1:]:
+            a, b = recente.ultima.contenuto, vecchia.ultima.contenuto
+            comuni = [c for c in (a.cosa or ()) if c in (b.cosa or ())]
+            if a.autore != b.autore or not comuni or not (nomina(recente, vecchia) or nomina(vecchia, recente)):
+                continue
+            segnalazioni.append(Segnalazione(vecchia, (
+                f"integrabile nella nota {recente.ultima.etichetta(segno)}: stesso autore, stessa COSA "
+                f"({', '.join(comuni)}) e una delle due nomina l'altra. Si può integrare con integrates: {recente.base} "
+                f"e from_note: {vecchia.base} (il testo resta com'è); oppure lasciarle separate."
+            ), _proposta(oggi, integrates=recente.base, from_note=vecchia.base)))
     return segnalazioni

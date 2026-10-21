@@ -162,7 +162,7 @@ class TestPermessi(ConQuaderno):
         self.assertIn("- change: closed; kind todo → fact\n", self.file_nota("0002.1"))
         self.accettata(kind="todo", text="Tre.")
         self.assertEqual(self.motivi(reopens="0003", text="x"),
-                         "note «0003» is not closed (T0003): only a closed note can be reopened.")
+                         "note «0003» is not closed (T0003): only a closed or cancelled note can be reopened.")
         self.assertEqual(self.accettata(reopens="0002.1", text="Non era fatto."), "0002.2")
 
     def test_si_cambia_solo_l_ultima_versione(self):

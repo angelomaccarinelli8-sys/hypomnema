@@ -1,0 +1,14 @@
+propose 01-decisione.json
+propose 02-decisione.json
+propose 03-decisione.json
+propose 04-idea.json
+propose 05-idea.json
+propose 06-idea.json
+propose 07-da-fare.json
+propose 08-da-fare.json
+propose 09-claude.json
+patterns
+schemi --misura
+propose 10-idea-che-suona-decisione.json
+propose 11-decisione-giusta.json
+patterns

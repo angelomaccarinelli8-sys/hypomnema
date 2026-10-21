@@ -39,7 +39,7 @@ from typing import TextIO
 
 from hypomnema import (
     __version__, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
-    fuso_del_sistema, promemoria, registro, revisione, risposte, sportello, testimone,
+    fuso_del_sistema, grafo, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
 from hypomnema.versioni import LEGENDA, Quaderno, Storia
@@ -52,13 +52,13 @@ INGLESE = {
     "stato": "status", "istantanea": "snapshot", "cambiati": "changed", "controlla": "check",
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
-    "revisione": "review", "etichette": "labels", "riscontri": "matches",
+    "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns", "grafo": "graph",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
 # I comandi che leggono il quaderno: aspettano che un passaggio dello sportello finisca (vedi blocco).
 LETTURA = ("search", "reminders", "recap", "review", "check", "snapshot", "changed", "status", "diary", "labels",
-           "matches")
+           "matches", "patterns", "graph")
 
 
 def _filtri(comando: argparse.ArgumentParser) -> None:
@@ -107,10 +107,25 @@ def _parser() -> argparse.ArgumentParser:
     )
     riscontri.add_argument("--about", "--cosa", dest="cosa", action="append", default=[], metavar="ETICHETTA",
                            help="solo queste etichette COSA (si può ripetere)")
-    comandi.add_parser(
+    schemi_parser = comandi.add_parser(
+        "patterns", aliases=["schemi"],
+        help="le sequenze di parole tipiche di ogni tipo di nota, dalle note dell'utente (solo lettura)",
+    )
+    schemi_parser.add_argument("--all", "--tutti", dest="tutti", action="store_true",
+                               help="mostra tutte le sequenze tipiche, non solo le più frequenti")
+    schemi_parser.add_argument("--measure", "--misura", dest="misura", action="store_true",
+                               help="quante volte gli schemi indovinano il tipo: sulle stesse note e a turno")
+    disegna = comandi.add_parser(
+        "graph", aliases=["grafo"],
+        help="scrive una pagina HTML con il grafo del taccuino (note, etichette, rimandi), fuori dal quaderno",
+    )
+    disegna.add_argument("file", help="il file .html da scrivere, fuori dalla cartella del quaderno")
+    rivedi = comandi.add_parser(
         "review", aliases=["revisione"],
         help="che cosa conviene guardare nel quaderno: rami, note ferme, promemoria scaduti, note nominate (solo lettura)",
     )
+    rivedi.add_argument("--proposals", "--proposte", dest="proposte", action="store_true",
+                        help="mostra anche le proposte pronte, da completare e passare allo sportello una alla volta")
 
     registra = comandi.add_parser(
         "witness", aliases=["testimone"], help="registra un messaggio dell'utente (lo lancia Claude Code a ogni messaggio)"
@@ -176,6 +191,20 @@ def _parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _legenda(quaderno: Quaderno, segno: str) -> str:
+    """La legenda dei codici; «C annullata» solo se nel quaderno c'è una nota annullata (dalla 0.9.0)."""
+    annullate = any(v.annullata for s in quaderno.elenco() for v in s.versioni)
+    return LEGENDA.format(segno=segno) + (" · C annullata" if annullate else "")
+
+
+def _leggi(config, uscita: TextIO) -> Quaderno:
+    """Il quaderno per un comando che legge; se etichette.toml è scritto male, una riga di avviso e si va avanti."""
+    quaderno = cercatore.leggi(config)
+    if quaderno.avviso:
+        print(quaderno.avviso, file=uscita)
+    return quaderno
+
+
 def _descrivi(storia: Storia, quaderno: Quaderno, segno: str, conferme, titolo: str = "") -> list[str]:
     """L'ultima versione di una nota per intero, poi la sua storia."""
     ultima = storia.ultima
@@ -190,6 +219,11 @@ def _descrivi(storia: Storia, quaderno: Quaderno, segno: str, conferme, titolo: 
     ]
     if ultima.chiusa:
         righe.append(f"stato: chiusa ({ultima.data})")
+    if ultima.annullata:
+        righe.append(f"stato: annullata ({ultima.data})")
+    if storia.integrata_in is not None:
+        righe.append(f"stato: integrata nella nota {storia.integrata_in.etichetta(segno)} "
+                     f"({storia.integrata_in.data}): il suo testo è in fondo a quella nota")
     if nota.priorita is not None:
         righe.append(f"priorità: {nota.priorita}")
     if nota.chi is not None:
@@ -244,6 +278,7 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
         print(f"ACCETTATA: {cosa} è stata salvata nel quaderno ({relativo}).", file=uscita)
     if esito.accettata:
         print("Il passaggio è annotato nel registro.", file=uscita)
+        _stampa_suggerimento(esito, uscita)
         return 0
     print("RIFIUTATA: la nota non è stata salvata." if not esito.scritte
           else "RIFIUTATA: il resto del cambiamento non è stato salvato.", file=uscita)
@@ -253,7 +288,23 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
         # (per esempio un finto "ACCETTATA") può comparire nella risposta che legge Claude.
         print(f"- {registro.su_una_riga(motivo)}", file=uscita)
     print("Il passaggio è annotato nel registro.", file=uscita)
+    _stampa_suggerimento(esito, uscita)
     return 1
+
+
+# Come si dice il tipo nel suggerimento: «suona come una decisione».
+COME_SUONA = {"decision": "una decisione", "idea": "un'idea", "todo": "una cosa da fare",
+              "open": "una questione aperta", "fact": "un fatto"}
+
+
+def _stampa_suggerimento(esito, uscita: TextIO) -> None:
+    """Dalla 0.9.0: il tipo che suona meglio secondo gli schemi dell'utente. Solo un suggerimento."""
+    if esito.suggerimento is None:
+        return
+    tipo, trovate, proposto = esito.suggerimento
+    citate = ", ".join(f"«{s}»" for s in trovate)
+    print(f"SUGGERIMENTO (non cambia niente): suona come {COME_SUONA[tipo]} ({tipo}: {citate}). È giusto il tipo "
+          f"{proposto}? Per cambiarlo serve updates.", file=uscita)
 
 
 def _mostra_con_collegate(storia: Storia, quaderno: Quaderno, segno: str, conferme, gia_mostrate: set[str],
@@ -316,7 +367,7 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
     if not parola and not filtro:
         print("ERRORE: serve una parola da cercare (oppure un filtro: --chi, --cosa).", file=uscita)
         return 2
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     if not _controlla_filtro(argomenti, config, archivio_note, uscita):
         return 2
     trovate = cercatore.cerca(archivio_note, parola, argomenti.tutte, argomenti.chi, argomenti.cosa)
@@ -348,13 +399,13 @@ def _cerca(argomenti, config, uscita: TextIO) -> int:
         _mostra_con_collegate(storia, archivio_note, config.segno_chiusa, conferme, gia_mostrate, uscita)
     if trovate:
         print("", file=uscita)
-        print(f"Legenda: {LEGENDA.format(segno=config.segno_chiusa)}", file=uscita)
+        print(f"Legenda: {_legenda(archivio_note, config.segno_chiusa)}", file=uscita)
     return 0
 
 
 def _promemoria(config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: i promemoria scaduti, dal più vecchio."""
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     oggi = adesso.date()
     scaduti = promemoria.scaduti(archivio_note, oggi)
     in_arrivo = promemoria.in_arrivo(archivio_note, oggi)
@@ -425,7 +476,7 @@ def _recap(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     suo ✓). Con un filtro per etichette (--chi, --cosa) restano solo le note che le hanno tutte, e il diario,
     che non ha etichette, non si mostra.
     """
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     if not _controlla_filtro(argomenti, config, archivio_note, uscita):
         return 2
     filtro = bool(argomenti.chi or argomenti.cosa)
@@ -492,7 +543,7 @@ def _recap(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
             for voce in mostrate:
                 righe.append(f"- {voce.quando} · {voce.chi}: {_prima_riga(voce.testo, voce.dicitura)}")
             righe.append(f"(per leggerle intere: diary --last {len(mostrate)})")
-    righe += ["", f"Legenda: {LEGENDA.format(segno=segno)}"]
+    righe += ["", f"Legenda: {_legenda(archivio_note, segno)}"]
 
     for riga in righe:
         print(riga, file=uscita)
@@ -502,7 +553,7 @@ def _recap(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
 def _etichette(config, uscita: TextIO) -> int:
     """Solo lettura: le etichette della lista, con quante note (ultima versione) ha ognuna."""
     lista = etichette.leggi(config.cartella_quaderno)
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     storie = archivio_note.elenco()
 
     def aperta(storia: Storia) -> bool:
@@ -544,9 +595,9 @@ def _etichette(config, uscita: TextIO) -> int:
     return 0
 
 
-def _revisione(config, adesso: datetime, uscita: TextIO) -> int:
+def _revisione(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: che cosa conviene guardare. 0 = niente, 1 = qualcosa da guardare."""
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     oggi = adesso.date()
     segnalazioni = revisione.rivedi(archivio_note, oggi, config.giorni_revisione, config.segno_chiusa)
     if not segnalazioni:
@@ -556,8 +607,17 @@ def _revisione(config, adesso: datetime, uscita: TextIO) -> int:
     print(f"Revisione del quaderno ({oggi.isoformat()}): {quante}. Non è stato cambiato niente.", file=uscita)
     for voce in segnalazioni:
         print(f"- {voce.storia.ultima.etichetta(config.segno_chiusa)}: {voce.testo}", file=uscita)
+    proposte = [v for v in segnalazioni if v.proposta is not None] if argomenti.proposte else []
+    if proposte:
+        print("", file=uscita)
+        print(f"Proposte pronte: {len(proposte)}. Non sono state passate allo sportello: ognuna va completata con "
+              "«source» e, dove c'è, «text» (le parole dell'utente, mai inventate), e poi proposta una alla volta "
+              "con propose. Se manca qualcosa lo sportello la rifiuta.", file=uscita)
+        for numero, voce in enumerate(proposte, start=1):
+            print(f"Proposta {numero} ({voce.storia.ultima.etichetta(config.segno_chiusa)}):", file=uscita)
+            print(json.dumps(voce.proposta, ensure_ascii=False), file=uscita)
     print("", file=uscita)
-    print(f"Legenda: {LEGENDA.format(segno=config.segno_chiusa)}", file=uscita)
+    print(f"Legenda: {_legenda(archivio_note, config.segno_chiusa)}", file=uscita)
     return 1
 
 
@@ -621,7 +681,7 @@ def _riscontri(argomenti, config, uscita: TextIO) -> int:
     il codice, l'etichetta e «a mano, non nel testo». Non giudica e non cambia niente.
     """
     lista = etichette.leggi(config.cartella_quaderno)
-    archivio_note = cercatore.leggi(config)
+    archivio_note = _leggi(config, uscita)
     storie = archivio_note.elenco()
     segno = config.segno_chiusa
     usate = sorted({e for s in storie for e in (s.ultima.contenuto.cosa or ())} - set(lista.cosa if lista else ()))
@@ -651,6 +711,65 @@ def _riscontri(argomenti, config, uscita: TextIO) -> int:
           "«a mano, non nel testo»: proposta a mano, e nel testo non c'è.", file=uscita)
     for riga in righe:
         print(riga, file=uscita)
+    return 0
+
+
+def _schemi(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura (dalla 0.9.0): gli schemi del modo di parlare dell'utente, e se si chiede la misura."""
+    note = schemi.note_dell_utente(_leggi(config, uscita))
+    conti = schemi.Conti.da(note)
+    print(f"Schemi del modo di parlare dell'utente: {len(note)} note dell'utente (prima versione di ogni nota; le note "
+          "di Claude non contano).", file=uscita)
+    print(f"Una sequenza di 2 o 3 parole è tipica di un tipo se compare in almeno {schemi.MIN_NOTE} note di quel tipo "
+          f"e almeno il {schemi.QUOTA:.0%} delle sue note è di quel tipo.", file=uscita)
+    for tipo in schemi.TIPI:
+        trovati = conti.schemi(tipo)
+        mostrati = trovati if argomenti.tutti else trovati[:schemi.DA_MOSTRARE]
+        quante = "1 nota" if conti.note_per_tipo[tipo] == 1 else f"{conti.note_per_tipo[tipo]} note"
+        elenco = ", ".join(f"«{s}» {n}" for s, n in mostrati) or "nessuno schema"
+        resto = len(trovati) - len(mostrati)
+        altri = f" (e altri {resto}: --all per vederli)" if resto else ""
+        print(f"- {tipo} ({quante}): {elenco}{altri}", file=uscita)
+    if argomenti.misura:
+        print("", file=uscita)
+        for titolo, a_turno in (("sulle stesse note (ottimista: gli schemi vengono anche dalla nota da indovinare)",
+                                 False),
+                                ("a turno (onesta: ogni nota tolta dal calcolo prima di indovinarla)", True)):
+            m = schemi.misura(note, a_turno)
+            print(f"Misura {titolo}: {m.note} note, tipo giusto {m.giuste}, nessuno schema {m.senza}, "
+                  f"tipo sbagliato {m.note - m.giuste - m.senza}.", file=uscita)
+        print("È una prova, non una garanzia: il tipo lo sceglie sempre chi propone.", file=uscita)
+    return 0
+
+
+def _grafo(argomenti, config, uscita: TextIO) -> int:
+    """Solo lettura sul quaderno (dalla 0.9.0): scrive la pagina del grafo in un file fuori dal quaderno.
+
+    Sovrascrive solo un file che è già una pagina del grafo di Hypomnema: un altro file non lo tocca.
+    """
+    file = Path(argomenti.file).resolve()
+    if config.cartella_quaderno.resolve() in (file, *file.parents):
+        print("ERRORE: la pagina del grafo non va dentro la cartella del quaderno: scegli un file fuori.", file=uscita)
+        return 2
+    if file.exists():
+        try:
+            inizio = file.read_text(encoding="utf-8")[:200]
+        except (OSError, UnicodeDecodeError):
+            inizio = ""
+        if grafo.SEGNO_PAGINA not in inizio:
+            print(f"ERRORE: il file «{file}» c'è già e non è una pagina del grafo di Hypomnema: non lo tocco. Scegli "
+                  "un altro nome.", file=uscita)
+            return 2
+    archivio_note = _leggi(config, uscita)
+    try:
+        lista = etichette.leggi(config.cartella_quaderno)
+    except etichette.ErroreEtichette:
+        lista = None  # l'avviso l'ha già dato _leggi
+    testo = grafo.pagina(archivio_note, lista, config.segno_chiusa)
+    file.write_text(testo, encoding="utf-8", newline="\n")
+    note = len(archivio_note.elenco())
+    print(f"Grafo del taccuino scritto in «{file}»: {note} note, {len(grafo.collegamenti(archivio_note))} rimandi. "
+          "Aprilo con il browser. Il quaderno non è stato toccato.", file=uscita)
     return 0
 
 
@@ -1054,8 +1173,12 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
         return _etichette(config, uscita)
     if comando == "matches":
         return _riscontri(argomenti, config, uscita)
+    if comando == "patterns":
+        return _schemi(argomenti, config, uscita)
+    if comando == "graph":
+        return _grafo(argomenti, config, uscita)
     if comando == "review":
-        return _revisione(config, adesso, uscita)
+        return _revisione(argomenti, config, adesso, uscita)
     if comando == "claude-settings":
         return _impostazioni_claude(argomenti, config, uscita)
     return _cerca(argomenti, config, uscita)

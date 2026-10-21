@@ -109,7 +109,9 @@ note, with `who` and/or `about` and, as always, `text` = the reason.
   **only if it has none proposed by hand yet** (the ones added by the desk do not count). Once a
   user's note has labels proposed by hand, only the user changes them: if you think they are wrong,
   suggest it.
-- Old notes do not get the COSA from their text by themselves: only their next version does.
+- From 0.9.0 the COSA from the text are also computed **when reading** (search, recap, labels, matches) for every
+  note, old ones too, with the list as it is now: when the user adds a label to the list, every note that names it
+  gets it at once, and no file is written. So **never propose versions just to add COSA that are in the text**.
 - A version that only changes labels does not move the note in the recap and does not reset the days
   of the review: the note keeps the date of its last real change.
 - Labelling many old notes: ask the user first («Vuoi che metta le etichette alle note vecchie? Sono

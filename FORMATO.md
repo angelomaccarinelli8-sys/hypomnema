@@ -42,6 +42,9 @@ Una proposta è **una sola nota** scritta in JSON, salvata in UTF-8.
 | `remind` | no | solo il giorno: `AAAA-MM-GG` | Promemoria: il giorno in cui riprendere la nota. Il comando `reminders` elenca quelli arrivati o passati. |
 | `done` | no | uno o più numeri di note esistenti, separati da virgole: `"0012"` oppure `"0012, 0015"` | Chiude le note indicate: questioni aperte (`open`), cose da fare (`todo`) o promemoria (con `remind`). Crea una versione chiusa per ciascuna, con lo stesso motivo (il `text`). Vedi «Chiudere e riaprire». |
 | `priority` | no; **solo** con `author: user` | `high`, `normal`, `low` | La priorità; senza, vale `normal`. Si cambia con `updates`. |
+| `integrates` | no (dalla 0.9.0) | numero di una nota non chiusa | Aggiunge un pezzo in fondo al testo della nota, che resta intatto: senza `from_note` le parole nuove del `text` (dello stesso autore della nota); con `from_note` il testo dell'altra nota così com'è. Vedi «Integrare una nota». |
+| `cancels` | no (dalla 0.9.0) | numero di una nota non chiusa | Annulla la nota: non vale più (diverso da `done`, «fatto»). Crea una versione con `- status: cancelled`; il `text` è il motivo. |
+| `from_note` | solo con `integrates` (dalla 0.9.0) | numero di un'altra nota | La nota da integrare: il suo testo va in fondo; la proposta non ha `text`. |
 | `who` | no (dalla 0.7.0) | una o due etichette CHI, separate da virgola: `"Anna"`, `"Anna, Marco"` | Le persone di cui parla la nota, dalla lista `chi` di `etichette.toml`. Vedi «Le etichette». |
 | `about` | no (dalla 0.7.0) | una o due etichette COSA, separate da virgola | I progetti o gli argomenti, dalla lista `cosa` di `etichette.toml`. |
 | `from_reply` | no; **solo** con `author: claude`, mai insieme a `quote` | `"yes"` | Il `text` è un pezzo di una risposta di Claude («Salva questa risposta di Claude»). Con il testimone delle risposte acceso, lo sportello lo cerca nelle risposte registrate. |
@@ -62,7 +65,8 @@ I valori vanno scritti esattamente così, in minuscolo. Gli spazi all'inizio e a
 `fonte`, `autore` (`utente`), `tipo` (`dichiarata`, `osservata`, `dedotta`), `natura` (`fatto`,
 `idea`, `decisione`, `discorso aperto`), `testo`, `contesto`, `citazione`, `conferma_di`,
 `corregge`, `aggiorna` (per `updates`), `riapre` (per `reopens`), `riprendere_il`, `da_risposta` (`sì`),
-`priorità` (`alta`, `normale`, `bassa`), e dalla 0.7.0 `chi` (per `who`) e `cosa` (per `about`).
+`priorità` (`alta`, `normale`, `bassa`), dalla 0.7.0 `chi` (per `who`) e `cosa` (per `about`), dalla 0.9.0 `integra`
+(per `integrates`), `da_nota` (per `from_note`) e `annulla` (per `cancels`).
 Lo sportello li porta all'inglese e la nota nuova si scrive in inglese. Lo stesso campo non può
 comparire due volte, nemmeno con i due nomi (per esempio `data` e `date`).
 
@@ -291,6 +295,37 @@ Il basilico è urgente, sta finendo la stagione buona.
 Il blocco `## Change` si legge solo nei file con il punto: una nota vecchia che ha quella riga nel
 testo resta com'è.
 
+## Integrare una nota (dalla 0.9.0)
+
+`integrates` crea la versione successiva della nota A: il testo di prima resta **intatto** e in fondo, dopo una riga
+vuota, si aggiunge un pezzo. Niente `kind`, `priority`, `remind`, `context` (per cambiarli c'è `updates`); A non chiusa
+né integrata in un'altra.
+
+- **(a) Parole nuove** (`integrates` senza `from_note`): il pezzo è il `text`, verificato come sempre (le parole
+  dell'utente con il testimone o l'archivio). Solo l'autore di A aggiunge parole: mai parole di Claude in una nota
+  dell'utente. Il blocco del cambiamento dice `change: text added`, con data, fonte, autore e verifica del pezzo.
+- **(b) Un'altra nota** (`integrates` + `from_note`, senza `text`): il pezzo è il testo dell'ultima versione di B,
+  così com'è. Il blocco dice `change: integrated 0052` e ha una sezione `### From note 0052` con la data, la fonte,
+  l'autore e la verifica di B. Regole: A e B con almeno una COSA in comune (finali, anche dal testo), stesso autore,
+  B non chiusa e non già integrata; se B è dell'utente la integra solo l'utente. Il file di B non si tocca: al
+  momento della lettura B è «integrata nella nota A» (la prima integrazione), esce dal recap, dalla ricerca di base,
+  dai promemoria e dalla revisione; `search --all` la mostra con «stato: integrata nella nota …».
+
+## Annullare una nota (dalla 0.9.0)
+
+`cancels` (in italiano `annulla`) dice che una nota **non vale più**: non è stata fatta, è superata. È diverso da
+`done` («è fatto»), che chiude solo questioni aperte, cose da fare e promemoria: si annulla ogni tipo di nota, anche
+un'idea, un fatto o una decisione. La versione nuova ha `- status: cancelled`, il blocco del cambiamento
+`change: cancelled` e il motivo. Il codice ha una **C** al posto del ✓, davanti alla lettera del tipo: `CD0156.1` è
+la decisione 0156 annullata; la legenda aggiunge «C annullata» quando nel quaderno c'è una nota annullata.
+
+- Solo l'utente annulla una nota dell'utente; Claude solo le sue.
+- Una nota annullata esce dal recap (anche una decisione), dalla ricerca di base, dai promemoria e dalla revisione;
+  `search --all` la mostra con «stato: annullata» e «annullata il …, perché «…»».
+- Non si chiude, non si annulla di nuovo, non si integra e non si integra in un'altra: per farla valere di nuovo
+  c'è `reopens` (per una nota dell'utente, solo l'utente), che riporta la nota com'era.
+- Una nota chiusa (fatta) non si annulla: si riapre.
+
 ## Il codice della nota
 
 Ogni nota si mostra con un codice: la lettera della natura della sua **ultima** versione davanti al
@@ -450,6 +485,12 @@ progetti o argomenti) proposte a mano. L'intestazione le mostra dopo la priorit�
   tocca.
 - Il permesso «Claude può mettere etichette a una nota dell'utente solo se non ne ha» conta solo quelle
   proposte a mano.
+- **Dalla 0.9.0 le COSA dal testo si calcolano anche al momento della lettura** (recap, search, labels, matches,
+  review, patterns), per tutte le versioni di tutte le note, anche quelle scritte prima: quelle proposte a mano più
+  quelle trovate oggi nel testo con la lista di oggi. Un'etichetta aggiunta alla lista vale subito per tutte le note
+  che la nominano; nessun file si scrive (niente versioni di sole etichette). Se `etichette.toml` è scritto male, i
+  comandi che leggono vanno avanti senza le COSA dal testo, con una prima riga «Attenzione: etichette.toml è scritto
+  male (…)»; lo sportello invece si ferma, come nella 0.8.0.
 - **`matches`** (`riscontri`), in sola lettura: per ogni COSA messa dallo sportello, una riga con il
   codice della nota, l'etichetta e il pezzo di frase dove l'ha trovata (fino a 4 parole prima e dopo,
   la parola tra `[ ]`); per ogni COSA proposta a mano che nel testo non c'è, una riga «a mano, non nel
@@ -481,6 +522,31 @@ progetti o argomenti) proposte a mano. L'intestazione le mostra dopo la priorit�
   quante sono aperte (open, todo e promemoria non chiusi); per le COSA anche quante dal testo e quante
   proposte (dalla 0.8.0); poi le etichette usate in qualche nota ma non più nella lista.
 
+## Gli schemi del modo di parlare (dalla 0.9.0)
+
+Il comando `patterns` (`schemi`), in sola lettura, ricava dal quaderno le sequenze di parole tipiche di ogni tipo di
+nota, con le regole fisse dello script del 21/10/2026 (decisione D0210), scritte in un posto solo (`hypomnema/schemi.py`):
+
+- si guardano solo le note dell'utente, ognuna con la sua prima versione (tipo e testo di quando è nata); le note di
+  Claude non contano;
+- il testo si porta in minuscolo e si spezza in parole fatte di lettere (anche à è é ì ò ù) e apostrofi; di ogni nota
+  si prendono le sequenze di 2 e 3 parole consecutive, ognuna una volta sola;
+- una sequenza è tipica di un tipo se compare in almeno 2 note di quel tipo e almeno il 60% delle note in cui compare
+  è di quel tipo, e non è una coppia «vuota»: una parola grammaticale (di, a, e, il, la, lo, le, i, che, per, in, un,
+  una, non, è, da, con, su) seguita da una parola, o una parola seguita da una di quelle (tranne non, è);
+- il tipo che suona un testo è quello con più sequenze tipiche; a parità vale l'ordine decision, idea, todo, open,
+  fact; con nessuna, nessuno.
+
+Gli schemi si ricalcolano dal quaderno ogni volta: nessun file salvato. `patterns` mostra le 12 più frequenti per tipo
+(`--all` tutte, a parità in ordine alfabetico); `--measure` (`--misura`) dice quante volte gli schemi indovinano il
+tipo delle note dell'utente, sulle stesse note (ottimista) e a turno (ogni nota tolta dal calcolo prima di indovinarla:
+il numero onesto).
+
+**Il suggerimento dello sportello.** Per una nota nuova dell'utente (non per i cambiamenti), se un altro tipo ha più
+sequenze tipiche del tipo proposto (gli schemi del quaderno di prima della proposta), `propose` stampa in fondo una
+riga «SUGGERIMENTO (non cambia niente): suona come una decisione (decision: «d'ora in poi»). È giusto il tipo idea? …».
+A parità niente. Il suggerimento non entra nella nota né nel registro, non cambia il codice di uscita e non blocca.
+
 ## La revisione
 
 Il comando `review` (o `revisione`) dice che cosa conviene guardare nel quaderno. È solo lettura:
@@ -499,7 +565,26 @@ niente, con 1 se c'è qualcosa da guardare. Le regole sono fisse:
    «in … days/day/weeks/week»;
 6. **catena vecchia non permessa oggi**: una nota vecchia cambiava ciò che oggi non avrebbe il
    permesso di cambiare (vedi «Le note di prima delle versioni»): resta nella storia ma non vale, e la
-   riga dice con quale proposta l'utente può fare il cambiamento, se lo vuole.
+   riga dice con quale proposta l'utente può fare il cambiamento, se lo vuole;
+7. **integrabile** (dalla 0.9.0): due note dello stesso autore, non chiuse, non annullate e non già integrate, con
+   almeno una COSA in comune, e il testo o il contesto di una delle due nomina l'altra (anche di tipo diverso). Si
+   propone di integrare la più vecchia (numero più basso) nella più recente.
+
+**Le proposte pronte** (dalla 0.9.0): `review --proposals` (`--proposte`) stampa, dopo le segnalazioni, una proposta
+JSON per ogni segnalazione che ha una regola fissa: `done` per le ferme, i promemoria scaduti e le nominate, `updates`
+con `remind` per quelle senza data, `integrates` + `from_note` per le integrabili. Hanno la data di oggi, autore
+`user`, e `source` e `text` vuoti: le parole dell'utente non si inventano, e lo sportello rifiuta una proposta finché
+non sono scritte. Non passano da sole allo sportello: si completano e si propongono una alla volta.
+
+## Il grafo del taccuino (dalla 0.9.0)
+
+`graph FILE.html` (`grafo`) scrive una pagina HTML, fuori dalla cartella del quaderno, con il disegno del taccuino: le
+note come punti colorati per tipo con il codice accanto, le etichette (CHI con il bordo tratteggiato, COSA) come punti
+grandi su un cerchio, le linee per i rimandi tra le note (conferme; chiusure e correzioni delle note vecchie;
+integrazioni; un numero di nota scritto nel testo o nel contesto, tratteggiato) e, più chiare, per i legami con le
+etichette. Le note chiuse, annullate o integrate sono sbiadite. La disposizione è fissa (stesso quaderno, stessa
+pagina), la pagina non usa internet. Il comando non scrive mai dentro il quaderno e sovrascrive solo un file che è già
+una pagina del grafo.
 
 Il programma non capisce il senso delle parole: non sa se una nota dice «è fatta» o «è superata», e
 non legge le date scritte a parole. Per questo segnala soltanto, e decide l'utente.

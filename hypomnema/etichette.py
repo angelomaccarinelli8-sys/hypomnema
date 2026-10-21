@@ -159,6 +159,23 @@ def pezzo_di_frase(testo: str, etichetta: str) -> str | None:
     return " ".join(parte for parte in (inizio, centro, fine) if parte)
 
 
+def con_cosa_dal_testo(quaderno, lista: Etichette | None) -> None:
+    """Le COSA dal testo calcolate al momento della lettura, per tutte le versioni di tutte le note (dalla 0.9.0).
+
+    Per ogni versione: quelle proposte a mano più quelle trovate oggi nel suo testo con la lista di oggi. Le note
+    vecchie prendono subito un'etichetta aggiunta alla lista; nessun file si scrive o si cambia.
+    """
+    from dataclasses import replace
+    if lista is None:
+        return
+    for storia in quaderno.elenco():
+        for i, versione in enumerate(storia.versioni):
+            nota = versione.contenuto
+            cosa, dal_testo = cosa_finali(cosa_a_mano(nota), trova_nel_testo(nota.testo, lista))
+            if (cosa, dal_testo) != (nota.cosa, nota.cosa_dal_testo):
+                storia.versioni[i] = replace(versione, contenuto=replace(nota, cosa=cosa, cosa_dal_testo=dal_testo))
+
+
 def separa(valore: str) -> tuple[str, ...]:
     """Le etichette di un campo come «who: Anna, Marco»."""
     return tuple(parte.strip() for parte in valore.split(","))

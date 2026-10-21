@@ -104,7 +104,12 @@ anything**: the register only grows and the decision is theirs. Then carry on no
    note, «ricordamelo» without a date, old branches, old chains not allowed today). If it finds something, **tell the user in
    one line**, for example «La revisione segnala 2 cose: la T0006 ha il promemoria scaduto e la
    O0004 è ferma da 46 giorni.» Do not change anything by yourself: each line says what *can* be
-   done, the user decides.
+   done, the user decides. From 0.9.0 it also lists notes **integrable** into another (same author, a COSA
+   in common, one names the other), and `P review --proposals` prints ready-made proposals with `source`
+   (and `text`) left empty: if the user accepts one, fill them with **the user's words** (never invented)
+   and propose it as usual, one at a time.
+   `P graph <file.html>` writes, outside the notebook, a page with the graph of the notebook: offer it when
+   the user wants to see the notebook as a whole.
 2. When a specific topic is needed later, run `P search <word>`. The search is by exact word,
    case-insensitive: try singular/plural too if needed. It also finds words inside compound names
    (`orto` finds `orto_balcone.py`). Notes come **from the most recent to the oldest**. **Closed
@@ -233,6 +238,9 @@ new note number.
 | change kind, priority, reminder date or labels | `"updates": "0049"` with `kind`, `priority`, `remind`, `who` and/or `about` | the reason |
 | close an open question, a todo or a reminder | `"done": "0049"` or `"done": "0012, 0015"` | the reason |
 | reopen a closed note | `"reopens": "0049"` | the reason |
+| add new words at the end of a note (0.9.0) | `"integrates": "0049"` | the new words (same author as the note) |
+| cancel a note: it no longer counts, it was not done (0.9.0) | `"cancels": "0049"` | the reason |
+| put another note about the same thing at the end of this one (0.9.0) | `"integrates": "0049", "from_note": "0052"` | **no `text`**: the desk copies the text of 0052 |
 
 - In a change `kind` is optional: without it the kind stays as it is (with `reopens`, it goes back to
   the kind before the closure). With `done` it can say what the question became: `decision`,
@@ -244,6 +252,15 @@ new note number.
   explanation next to their reason (for example what «fatto» refers to). It is saved apart, as
   «contesto scritto da Claude». Never in your own changes; never `from_reply` in a change.
 - **A correction does not close**: correcting a todo leaves it to do. To say it is done, use `done`.
+- **`integrates`** (from 0.9.0) keeps the text of the note **intact** and adds a piece at the end: new words
+  (verified like any note, and only by the note's author: never your words in a user's note), or with
+  `from_note` the text of another note **as it is**, with that note's date, source and verification. Only
+  notes with a COSA label in common, with the same author, and only the user integrates a user's note
+  (it leaves the recap; with `search --all` it shows «integrata nella nota …»). No `kind`: use `updates`.
+  Propose it when the user says that two notes are the same idea growing; never on your own initiative.
+- **`cancels`** (from 0.9.0): the note **no longer counts** (any kind, decisions too), which is not «done». The code
+  gets a C in front: `CD0156.1`. It leaves the recap and the basic search; `reopens` makes it count again. Only the
+  user cancels (and makes count again) the user's notes; you only your own.
 - `done: 0012, 0015` creates one closed version for each note, with the same reason.
 - Who can do what:
   - **only the user** closes, reopens or changes the kind of an `open`, makes a note a
@@ -372,6 +389,11 @@ because the witness did not record them).
    - `RIFIUTATA`: read the reasons (in English). If it is a format mistake of yours, fix it and
      propose again. **Never get around a rule** (for example by changing the author to get a
      decision through): if the rule blocks the note, the note does not get in.
+   - `SUGGERIMENTO (non cambia niente): suona come una decisione (…)` (from 0.9.0, only for the user's new
+     notes): the patterns of the user's way of speaking, counted from the notebook with fixed rules, say
+     that the text sounds like another kind. It changes nothing. Tell the user in one line («Lo schema
+     dice che suona come una decisione: la lascio idea?») and **never change the kind by yourself**: if
+     the user says so, propose an `updates` by the user. `P patterns` shows the patterns.
 4. You can delete the temporary proposal file: it is not part of the notebook.
 
 Do not modify, rename or delete the notebook's files (`note/`, `registro.md`, `etichette.toml`). The
