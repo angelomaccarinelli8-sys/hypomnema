@@ -110,7 +110,7 @@ anything**: the register only grows and the decision is theirs. Then carry on no
    (and `text`) left empty: if the user accepts one, fill them with **the user's words** (never invented)
    and propose it as usual, one at a time.
    `P graph <file.html>` writes, outside the notebook, a page with the graph of the notebook: offer it when
-   the user wants to see the notebook as a whole.
+   the user wants to see the notebook as a whole. `P graph <file.html> --albero` draws it as a tree (COSA → sub-branches → notes).
 2. When a specific topic is needed later, run `P search <word>`. The search is by exact word,
    case-insensitive: try singular/plural too if needed. It also finds words inside compound names
    (`orto` finds `orto_balcone.py`). Notes come **from the most recent to the oldest**. **Closed

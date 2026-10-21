@@ -642,6 +642,15 @@ etichette. Le note chiuse, annullate o integrate sono sbiadite. La disposizione 
 pagina), la pagina non usa internet. Il comando non scrive mai dentro il quaderno e sovrascrive solo un file che è già
 una pagina del grafo.
 
+**Il grafo ad albero** (dalla 0.10.0): `graph FILE.html --albero` (`--tree`) scrive la stessa pagina, con le stesse
+regole (sola lettura, fuori dal quaderno, senza internet, disposizione fissa), ma disposta ad albero: ogni COSA è il
+centro di un grappolo e i grappoli stanno su un cerchio (nell'ordine della lista, poi le COSA fuori lista in ordine
+alfabetico, e per ultimo «senza COSA» per le note senza etichette COSA); intorno a ogni COSA i suoi sotto-rami e
+«senza argomento»; intorno a ogni sotto-ramo le sue note, a ventaglio verso l'esterno, con le catene di integrazione
+una accanto all'altra. Ogni nota compare una volta sola, nel primo ramo e nel primo sotto-ramo della sua ultima
+versione; verso gli altri suoi sotto-rami ha una linea chiara tratteggiata. Le CHI non si disegnano. Senza `--albero`
+la pagina è quella della 0.9.0, byte per byte.
+
 Il programma non capisce il senso delle parole: non sa se una nota dice «è fatta» o «è superata», e
 non legge le date scritte a parole. Per questo segnala soltanto, e decide l'utente.
 

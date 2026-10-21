@@ -24,6 +24,8 @@ Hypomnema e come aggiornarsi.
   dello stesso sotto-ramo, dello stesso autore e dello stesso tipo vanno tutte nella più recente, una proposta per nota.
   Senza sotto-rami resta la regola della 0.9.0, ma il rimando a un'altra nota conta solo se è nel testo, non nel
   contesto scritto da Claude, e anche lì a catena. Sul quaderno inventato dell'esempio 73: 4 proposte invece di 8.
+- **Il grafo ad albero.** `graph grafo.html --albero` disegna il taccuino ad albero: ogni COSA al centro del suo
+  grappolo, intorno i sotto-rami, intorno a ogni sotto-ramo le sue note. Senza `--albero` il grafo è quello di prima.
 
 Le note già scritte non si toccano e il quaderno della 0.9.0 si legge come prima. Aggiorna tutte e due le copie del
 programma (plugin di Claude Code e `programma-chat`).

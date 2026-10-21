@@ -122,6 +122,8 @@ def _parser() -> argparse.ArgumentParser:
         help="scrive una pagina HTML con il grafo del taccuino (note, etichette, rimandi), fuori dal quaderno",
     )
     disegna.add_argument("file", help="il file .html da scrivere, fuori dalla cartella del quaderno")
+    disegna.add_argument("--tree", "--albero", dest="albero", action="store_true",
+                         help="disposto ad albero: COSA al centro, sotto-rami intorno, note intorno al loro sotto-ramo")
     pianta = comandi.add_parser(
         "tree", aliases=["albero"],
         help="l'albero delle etichette: ramo (COSA) → sotto-rami → note, con le catene di integrazione (solo lettura)",
@@ -784,7 +786,7 @@ def _grafo(argomenti, config, uscita: TextIO) -> int:
         lista = etichette.leggi(config.cartella_quaderno)
     except etichette.ErroreEtichette:
         lista = None  # l'avviso l'ha già dato _leggi
-    testo = grafo.pagina(archivio_note, lista, config.segno_chiusa)
+    testo = (grafo.pagina_albero if argomenti.albero else grafo.pagina)(archivio_note, lista, config.segno_chiusa)
     file.write_text(testo, encoding="utf-8", newline="\n")
     note = len(archivio_note.elenco())
     print(f"Grafo del taccuino scritto in «{file}»: {note} note, {len(grafo.collegamenti(archivio_note))} rimandi. "

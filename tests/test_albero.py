@@ -301,5 +301,58 @@ class TestProposteACatena(ConAlbero):
         self.assertEqual(self.coppie(), [])
 
 
+
+class TestGrafoAdAlbero(ConAlbero):
+    """Pezzo 4: graph --albero, in sola lettura e fuori dal quaderno; senza l'opzione il grafo della 0.9.0."""
+
+    def setUp(self):
+        super().setUp()
+        self.senza_rami()
+        self.accettata(kind="idea", text="Nell'orto i pomodori A.", who="Anna")   # 0001
+        self.accettata(kind="idea", text="Nell'orto i pomodori B.")               # 0002
+        self.accettata(integrates="0002", from_note="0001")
+        self.accettata(kind="fact", text="Nell'orto la goccia per i pomodori.")   # 0003: due sotto-rami
+        self.accettata(kind="todo", text="Comprare il pane.")                     # 0004: senza COSA
+        self.scrivi_lista(LISTA)
+        self.cartella_fuori = self.cartella / "fuori"
+        self.cartella_fuori.mkdir()
+
+    def disegna(self, *opzioni, nome="albero.html"):
+        pagina = self.cartella_fuori / nome
+        codice, uscita = self.comando("graph", str(pagina), *opzioni)
+        self.assertEqual(codice, 0, uscita)
+        return pagina.read_text(encoding="utf-8")
+
+    def test_pagina_ad_albero(self):
+        prima = {p: p.read_bytes() for p in self.config.cartella_quaderno.rglob("*") if p.is_file()}
+        testo = self.disegna("--albero")
+        self.assertTrue(testo.startswith("<!doctype html>\n<!-- Hypomnema: grafo del taccuino -->"))
+        self.assertIn('aria-label="Albero delle etichette: rami, sotto-rami e note"', testo)
+        self.assertIn("4 note, 2 rami, 2 sotto-rami", testo)
+        for nome in (">orto</text>", ">bilancio</text>", ">pomodori</text>", ">irrigazione</text>",
+                     ">senza COSA</text>"):
+            self.assertIn(nome, testo)
+        self.assertNotIn(">Anna</text>", testo)  # le CHI non si disegnano
+        self.assertIn('class="legame altro"', testo)  # la 0003 ha anche il sotto-ramo irrigazione
+        self.assertIn("<title>0002 integra 0001</title>", testo)
+        self.assertNotIn("http", testo.replace('xmlns="http', ""))
+        self.assertEqual({p: p.read_bytes() for p in self.config.cartella_quaderno.rglob("*") if p.is_file()}, prima)
+
+    def test_sempre_uguale_e_senza_opzione_come_prima(self):
+        self.assertEqual(self.disegna("--tree"), self.disegna("--albero", nome="altra.html"))
+        from hypomnema import grafo
+        quaderno = leggi(self.config)
+        self.assertEqual(self.disegna(), grafo.pagina(quaderno, self.lista_letta(), "✓"))
+        self.assertNotIn("sotto-rami", self.disegna())
+
+    def test_ogni_nota_una_volta_sola(self):
+        from hypomnema import grafo
+        nodi, dove_nota = grafo.posizioni_albero(leggi(self.config), self.lista_letta())
+        self.assertEqual(sorted(dove_nota), ["0001", "0002", "0003", "0004"])
+        self.assertEqual([n[1] for n in nodi if n[0] == "ramo"], ["orto", "bilancio", "senza COSA"])
+        posizioni = list(dove_nota.values())
+        self.assertEqual(len(set(posizioni)), len(posizioni))
+
+
 if __name__ == "__main__":
     unittest.main()
