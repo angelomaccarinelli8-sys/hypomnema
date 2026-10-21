@@ -3,6 +3,40 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.9.0 (prototipo) — gli schemi del modo di parlare e il riordino del taccuino
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **Gli schemi del tuo modo di parlare** (D0210). Il comando nuovo `patterns` (`schemi`), in sola lettura, ricava dal
+  quaderno le sequenze di 2 e 3 parole tipiche di ogni tipo di nota (decisione, idea, da fare, aperta, fatto), con
+  regole fisse: solo le tue note, almeno 2 note di quel tipo, almeno il 60% delle volte in quel tipo, senza le coppie
+  vuote come «di casa». Gli schemi si ricalcolano ogni volta: crescono con il taccuino. `patterns --misura` dice
+  quante volte indovinano il tipo, sulle stesse note e «a turno» (il numero onesto).
+- **Un suggerimento allo sportello.** Quando salvi una nota tua e il testo suona come un altro tipo («d'ora in poi» in
+  un'idea), `propose` aggiunge una riga «SUGGERIMENTO (non cambia niente)». Non blocca e non cambia niente: il tipo lo
+  scegli tu.
+- **Etichette retroattive** (I0201). Le COSA trovate nel testo valgono per tutte le note, anche quelle scritte prima:
+  si calcolano quando si leggono. Se aggiungi un'etichetta alla lista, tutte le note che la nominano la prendono
+  subito, senza scrivere niente.
+- **Integrare una nota** (I0202), con `integrates` (`integra`): aggiungere parole nuove in fondo a una nota, oppure
+  mettere in fondo a una nota il testo di un'altra sulla stessa cosa (`from_note`, `da_nota`). Il testo di prima resta
+  intatto; la nota integrata esce dal recap ma resta nel quaderno e nella ricerca con `--all`.
+- **Annullare una nota** (I0168), con `cancels` (`annulla`): una nota che non vale più, anche un'idea o una decisione,
+  diversa da «fatto». Il codice prende una C davanti: `CD0156.1`. Si fa valere di nuovo con `reopens`.
+
+Le note già scritte non si toccano e il quaderno della 0.8.0 si legge come prima. Aggiorna tutte e due le copie del
+programma (plugin di Claude Code e `programma-chat`).
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+e su Windows, nella cartella Hypomnema: `git -C programma-chat pull`.
+
+**Nella chat di claude.ai:** scarica il nuovo `hypomnema-skill.zip` e caricalo tra le skill nelle impostazioni di
+Claude, sostituendo quello vecchio.
+
 ## 0.8.0 (prototipo) — le etichette COSA le mette lo sportello
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
