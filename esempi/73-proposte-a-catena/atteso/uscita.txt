@@ -1,0 +1,38 @@
+$ hypomnema review --proposte
+Revisione del quaderno (2026-01-15): 4 cose da guardare. Non è stato cambiato niente.
+- I0001: integrabile nella nota I0005: stesso autore, stesso tipo e stesso sotto-ramo (orto/pomodori). Si può integrare con integrates: 0005 e from_note: 0001 (il testo resta com'è); oppure lasciarle separate.
+- I0002: integrabile nella nota I0005: stesso autore, stesso tipo e stesso sotto-ramo (orto/pomodori). Si può integrare con integrates: 0005 e from_note: 0002 (il testo resta com'è); oppure lasciarle separate.
+- I0004: integrabile nella nota I0008: stesso autore, stesso tipo e stesso sotto-ramo (orto/irrigazione). Si può integrare con integrates: 0008 e from_note: 0004 (il testo resta com'è); oppure lasciarle separate.
+- I0009: integrabile nella nota I0010: stesso autore, stessa COSA (bilancio) e nel testo una nomina l'altra. Si può integrare con integrates: 0010 e from_note: 0009 (il testo resta com'è); oppure lasciarle separate.
+
+Proposte pronte: 4. Non sono state passate allo sportello: ognuna va completata con «source» e, dove c'è, «text» (le parole dell'utente, mai inventate), e poi proposta una alla volta con propose. Se manca qualcosa lo sportello la rifiuta.
+Proposta 1 (I0001):
+{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "integrates": "0005", "from_note": "0001"}
+Proposta 2 (I0002):
+{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "integrates": "0005", "from_note": "0002"}
+Proposta 3 (I0004):
+{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "integrates": "0008", "from_note": "0004"}
+Proposta 4 (I0009):
+{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "integrates": "0010", "from_note": "0009"}
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 1]
+
+$ hypomnema tree --cosa orto
+Albero del taccuino: 1 ramo. Non è stato cambiato niente.
+
+orto · 8 note
+  pomodori · 4
+    F0006  l'orto ha dodici piante di pomodori
+    I0005  i pomodori dell'orto li coprirei con la rete antigrandine
+    I0002  nell'orto i pomodori potrei legarli con lo spago, invece dei tutori della 0001
+    I0001  per i pomodori dell'orto userei i tutori di bambù
+  irrigazione · 4
+    I0008  nell'orto metterei un secondo tubo per l'irrigazione
+    D0007  nell'orto da domani annaffio la mattina presto
+    I0004  nell'orto l'irrigazione la sera spreca meno acqua
+    F0003  nell'orto l'irrigazione a goccia parte alle 6
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa · ← integrata nella nota a sinistra
+[codice di uscita: 0]
+

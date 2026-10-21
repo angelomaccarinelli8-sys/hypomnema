@@ -21,6 +21,12 @@ parole) segnala soltanto, e decide l'utente.
 7. **Integrabile** (dalla 0.9.0, decisione di Angelo del 21/10): due note dello stesso autore, con almeno una COSA
    in comune, e il testo o il contesto di una delle due nomina l'altra (anche di tipo diverso: un'idea che finisce in
    una decisione). Si propone di integrare la più vecchia nella più recente; decide l'utente.
+   **Dalla 0.10.0 a catena** (decisione di Angelo del 21/10): per una COSA con sotto-rami, le note vive dello stesso
+   autore e dello stesso tipo nello stesso sotto-ramo (dal testo proprio, vedi ``albero``) vanno tutte nella più recente,
+   una proposta per nota, dalla più vecchia; una nota in due sotto-rami va solo nel primo, nell'ordine del file. Per le
+   COSA senza sotto-rami resta la regola della 0.9.0, ma il rimando conta solo nel **testo** (non più nel contesto di
+   Claude, che nomina altre note per riferimento) e anche lì a catena: le note legate tra loro, anche attraverso altre,
+   vanno tutte nella più recente.
 
 Dalla 0.9.0 ogni segnalazione che ha una regola fissa porta anche una **proposta pronta** (``proposta``), da completare
 con le parole dell'utente: il programma non le inventa (``text`` e ``source`` restano vuoti, e lo sportello rifiuta
@@ -31,7 +37,7 @@ import re
 from dataclasses import dataclass
 from datetime import date
 
-from hypomnema import promemoria
+from hypomnema import albero, promemoria
 from hypomnema.cercatore import in_italiano
 from hypomnema.nota import ordine
 from hypomnema.versioni import Quaderno, Storia, Versione
@@ -92,7 +98,7 @@ def _successive(quaderno: Quaderno, storia: Storia) -> list[tuple[Storia, Versio
     return elenco
 
 
-def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segnalazione]:
+def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str, lista=None) -> list[Segnalazione]:
     segnalazioni: list[Segnalazione] = []
     da_seguire = [s for s in quaderno.elenco() if not s.chiusa and not s.annullata and s.integrata_in is None
                   and s.ultima.contenuto.natura in NATURE_DA_SEGUIRE]
@@ -154,29 +160,73 @@ def rivedi(quaderno: Quaderno, oggi: date, giorni: int, segno: str) -> list[Segn
                 f"{versione.data[:10]}) non vale «{', '.join(in_italiano(v) for v in versione.bloccati)}». Resta "
                 f"nella storia; se il cambiamento va fatto, lo decide l'utente ({campo}: {storia.base})."
             )))
-    segnalazioni += _integrabili(quaderno, segno, oggi)
+    segnalazioni += _integrabili(quaderno, segno, oggi, lista)
     return segnalazioni
 
 
-def _integrabili(quaderno: Quaderno, segno: str, oggi: date) -> list[Segnalazione]:
-    """Le coppie di note integrabili (regola 7): la più vecchia si propone dentro la più recente."""
+def _integrabili(quaderno: Quaderno, segno: str, oggi: date, lista=None) -> list[Segnalazione]:
+    """Le note integrabili (regola 7), a catena: ogni nota si propone una volta sola, dentro la più recente del suo
+    gruppo. Prima i sotto-rami, poi le COSA senza sotto-rami."""
     vive = [s for s in quaderno.elenco() if _vive(s)]
-    schemi = {s.base: _numero_nominato(_numeri_della_storia(s)) for s in vive}
+    gruppi: list[tuple[list[Storia], str]] = []
+    prese: set[str] = set()
+
+    # (a) Le COSA con sotto-rami: stesso sotto-ramo, stesso autore, stesso tipo.
+    for ramo, sotto in (lista.rami if lista is not None else ()):
+        for nome, _ in sotto:
+            insieme: dict[tuple[str, str], list[Storia]] = {}
+            for storia in vive:
+                if storia.base not in prese and (ramo, nome) in albero.sotto_rami_propri(storia, lista):
+                    nota = storia.ultima.contenuto
+                    insieme.setdefault((nota.autore, nota.natura), []).append(storia)
+            for note in insieme.values():
+                if len(note) > 1:
+                    prese.update(s.base for s in note)
+                    gruppi.append((note, f"stesso autore, stesso tipo e stesso sotto-ramo ({ramo}/{nome})"))
+
+    # (b) Le COSA senza sotto-rami: la regola della 0.9.0, con il rimando nel testo, a catena.
+    def senza_sotto_rami(storia: Storia) -> set[str]:
+        return {c for c in (storia.ultima.contenuto.cosa or ()) if lista is None or not lista.sotto_rami_di(c)}
+    restanti = [s for s in vive if s.base not in prese and senza_sotto_rami(s)]
+    schemi = {s.base: _numero_nominato(_numeri_della_storia(s)) for s in restanti}
 
     def nomina(chi: Storia, chi_e_nominata: Storia) -> bool:
-        nota = chi.ultima.contenuto
-        return any(t is not None and schemi[chi_e_nominata.base].search(t) for t in (nota.testo, nota.contesto))
+        return bool(schemi[chi_e_nominata.base].search(chi.ultima.contenuto.testo))
+
+    legami: dict[str, set[str]] = {s.base: set() for s in restanti}
+    comuni_di: dict[frozenset, list[str]] = {}
+    for i, vecchia in enumerate(restanti):
+        for recente in restanti[i + 1:]:
+            comuni = sorted(senza_sotto_rami(vecchia) & senza_sotto_rami(recente),
+                            key=lambda c: list(recente.ultima.contenuto.cosa).index(c))
+            if (vecchia.ultima.contenuto.autore == recente.ultima.contenuto.autore and comuni
+                    and (nomina(recente, vecchia) or nomina(vecchia, recente))):
+                legami[vecchia.base].add(recente.base)
+                legami[recente.base].add(vecchia.base)
+                comuni_di[frozenset((vecchia.base, recente.base))] = comuni
+    viste: set[str] = set()
+    for storia in restanti:
+        if storia.base in viste or not legami[storia.base]:
+            continue
+        componente, da_vedere = set(), [storia.base]
+        while da_vedere:
+            base = da_vedere.pop()
+            if base not in componente:
+                componente.add(base)
+                da_vedere += legami[base]
+        viste |= componente
+        note = [s for s in restanti if s.base in componente]
+        cosa = sorted({c for coppia, comuni in comuni_di.items() if coppia <= componente for c in comuni},
+                      key=lambda c: (lista.cosa.index(c) if lista is not None and c in lista.cosa else len(c), c))
+        gruppi.append((note, f"stesso autore, stessa COSA ({', '.join(cosa)}) e nel testo una nomina l'altra"
+                             + (" (anche attraverso altre note)" if len(note) > 2 else "")))
 
     segnalazioni = []
-    for i, vecchia in enumerate(vive):
-        for recente in vive[i + 1:]:
-            a, b = recente.ultima.contenuto, vecchia.ultima.contenuto
-            comuni = [c for c in (a.cosa or ()) if c in (b.cosa or ())]
-            if a.autore != b.autore or not comuni or not (nomina(recente, vecchia) or nomina(vecchia, recente)):
-                continue
+    for note, perche in sorted(gruppi, key=lambda g: ordine(g[0][0].base)):
+        recente = note[-1]
+        for vecchia in note[:-1]:
             segnalazioni.append(Segnalazione(vecchia, (
-                f"integrabile nella nota {recente.ultima.etichetta(segno)}: stesso autore, stessa COSA "
-                f"({', '.join(comuni)}) e una delle due nomina l'altra. Si può integrare con integrates: {recente.base} "
-                f"e from_note: {vecchia.base} (il testo resta com'è); oppure lasciarle separate."
+                f"integrabile nella nota {recente.ultima.etichetta(segno)}: {perche}. Si può integrare con integrates: "
+                f"{recente.base} e from_note: {vecchia.base} (il testo resta com'è); oppure lasciarle separate."
             ), _proposta(oggi, integrates=recente.base, from_note=vecchia.base)))
     return segnalazioni

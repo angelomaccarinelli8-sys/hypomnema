@@ -614,7 +614,11 @@ def _revisione(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
     """Solo lettura: che cosa conviene guardare. 0 = niente, 1 = qualcosa da guardare."""
     archivio_note = _leggi(config, uscita)
     oggi = adesso.date()
-    segnalazioni = revisione.rivedi(archivio_note, oggi, config.giorni_revisione, config.segno_chiusa)
+    try:
+        lista = etichette.leggi(config.cartella_quaderno)
+    except etichette.ErroreEtichette:
+        lista = None  # l'avviso l'ha già dato _leggi
+    segnalazioni = revisione.rivedi(archivio_note, oggi, config.giorni_revisione, config.segno_chiusa, lista)
     if not segnalazioni:
         print(f"Revisione del quaderno ({oggi.isoformat()}): niente da segnalare.", file=uscita)
         return 0

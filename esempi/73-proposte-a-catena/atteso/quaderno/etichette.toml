@@ -1,0 +1,7 @@
+# Lista inventata per l'esempio delle proposte a catena (0.10.0).
+chi = ["Anna", "Marco"]
+cosa = ["orto", "bilancio"]
+
+[rami.orto]
+pomodori = ["pomodori", "pomodoro"]
+irrigazione = ["irrigazione", "goccia", "annaffio"]

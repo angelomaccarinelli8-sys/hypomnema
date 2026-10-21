@@ -616,6 +616,15 @@ niente, con 1 se c'è qualcosa da guardare. Le regole sono fisse:
 7. **integrabile** (dalla 0.9.0): due note dello stesso autore, non chiuse, non annullate e non già integrate, con
    almeno una COSA in comune, e il testo o il contesto di una delle due nomina l'altra (anche di tipo diverso). Si
    propone di integrare la più vecchia (numero più basso) nella più recente.
+   **Dalla 0.10.0 a catena, e il contesto non basta più** (decisione di Angelo del 21/10):
+   - per una COSA **con sotto-rami**: le note vive dello stesso autore e dello **stesso tipo** nello stesso sotto-ramo
+     (dal testo proprio) formano un gruppo; si propone di integrarle tutte nella più recente, una proposta per nota,
+     dalla più vecchia. Una nota che sta in due sotto-rami va solo nel primo, nell'ordine del file. Il rimando tra le
+     note non serve;
+   - per una COSA **senza sotto-rami**: la regola della 0.9.0, ma il rimando conta solo se è nel **testo** (non nel
+     contesto di Claude, che nomina altre note per riferimento), e anche qui a catena: le note legate tra loro, anche
+     attraverso altre note (A nominata da B, B da C), vanno tutte nella più recente. I tipi possono essere diversi.
+   Così ogni nota compare in una proposta sola, e le proposte si possono fare tutte una dopo l'altra.
 
 **Le proposte pronte** (dalla 0.9.0): `review --proposals` (`--proposte`) stampa, dopo le segnalazioni, una proposta
 JSON per ogni segnalazione che ha una regola fissa: `done` per le ferme, i promemoria scaduti e le nominate, `updates`

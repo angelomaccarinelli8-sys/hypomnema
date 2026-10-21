@@ -104,6 +104,7 @@ avviene un minuto dopo. Quando si usa il programma davvero, l'ora è quella del 
 | `70-proposte-della-revisione` | Un'idea e una decisione sull'orto (il contesto della decisione nomina l'idea), un promemoria scaduto, un todo con «ricordamelo», un'idea sul gioco che nomina la prima; `review`, `revisione --proposte`; poi l'integrazione completata e di nuovo `review`. | La revisione segnala l'idea come integrabile nella decisione (stessa COSA orto, tipi diversi), non quella sul gioco (nessuna COSA in comune); `--proposte` stampa tre proposte con `source` e `text` vuoti. Dopo l'integrazione la segnalazione sparisce. |
 | `71-albero` | Un quaderno della 0.9.0 sull'orto e sul bilancio, con i sotto-rami `pomodori` e `irrigazione` nella lista; `tree`, poi l'integrazione della 0001 nella 0002, `albero --cosa orto`, `tree --cosa bilancio` e `tree --cosa Orto`. | L'albero mostra due idee sotto `pomodori`, un fatto sotto `irrigazione` e la panchina «senza argomento»; dopo l'integrazione le due idee sono una catena sola (`I0002.1 ← I0001`); il bilancio ha solo «senza argomento»; `Orto` con la maiuscola è un errore (codice 2). |
 | `72-regola-dell-integrazione` | Lo stesso quaderno del 71: un'idea nuova sui pomodori, la stessa come integrazione della 0002, un fatto e un'idea sull'irrigazione, una decisione sui pomodori; poi `tree --cosa orto`. | L'idea nuova è rifiutata: nomina la 0002 (la più recente del sotto-ramo) e anche la 0001; come integrazione passa (`0002.1`). Il fatto passa con la riga SUGGERIMENTO sulla 0003; l'idea sull'irrigazione e la decisione passano (nessuna idea in quel sotto-ramo; le decisioni restano fuori). |
+| `73-proposte-a-catena` | Un quaderno della 0.9.0 con 11 idee, fatti e una decisione su orto e bilancio (alcuni contesti di Claude nominano altre note), e i sotto-rami `pomodori` e `irrigazione`; `review --proposte` e `tree --cosa orto`. | 4 proposte, una per nota, senza contraddizioni: 0001 e 0002 nella 0005 (pomodori), 0004 nella 0008 (irrigazione), 0009 nella 0010 (bilancio, nominata nel testo). La 0.9.0 ne dava 8, sei solo per rimandi scritti nel contesto. |
 | `26-confronta` | `confronta` tra due file uguali, due diversi e un file che manca. | `UGUALI` (codice 0); `DIVERSI` con il primo byte diverso (codice 1); errore (codice 2). |
 
 Dal compito 2, negli esempi 01, 04 e 05 (testimone spento) le note con autore «utente» hanno
@@ -161,3 +162,8 @@ Dalla versione 0.8.0 cambiano i risultati attesi di questi esempi già approvati
 - 60: `labels` dice, per ogni COSA, quante dal testo e quante proposte, e la riga finale lo spiega.
 - 15 (dalla 0.9.0): l'elenco dei campi ammessi comprende `integrates`, `from_note` e `cancels`.
 - 54 (dalla 0.9.0): il motivo «only a closed or cancelled note can be reopened» (prima «only a closed note»).
+
+Dalla versione 0.10.0 cambia il risultato atteso di questo esempio già approvato:
+- 70: la decisione 0002 nomina l'idea 0001 solo nel contesto («Dopo l'idea 0001.»), che non basta più per dire
+  «integrabile»: `review` segnala 2 cose invece di 3 e `--proposte` stampa 2 proposte invece di 3. L'integrazione
+  finale dell'esempio passa come prima.

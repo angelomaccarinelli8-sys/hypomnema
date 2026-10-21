@@ -244,5 +244,62 @@ class TestRegolaDellIntegrazione(ConAlbero):
         self.assertEqual(self.accettata(kind="idea", text="Nell'orto i pomodori in fila."), "0005")
 
 
+
+class TestProposteACatena(ConAlbero):
+    """Pezzo 3: review --proposte propone catene, non coppie."""
+
+    def proposte(self):
+        from datetime import date
+        from hypomnema.revisione import rivedi
+        return [v.proposta for v in rivedi(leggi(self.config), date(2026, 1, 15), 30, "✓", self.lista_letta())
+                if v.proposta is not None and "integrates" in v.proposta]
+
+    def coppie(self):
+        return [(p["integrates"], p["from_note"]) for p in self.proposte()]
+
+    def test_un_sotto_ramo_una_catena_verso_la_piu_recente(self):
+        self.senza_rami()
+        self.accettata(kind="idea", text="Nell'orto i pomodori A.")              # 0001
+        self.accettata(kind="idea", text="Nell'orto i pomodori B.")              # 0002
+        self.accettata(kind="fact", text="Nell'orto i pomodori sono dodici.")    # 0003: altro tipo
+        self.accettata(kind="idea", text="Nell'orto i pomodori C.")              # 0004
+        self.accettata(kind="idea", text="Nell'orto i pomodori D.", author="claude", knowledge="inferred")  # 0005
+        self.scrivi_lista(LISTA)
+        self.assertEqual(self.coppie(), [("0004", "0001"), ("0004", "0002")])
+        # Le proposte della catena passano tutte, una dopo l'altra.
+        for proposta in self.proposte():
+            self.accettata(**{k: v for k, v in proposta.items() if k not in ("date", "author", "knowledge")
+                              and v != ""}, source="chat inventata")
+        self.assertEqual(self.coppie(), [])
+        self.assertIn("    I0004.2 ← I0002 ← I0001  Nell'orto i pomodori C. …\n", self.comando("tree")[1])
+
+    def test_una_nota_in_due_sotto_rami_va_nel_primo(self):
+        self.senza_rami()
+        self.accettata(kind="idea", text="Nell'orto la goccia per i pomodori.")  # 0001: pomodori e irrigazione
+        self.accettata(kind="idea", text="Nell'orto i pomodori B.")              # 0002
+        self.accettata(kind="idea", text="Nell'orto la goccia C.")               # 0003
+        self.scrivi_lista(LISTA)
+        self.assertEqual(self.coppie(), [("0002", "0001")])
+
+    def test_il_contesto_non_basta(self):
+        self.accettata(kind="idea", text="Il bilancio di gennaio.")                             # 0001
+        self.accettata(kind="idea", text="Il bilancio di febbraio.", context="Come la 0001.")  # 0002
+        self.assertEqual(self.coppie(), [])
+
+    def test_senza_sotto_rami_a_catena_nel_testo(self):
+        self.accettata(kind="idea", text="Il bilancio di gennaio.")                       # 0001
+        self.accettata(kind="todo", text="Il bilancio di febbraio, dopo la nota 0001.")  # 0002
+        self.accettata(kind="idea", text="Il bilancio di marzo, come la 0002.")          # 0003
+        self.accettata(kind="idea", text="Il bilancio di aprile.")                        # 0004: non nomina nessuno
+        self.assertEqual(self.coppie(), [("0003", "0001"), ("0003", "0002")])
+
+    def test_le_cosa_con_sotto_rami_non_usano_la_regola_vecchia(self):
+        self.senza_rami()
+        self.accettata(kind="idea", text="Nell'orto una panchina.")                    # 0001: senza argomento
+        self.accettata(kind="todo", text="Nell'orto la panchina della nota 0001.")     # 0002
+        self.scrivi_lista(LISTA)
+        self.assertEqual(self.coppie(), [])
+
+
 if __name__ == "__main__":
     unittest.main()

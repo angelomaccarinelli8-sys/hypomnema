@@ -20,6 +20,10 @@ Hypomnema e come aggiornarsi.
   è quello del testo proprio della nota (prima versione o ultima correzione): una nota che riceve integrazioni non si
   allarga a tutto il ramo. Senza sotto-rami nella lista non cambia niente. Se due idee sono davvero diverse, servono
   parole più precise nei sotto-rami.
+- **Le proposte della revisione a catena.** `review --proposte` non propone più coppie (A in B, B in C, A in C): le note
+  dello stesso sotto-ramo, dello stesso autore e dello stesso tipo vanno tutte nella più recente, una proposta per nota.
+  Senza sotto-rami resta la regola della 0.9.0, ma il rimando a un'altra nota conta solo se è nel testo, non nel
+  contesto scritto da Claude, e anche lì a catena. Sul quaderno inventato dell'esempio 73: 4 proposte invece di 8.
 
 Le note già scritte non si toccano e il quaderno della 0.9.0 si legge come prima. Aggiorna tutte e due le copie del
 programma (plugin di Claude Code e `programma-chat`).

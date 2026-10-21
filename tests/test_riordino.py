@@ -232,30 +232,34 @@ class TestProposteDellaRevisione(ConLista):
                        author="claude", knowledge="inferred")                                        # 0004
 
     def test_integrabili(self):
+        # Dalla 0.10.0 il rimando scritto solo nel contesto di Claude non basta più (la 0002 nomina la 0001 lì).
+        self.assertNotIn("integrabile", self.comando("review")[1])
+        self.accettata(kind="decision", text="Il pozzo dell'orto come nella nota 0001.")       # 0005
         codice, uscita = self.comando("review")
         self.assertEqual(codice, 1)
-        # Stesso autore, COSA in comune (orto), e il contesto della 0002 nomina la 0001: anche se i tipi sono diversi.
-        self.assertIn("- I0001: integrabile nella nota D0002: stesso autore, stessa COSA (orto) e una delle due nomina "
-                      "l'altra. Si può integrare con integrates: 0002 e from_note: 0001", uscita)
+        # Stesso autore, COSA in comune (orto), e il testo della 0005 nomina la 0001: anche se i tipi sono diversi.
+        self.assertIn("- I0001: integrabile nella nota D0005: stesso autore, stessa COSA (orto) e nel testo una nomina "
+                      "l'altra. Si può integrare con integrates: 0005 e from_note: 0001", uscita)
         self.assertNotIn("nella nota I0003", uscita)  # nomina la 0001 ma non ha COSA in comune
         self.assertNotIn("nella nota I0004", uscita)  # stessa COSA, ma un altro autore
         self.assertNotIn("Proposte pronte", uscita)
 
     def test_proposte_pronte_da_completare(self):
         self.accettata(kind="todo", text="Comprare i semi, ricordamelo tra una settimana.")  # 0005
+        self.accettata(kind="decision", text="Il pozzo dell'orto come nella 0001, a marzo.")  # 0006
         _, uscita = self.comando("review", "--proposte")
         self.assertIn("Proposte pronte: 2.", uscita)
         self.assertIn('{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "updates": "0005", '
                       '"remind": "", "text": ""}', uscita)
         self.assertIn('{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "integrates": '
-                      '"0002", "from_note": "0001"}', uscita)
+                      '"0006", "from_note": "0001"}', uscita)
         # Così com'è, una proposta pronta è rifiutata: «source» (e «text») li scrive l'utente.
         file = self.cartella / "p.json"
         file.write_text('{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", '
-                        '"integrates": "0002", "from_note": "0001"}', encoding="utf-8")
+                        '"integrates": "0006", "from_note": "0001"}', encoding="utf-8")
         self.assertEqual(self.comando("propose", str(file))[0], 1)
         file.write_text('{"date": "2026-01-15", "source": "chat del 15 gennaio 2026", "author": "user", '
-                        '"knowledge": "stated", "integrates": "0002", "from_note": "0001"}', encoding="utf-8")
+                        '"knowledge": "stated", "integrates": "0006", "from_note": "0001"}', encoding="utf-8")
         self.assertEqual(self.comando("propose", str(file))[0], 0)
         self.assertNotIn("integrabile", self.comando("review")[1])
 

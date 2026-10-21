@@ -24,27 +24,23 @@ Il passaggio è annotato nel registro.
 [codice di uscita: 0]
 
 $ hypomnema review
-Revisione del quaderno (2026-01-15): 3 cose da guardare. Non è stato cambiato niente.
+Revisione del quaderno (2026-01-15): 2 cose da guardare. Non è stato cambiato niente.
 - T0003: promemoria scaduto il 2026-01-10, ancora aperto. Si può chiudere (done: 0003) o spostare (updates: 0003 con remind).
 - T0004: nel testo c'è «ricordamelo» ma la nota non ha la data del promemoria. Si può aggiungere con updates: 0004 e remind.
-- I0001: integrabile nella nota D0002: stesso autore, stessa COSA (orto) e una delle due nomina l'altra. Si può integrare con integrates: 0002 e from_note: 0001 (il testo resta com'è); oppure lasciarle separate.
 
 Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 1]
 
 $ hypomnema revisione --proposte
-Revisione del quaderno (2026-01-15): 3 cose da guardare. Non è stato cambiato niente.
+Revisione del quaderno (2026-01-15): 2 cose da guardare. Non è stato cambiato niente.
 - T0003: promemoria scaduto il 2026-01-10, ancora aperto. Si può chiudere (done: 0003) o spostare (updates: 0003 con remind).
 - T0004: nel testo c'è «ricordamelo» ma la nota non ha la data del promemoria. Si può aggiungere con updates: 0004 e remind.
-- I0001: integrabile nella nota D0002: stesso autore, stessa COSA (orto) e una delle due nomina l'altra. Si può integrare con integrates: 0002 e from_note: 0001 (il testo resta com'è); oppure lasciarle separate.
 
-Proposte pronte: 3. Non sono state passate allo sportello: ognuna va completata con «source» e, dove c'è, «text» (le parole dell'utente, mai inventate), e poi proposta una alla volta con propose. Se manca qualcosa lo sportello la rifiuta.
+Proposte pronte: 2. Non sono state passate allo sportello: ognuna va completata con «source» e, dove c'è, «text» (le parole dell'utente, mai inventate), e poi proposta una alla volta con propose. Se manca qualcosa lo sportello la rifiuta.
 Proposta 1 (T0003):
 {"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "done": "0003", "text": ""}
 Proposta 2 (T0004):
 {"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "updates": "0004", "remind": "", "text": ""}
-Proposta 3 (I0001):
-{"date": "2026-01-15", "source": "", "author": "user", "knowledge": "stated", "integrates": "0002", "from_note": "0001"}
 
 Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
 [codice di uscita: 1]

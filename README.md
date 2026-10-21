@@ -674,6 +674,11 @@ ferma: semplicemente non aggiunge le COSA dal testo. Aggiornale tutte e due.
 - `cancels` (`annulla`) annulla una nota che non vale più (codice con la C: `CD0156.1`); `reopens` la fa valere di nuovo.
 - `review` segnala anche le note **integrabili** (stesso autore, una COSA in comune, una nomina l'altra);
   `review --proposte` stampa le proposte pronte, da completare con le tue parole e proporre una alla volta.
+  Dalla 0.10.0 le proposte sono **a catena**: le note dello stesso sotto-ramo (stesso autore, stesso tipo) vanno
+  tutte nella più recente; senza sotto-rami conta solo il rimando scritto nel testo, non nel contesto di Claude.
+- **L'albero delle etichette** (dalla 0.10.0): in `etichette.toml` una COSA può avere dei sotto-rami
+  (`[rami.orto]` con `pomodori = ["pomodori", "pomodoro"]`). `tree --cosa orto` mostra ramo, sotto-rami e note; lo
+  sportello rifiuta un'idea nuova nel sotto-ramo di un'idea tua ancora viva e ti chiede di integrarla in quella.
 - `graph grafo.html` (`grafo`) scrive, fuori dal quaderno, una pagina con il grafo del taccuino: note, etichette e
   rimandi. Si apre con il browser.
 
