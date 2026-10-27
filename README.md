@@ -328,6 +328,49 @@ testo libero nel registro, risponde con un errore e Claude non riporta niente. U
 mano ma con la forma giusta non si può distinguere da una vera: è un limite dichiarato.
 `check` confronta note e registro, in sola lettura.
 
+## Il server MCP (dalla 0.11.0)
+
+Dalla 0.11.0 Hypomnema è anche un **server MCP**: invece di lanciare i programmi a mano, Claude ha degli
+strumenti (`status`, `check`, `recap`, `review`, `tree`, `search`, `labels`, `template`, `propose`, `archive`) e
+riceve dal server una scheda corta con le regole. Ogni strumento è un comando di sempre: **lo sportello è lo
+stesso**, con le stesse regole. Dopo ogni `propose` e `archive` il server lancia da solo `check` e restituisce le
+due risposte insieme. Il server lavora su **un solo taccuino per volta**, quello della configurazione che riceve
+all'avvio: nessuno strumento accetta un percorso o un'altra configurazione.
+
+Il server non vede i tuoi messaggi: riceve solo ciò che Claude gli passa. In Claude Code, con il plugin, i
+testimoni continuano a registrare i tuoi messaggi e le tue note restano **verificate**; dove non ci sono testimoni
+(app desktop, telefono) si usa la configurazione della chat e le tue note sono **«non verificate»** (o
+«riscontrate sull'archivio della chat» dopo `archive`).
+
+**Su stdio** (Claude Code): il plugin registra il server da solo (file `.mcp.json`), con la configurazione di base
+`~/Hypomnema/hypomnema.toml`. A mano: `py programma.py --config <file> serve`. Su stdio il server non apre
+nessuna porta di rete.
+
+**Su HTTP, attraverso un tunnel**: `py programma.py serve --http <file dei taccuini>`. Regole fisse:
+
+- ascolta **solo su 127.0.0.1**: dall'esterno lo raggiunge soltanto un tunnel che accendi tu sul tuo computer
+  (per esempio `cloudflared tunnel --url http://127.0.0.1:8765`);
+- **una chiave per taccuino**, nell'indirizzo: `https://<indirizzo del tunnel>/<chiave>/mcp`. Ogni altro
+  indirizzo risponde 404, senza dire niente;
+- la chiave **non si scrive mai**: il server non scrive una riga per ogni richiesta e i suoi messaggi non
+  contengono indirizzi;
+- **mai il taccuino della configurazione di base** (`~/Hypomnema`): se il file lo nomina, il server non parte.
+
+Il file dei taccuini lo scrivi tu, **fuori** dal repository e fuori dal quaderno (è un ESEMPIO):
+
+```toml
+porta = 8765
+
+[[taccuino]]
+nome = "prova"
+config = "C:/Users/nome/Hypomnema-Prova/hypomnema-chat.toml"
+chiave = "incolla qui la chiave"
+```
+
+La chiave (almeno 32 caratteri: lettere, cifre, `-` e `_`) si crea con
+`py -c "import secrets; print(secrets.token_urlsafe(32))"`. Chi ha la chiave può leggere e proporre note su quel
+taccuino: tienila come una password, e se esce dal tuo controllo cambiala nel file e riavvia il server.
+
 ## Dove funziona davvero
 
 Hypomnema ha bisogno di due cose: che Claude possa lanciare i programmi sul tuo computer, e che
@@ -342,6 +385,7 @@ Claude Code lanci i testimoni. Dove provato, l'ho provato su Windows 11 con Clau
 | Claude Code in VS Code (pannello dell'estensione) | Probabilmente sì, con il plugin installato | **Non provato.** Il pannello usa le stesse impostazioni di Claude Code; i plugin installati dovrebbero valere anche lì. |
 | Chat di Claude nell'app desktop, collegata al computer | **Sì, in modalità chat**, senza testimone; dalla 0.6.1 direttamente sul quaderno, se c'è `programma-chat` | **Provato in parte** il 18/10/2026: la macchina Linux della chat vede la cartella Hypomnema e ha Python 3.10 (da qui nasce la 0.6.1). Il giro completo è provato dai test con Python 3.10; sulla macchina vera lo prova Angelo. Vedi «Usarlo nella chat di Claude». |
 | Chat di Claude sul sito o nell'app mobile | **Solo come prova**: il quaderno sparisce a fine chat | **Non ancora provato**, come sopra. |
+| Chat di Claude (sito, app, telefono) con il connettore del server HTTP attraverso un tunnel (0.11.0) | **Da provare**: senza testimone, note «non verificate» | **Provato con le prove automatiche** (server su 127.0.0.1, chiavi, 404); il tunnel e il connettore dal telefono non ancora. |
 
 ## Installazione per provarlo o svilupparlo
 

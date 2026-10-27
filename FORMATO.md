@@ -768,7 +768,8 @@ Una versione ha la sua riga come una nota; una chiusura di più note (`done: 001
 per ogni versione chiusa.
 
 L'ora è quella del computer al momento del passaggio. `da:` è il nome del file proposto,
-oppure `(ingresso diretto)` se la nota arriva dall'ingresso standard.
+oppure `(ingresso diretto)` se la nota arriva dall'ingresso standard, oppure (dalla 0.11.0) `(strumento MCP)` se
+arriva dallo strumento `propose` del server MCP.
 Se il registro esiste e non finisce con un "a capo" (qualcuno l'ha toccato a mano), lo sportello
 non scrive niente, né la nota né la riga, e risponde con un errore: la sua riga si attaccherebbe a
 quella scritta a mano. Non ripara il registro da solo. `check` mostra le righe che non hanno la
