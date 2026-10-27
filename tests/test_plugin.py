@@ -20,7 +20,7 @@ from tests.test_risposte import CONFIG_RISPOSTE, messaggio, risposta
 from tests.test_testimone import CONFIG_ACCESO, _bash
 
 # I file che servono al plugin installato (quelli che Claude Code copia nella sua cache).
-FILE_DEL_PLUGIN = ("programma.py", "hypomnema", "windows", "hooks", "skills", "commands", ".claude-plugin")
+FILE_DEL_PLUGIN = ("programma.py", "hypomnema", "windows", "hooks", "skills", "commands", ".claude-plugin", ".mcp.json")
 
 
 def copia_del_plugin(destinazione: Path) -> Path:
@@ -54,6 +54,31 @@ class TestCatalogoEManifesto(unittest.TestCase):
                 self.assertIn(f'"${{CLAUDE_PLUGIN_ROOT}}/programma.py" {comando};', testo)
                 self.assertNotIn("..", testo)
         self.assertEqual(agganci["PreToolUse"][0]["matcher"], "Edit|Write|MultiEdit|NotebookEdit")
+
+    def test_server_mcp_del_plugin(self):
+        """Dalla 0.11.0 il plugin registra il server MCP su stdio, con la configurazione di base (come gli agganci)."""
+        server = json.loads((RADICE / ".mcp.json").read_text(encoding="utf-8"))["mcpServers"]
+        self.assertEqual(list(server), ["hypomnema"])
+        self.assertEqual(server["hypomnema"], {"command": "py", "args": ["${CLAUDE_PLUGIN_ROOT}/programma.py", "serve"]})
+
+    def test_server_mcp_da_una_copia_del_plugin(self):
+        """Il comando del server lanciato da una copia del plugin, con la configurazione di base in una casa finta."""
+        with tempfile.TemporaryDirectory() as tmp:
+            plugin = copia_del_plugin(Path(tmp) / "cache" / "hypomnema")
+            casa = Path(tmp) / "casa"
+            (casa / "Hypomnema").mkdir(parents=True)
+            shutil.copy(RADICE / "chat" / "hypomnema-chat.toml", casa / "Hypomnema" / "hypomnema.toml")
+            ambiente = {k: v for k, v in os.environ.items() if k != "HYPOMNEMA_CONFIG"}
+            ambiente.update(HOME=str(casa), USERPROFILE=str(casa))
+            args = json.loads((plugin / ".mcp.json").read_text(encoding="utf-8"))["mcpServers"]["hypomnema"]["args"]
+            args = [a.replace("${CLAUDE_PLUGIN_ROOT}", str(plugin)) for a in args]
+            richiesta = json.dumps({"jsonrpc": "2.0", "id": 1, "method": "tools/call",
+                                    "params": {"name": "check", "arguments": {}}})
+            processo = subprocess.run([sys.executable, *args], input=richiesta + "\n", capture_output=True,
+                                      encoding="utf-8", env=ambiente, cwd=tmp, timeout=60)
+            self.assertEqual(processo.returncode, 0, processo.stderr)
+            self.assertIn("Quaderno in ordine", json.loads(processo.stdout)["result"]["content"][0]["text"])
+            self.assertFalse((plugin / "quaderno").exists())
 
     def test_comandi_con_la_barra(self):
         for nome in ("pausa", "riprendi"):
