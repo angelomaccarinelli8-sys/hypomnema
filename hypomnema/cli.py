@@ -41,7 +41,7 @@ from typing import TextIO
 
 from hypomnema import (
     __version__, albero, archivio, avvio, blocco, cambiamenti, cercatore, configurazione, controllo, diario, etichette,
-    fuso_del_sistema, grafo, modelli, promemoria, registro, revisione, risposte, schemi, sportello, testimone,
+    fuso_del_sistema, grafo, modelli, promemoria, registro, revisione, risposte, schemi, servizio, sportello, testimone,
 )
 from hypomnema.nota import NotaIlleggibile, base_di
 from hypomnema.versioni import LEGENDA, Quaderno, Storia
@@ -55,7 +55,7 @@ INGLESE = {
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
     "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns", "grafo": "graph",
-    "albero": "tree", "modello": "template",
+    "albero": "tree", "modello": "template", "servizio": "serve",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
@@ -196,7 +196,15 @@ def _parser() -> argparse.ArgumentParser:
     copia_archivio = comandi.add_parser(
         "archive", aliases=["archivio"], help="chat: aggiunge ai file del quaderno la copia dei messaggi presa dall'archivio della chat"
     )
-    copia_archivio.add_argument("file", help="file JSON con l'indirizzo della chat e i messaggi")
+    copia_archivio.add_argument("file", help="file JSON con l'indirizzo della chat e i messaggi, oppure - per leggerlo "
+                                             "dall'ingresso standard")
+    servi = comandi.add_parser(
+        "serve", aliases=["servizio"],
+        help="server MCP (dalla 0.11.0): su stdio per Claude Code e l'app desktop, oppure --http per il tunnel",
+    )
+    servi.add_argument("--http", dest="taccuini", metavar="FILE",
+                       help="server HTTP su 127.0.0.1 con i taccuini e le chiavi di questo file (mai il taccuino "
+                            "della configurazione di base)")
     comandi.add_parser(
         "start", aliases=["avvio"], help="inizio sessione (lo lancia Claude Code): crea la configurazione la prima volta e avvisa"
     )
@@ -278,10 +286,11 @@ def _descrivi(storia: Storia, quaderno: Quaderno, segno: str, conferme, titolo: 
     return righe
 
 
-def _proponi(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
+def _proponi(argomenti, config, adesso: datetime, uscita: TextIO, entrata: bytes | None = None) -> int:
     if argomenti.file == "-":
-        dati = sys.stdin.buffer.read()
-        origine = ORIGINE_DIRETTA
+        # Dalla 0.11.0 il server MCP passa la proposta direttamente (``entrata``), senza file né ingresso standard.
+        dati = sys.stdin.buffer.read() if entrata is None else entrata
+        origine = ORIGINE_DIRETTA if entrata is None else servizio.ORIGINE_MCP
     else:
         file = Path(argomenti.file)
         if not file.is_file():
@@ -875,12 +884,16 @@ def _stato_archivio(config) -> list[str]:
     return righe
 
 
-def _archivio(argomenti, config, uscita: TextIO) -> int:
-    file = Path(argomenti.file)
-    if not file.is_file():
-        print(f"ERRORE: non trovo il file «{file}».", file=uscita)
-        return 2
-    esito = archivio.copia(config, file.read_bytes())
+def _archivio(argomenti, config, uscita: TextIO, entrata: bytes | None = None) -> int:
+    if argomenti.file == "-":
+        dati = sys.stdin.buffer.read() if entrata is None else entrata
+    else:
+        file = Path(argomenti.file)
+        if not file.is_file():
+            print(f"ERRORE: non trovo il file «{file}».", file=uscita)
+            return 2
+        dati = file.read_bytes()
+    esito = archivio.copia(config, dati)
 
     def quanti(n: int, uno: str, tanti: str) -> str:
         return f"{n} {uno if n == 1 else tanti}"
@@ -1140,6 +1153,28 @@ def _stampa_voce(voce, segno: str, uscita: TextIO) -> None:
         print(riga, file=uscita)
 
 
+def _servizio(argomenti, adesso: datetime | None, uscita: TextIO, errori: TextIO) -> int:
+    """Il server MCP (dalla 0.11.0). Su stdio serve il taccuino della configurazione (``--config``, la variabile o
+    quella di base); con ``--http`` i taccuini del file indicato. Gli errori vanno su ``errori``: l'uscita è del
+    protocollo."""
+    if argomenti.taccuini:
+        from hypomnema import mcp_http
+
+        return mcp_http.avvia(Path(argomenti.taccuini), errori)
+    from hypomnema import mcp_stdio
+
+    try:
+        taccuino = servizio.Taccuino("taccuino", configurazione.trova(argomenti.config), orologio=lambda: adesso)
+    except configurazione.ErroreConfigurazione as errore:
+        print(f"ERRORE: {errore}", file=errori)
+        return 2
+    entrata = sys.stdin
+    if hasattr(entrata, "reconfigure"):
+        entrata.reconfigure(encoding="utf-8", errors="replace")
+    mcp_stdio.servi(taccuino, entrata, uscita)
+    return 0
+
+
 def _testimone(argomenti, adesso: datetime, errori: TextIO) -> int:
     # Su successo non scrive niente: per Claude Code, ciò che esce qui finirebbe nella chat.
     try:
@@ -1163,8 +1198,10 @@ def main(
     adesso: datetime | None = None,
     uscita: TextIO | None = None,
     errori: TextIO | None = None,
+    entrata: bytes | None = None,
 ) -> int:
-    """Punto d'ingresso. ``adesso``, ``uscita`` ed ``errori`` servono ai test per avere risultati ripetibili."""
+    """Punto d'ingresso. ``adesso``, ``uscita`` ed ``errori`` servono ai test per avere risultati ripetibili;
+    ``entrata`` (dalla 0.11.0) è la proposta o l'archivio di ``propose -`` e ``archive -`` passati dal server MCP."""
     # Sempre UTF-8: chi legge l'uscita (Claude, Git Bash) si aspetta UTF-8, anche su Windows
     # dove Python userebbe altrimenti la vecchia codifica di sistema. Nella finestra della
     # console non cambia niente: lì Python scrive già correttamente.
@@ -1188,6 +1225,7 @@ def main(
         if uscita_argparse.code == 2 and any(INGLESE.get(c, c) in AGGANCI for c in elenco):
             return 1
         raise
+    adesso_fisso = adesso is not None
     adesso = adesso or datetime.now().astimezone()
     comando = INGLESE.get(argomenti.comando, argomenti.comando)
     if comando == "witness":
@@ -1207,6 +1245,8 @@ def main(
         return 0
     if comando == "fingerprint":
         return _impronta(argomenti, uscita)
+    if comando == "serve":
+        return _servizio(argomenti, adesso if adesso_fisso else None, uscita, errori)
     try:
         config = configurazione.carica(argomenti.config)
     except configurazione.ErroreConfigurazione as errore:
@@ -1218,7 +1258,7 @@ def main(
             # Chi legge aspetta che un passaggio dello sportello finisca: non vede mai una nota a metà.
             with blocco.blocco(config.cartella_quaderno, crea=False):
                 return _esegui(comando, argomenti, config, adesso, uscita)
-        return _esegui(comando, argomenti, config, adesso, uscita)
+        return _esegui(comando, argomenti, config, adesso, uscita, entrata)
     except NotaIlleggibile as errore:
         print(f"ERRORE: il quaderno contiene un file non valido: {errore}. "
               "Controlla se è stato modificato a mano.", file=uscita)
@@ -1229,9 +1269,9 @@ def main(
         return 2
 
 
-def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int:
+def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO, entrata: bytes | None = None) -> int:
     if comando == "propose":
-        return _proponi(argomenti, config, adesso, uscita)
+        return _proponi(argomenti, config, adesso, uscita, entrata)
     if comando == "status":
         return _stato(argomenti, config, adesso, uscita)
     if comando == "snapshot":
@@ -1243,7 +1283,7 @@ def _esegui(comando, argomenti, config, adesso: datetime, uscita: TextIO) -> int
     if comando == "diary":
         return _diario(argomenti, config, uscita)
     if comando == "archive":
-        return _archivio(argomenti, config, uscita)
+        return _archivio(argomenti, config, uscita, entrata)
     if comando == "reminders":
         return _promemoria(config, adesso, uscita)
     if comando == "recap":

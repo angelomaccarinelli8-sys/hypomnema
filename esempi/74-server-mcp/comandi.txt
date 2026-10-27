@@ -1,0 +1,2 @@
+servizio richieste.jsonl
+check
