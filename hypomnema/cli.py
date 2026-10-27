@@ -1160,7 +1160,7 @@ def _servizio(argomenti, adesso: datetime | None, uscita: TextIO, errori: TextIO
     if argomenti.taccuini:
         from hypomnema import mcp_http
 
-        return mcp_http.avvia(Path(argomenti.taccuini), errori)
+        return mcp_http.avvia(Path(argomenti.taccuini), uscita, errori)
     from hypomnema import mcp_stdio
 
     try:
