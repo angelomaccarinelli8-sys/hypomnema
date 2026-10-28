@@ -62,7 +62,7 @@ class TestGuardianoPorte(unittest.TestCase):
     def test_caddy_e_servizio(self):
         caddy = testo("Caddyfile")
         righe = [r.strip() for r in caddy.splitlines() if r.strip() and not r.strip().startswith("#")]
-        self.assertEqual(righe, ["{", "admin off", "}", "DOMINIO {", "request_body {", "max_size 4MB", "}",
+        self.assertEqual(righe, ["DOMINIO {", "request_body {", "max_size 4MB", "}",
                                  "reverse_proxy 127.0.0.1:8765", "}"])
         self.assertIn("porta = 8765", testo("installa.sh"))
         servizio = testo("hypomnema.service")

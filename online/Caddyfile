@@ -6,10 +6,8 @@
 #   non è /mcp o /<chiave>/mcp.
 # - Nessuna riga per richiesta: in questo file non c'è la direttiva «log», quindi Caddy non scrive gli indirizzi
 #   chiesti (che possono contenere una chiave) né i corpi delle richieste (che contengono le note).
-{
-	admin off
-}
-
+# - L'amministrazione di Caddy resta quella di serie, solo su localhost:2019: serve agli aggiornamenti di Ubuntu
+#   per ricaricarlo.
 DOMINIO {
 	request_body {
 		max_size 4MB
