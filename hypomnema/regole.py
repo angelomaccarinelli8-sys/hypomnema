@@ -561,6 +561,7 @@ def _riscontro(copiati: list[Messaggio] | None, testo: str, segno: str, cosa: st
 # dicitura scritta nella nota.
 SENZA_TESTIMONE = "witness off"
 SENZA_TESTIMONE_IN_CHAT = "chat, no witness"
+SENZA_TESTIMONE_ONLINE = "online, no witness"
 SENZA_RISPOSTE = "replies witness off"
 SENZA_TESTIMONE_IN_PAUSA = "witnesses paused"
 
@@ -569,23 +570,25 @@ def verifica(
     autore: str, testo: str, citazione: str | None, messaggi: list[Messaggio] | None, segno: str,
     in_chat: bool = False, da_risposta: bool = False, risposte: list[Messaggio] | None = None,
     in_pausa: bool = False, archivio: list[Messaggio] | None = None, diario_chat: list[Messaggio] | None = None,
+    online: bool = False,
 ) -> str | None:
     """La dicitura "verification" da scrivere nella nota accettata (None = nessuna dicitura).
 
     Tre livelli: verificato dal testimone («found»), riscontrato sull'archivio della chat
     («matched», con l'indirizzo della chat), non verificato («not verified»).
     """
+    in_chat_o_online = SENZA_TESTIMONE_ONLINE if online else SENZA_TESTIMONE_IN_CHAT
     if da_risposta:
         riscontro = _riscontro(diario_chat, testo, segno, "text matched", "reply")
         if risposte is None and riscontro:
             return riscontro
         if risposte is None:
-            perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_RISPOSTE
+            perche = in_chat_o_online if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_RISPOSTE
             return f"reply not verified ({perche})"
         trovato = trova_citazione(risposte, testo, segno)
         return f"text found in Claude's reply of {trovato.messaggio.quando}"
     if messaggi is None:
-        perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_TESTIMONE
+        perche = in_chat_o_online if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_TESTIMONE
         if autore == "user":
             return _riscontro(archivio, testo, segno, "text matched", "message") or f"author not verified ({perche})"
         if citazione is not None:

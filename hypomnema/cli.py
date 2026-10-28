@@ -55,7 +55,7 @@ INGLESE = {
     "confronta": "compare", "risposte": "replies", "impronta": "fingerprint", "diario": "diary",
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
     "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns", "grafo": "graph",
-    "albero": "tree", "modello": "template", "servizio": "serve",
+    "albero": "tree", "modello": "template", "servizio": "serve", "taccuino-nuovo": "notebook-new",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
@@ -205,6 +205,16 @@ def _parser() -> argparse.ArgumentParser:
     servi.add_argument("--http", dest="taccuini", metavar="FILE",
                        help="server HTTP su 127.0.0.1 con i taccuini e le chiavi di questo file (mai il taccuino "
                             "della configurazione di base)")
+    nuovo = comandi.add_parser(
+        "notebook-new", aliases=["taccuino-nuovo"],
+        help="server online (0.11.0, seconda parte): crea un taccuino nuovo accanto al file dei taccuini, con la "
+             "sola impronta della chiave",
+    )
+    nuovo.add_argument("--file", dest="taccuini", metavar="FILE", required=True, help="il file dei taccuini del server")
+    nuovo.add_argument("--name", "--nome", dest="nome", required=True, help="il nome del taccuino (lettere minuscole, "
+                                                                           "cifre e -)")
+    nuovo.add_argument("--fingerprint", "--impronta", dest="impronta", required=True,
+                       help="l'impronta SHA-256 della chiave (64 cifre esadecimali): la chiave non passa di qui")
     comandi.add_parser(
         "start", aliases=["avvio"], help="inizio sessione (lo lancia Claude Code): crea la configurazione la prima volta e avvisa"
     )
@@ -679,6 +689,11 @@ def _stato(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
         )
     elif config.testimone_attivo:
         righe.append("Testimone: ACCESO (registra le parole esatte di ogni messaggio dell'utente).")
+    elif config.online:
+        righe.append(
+            "Testimone: NON C'È (taccuino online): i messaggi arrivano solo a Claude e le note con autore "
+            "«user» saranno marcate «author not verified (online, no witness)»."
+        )
     elif config.in_chat:
         righe.append(
             "Testimone: NON C'È (configurazione per la chat di Claude): i messaggi arrivano solo a Claude "
@@ -1153,6 +1168,27 @@ def _stampa_voce(voce, segno: str, uscita: TextIO) -> None:
         print(riga, file=uscita)
 
 
+def _taccuino_nuovo(argomenti, uscita: TextIO) -> int:
+    """Un taccuino online nuovo (0.11.0, seconda parte). Non usa la configurazione: lavora sul file dei taccuini."""
+    from hypomnema import mcp_http
+
+    file = Path(argomenti.taccuini)
+    try:
+        cartella = mcp_http.crea_taccuino(file, argomenti.nome, argomenti.impronta.strip().lower())
+    except mcp_http.ErroreTaccuini as errore:
+        print(f"ERRORE: {errore} Non ho creato niente.", file=uscita)
+        return 2
+    try:
+        mcp_http.leggi_taccuini(file)
+    except mcp_http.ErroreTaccuini as errore:
+        print(f"ATTENZIONE: il taccuino «{argomenti.nome}» è creato in {cartella}, ma il server non partirà: {errore}",
+              file=uscita)
+        return 2
+    print(f"Taccuino «{argomenti.nome}» creato in {cartella}, con la sola impronta della chiave.", file=uscita)
+    print("Riavvia il server perché lo veda.", file=uscita)
+    return 0
+
+
 def _servizio(argomenti, adesso: datetime | None, uscita: TextIO, errori: TextIO) -> int:
     """Il server MCP (dalla 0.11.0). Su stdio serve il taccuino della configurazione (``--config``, la variabile o
     quella di base); con ``--http`` i taccuini del file indicato. Gli errori vanno su ``errori``: l'uscita è del
@@ -1245,6 +1281,8 @@ def main(
         return 0
     if comando == "fingerprint":
         return _impronta(argomenti, uscita)
+    if comando == "notebook-new":
+        return _taccuino_nuovo(argomenti, uscita)
     if comando == "serve":
         return _servizio(argomenti, adesso if adesso_fisso else None, uscita, errori)
     try:

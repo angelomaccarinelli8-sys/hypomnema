@@ -4,43 +4,60 @@ libreria standard, sullo stesso cuore del trasporto stdio (``servizio``).
 Regole fisse (non sono impostazioni):
 - ascolta **solo su 127.0.0.1**: dall'esterno lo raggiunge soltanto il tunnel che l'utente accende sul suo PC;
 - **una chiave per taccuino**, nell'indirizzo (``/<chiave>/mcp``) oppure, dalla 0.11.0 seconda parte (I0285),
-  nell'intestazione ``X-Hypomnema-Key: <chiave>`` con l'indirizzo ``/mcp``: così l'indirizzo da solo non apre
+  nell'intestazione ``x-api-key: <chiave>`` con l'indirizzo ``/mcp``: così l'indirizzo da solo non apre
   niente. Se ci sono tutte e due, devono essere la stessa chiave. Ogni altro indirizzo (anche quelli che un client
   prova per cercare un login, come ``/.well-known/oauth-protected-resource``) risponde 404 subito, senza corpo;
 - **la chiave non si scrive mai**: niente righe per richiesta (``log_message`` spento), niente percorsi nei
   messaggi, errori interni senza dettagli;
 - **mai il taccuino della configurazione di base** (``~/Hypomnema``): se il file dei taccuini lo nomina, il server
-  non parte.
+  non parte;
+- **due limiti per taccuino** (seconda parte): richieste al minuto in tutto e proposte (``propose``) al minuto.
+  Oltre, 429 con un messaggio per Claude. Si contano solo le richieste accettate, nell'ultimo minuto.
+
+Al posto della chiave il file può avere la sua **impronta** (SHA-256, 64 cifre esadecimali): è il modo del server
+online, dove la chiave non arriva mai (nasce sul PC di chi crea il taccuino, vedi ``notebook-new``).
 
 Il file dei taccuini lo scrive l'utente, fuori dal repository::
 
     porta = 8765
+    richieste_al_minuto = 30   # facoltativa, se manca vale 30
+    proposte_al_minuto = 10    # facoltativa, se manca vale 10
 
     [[taccuino]]
     nome = "secondo"
     config = "C:/Users/nome/Hypomnema-Secondo/hypomnema-chat.toml"
-    chiave = "…almeno 32 caratteri: lettere, cifre, - e _…"
+    chiave = "…almeno 32 caratteri: lettere, cifre, - e _…"    # oppure  impronta = "…64 cifre esadecimali…"
 """
 
 from __future__ import annotations
 
+import hashlib
 import hmac
 import json
 import re
 import sys
+import threading
+import time
 import uuid
+from collections import deque
+from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import TextIO
 
-from hypomnema import avvio, configurazione, servizio
+from hypomnema import aggiunta, avvio, configurazione, servizio
 from hypomnema.configurazione import tomllib
 
 INDIRIZZO = "127.0.0.1"
 LUNGHEZZA_MINIMA_CHIAVE = 32
 CHIAVE_VALIDA = re.compile(r"[A-Za-z0-9_-]+")
-# L'intestazione con la chiave (I0285): nel modulo del connettore di claude.ai, «Intestazioni della richiesta».
-INTESTAZIONE_CHIAVE = "X-Hypomnema-Key"
+IMPRONTA_VALIDA = re.compile(r"[0-9a-f]{64}")
+# L'intestazione con la chiave (I0285): nel modulo del connettore di claude.ai, «Request headers». Deve essere un
+# nome della lista di serie di claude.ai: un nome nuovo andrebbe fatto approvare ad Anthropic.
+INTESTAZIONE_CHIAVE = "x-api-key"
+# I limiti quando il file dei taccuini non li scrive.
+RICHIESTE_AL_MINUTO = 30
+PROPOSTE_AL_MINUTO = 10
 # Una richiesta più grande è rifiutata (413): una proposta o una copia dell'archivio stanno molto sotto.
 LIMITE_RICHIESTA = 4 * 1024 * 1024
 ATTESA_SECONDI = 30
@@ -50,8 +67,56 @@ class ErroreTaccuini(Exception):
     """Il file dei taccuini non va. Il messaggio non contiene mai una chiave."""
 
 
+def impronta(chiave: str) -> str:
+    """L'impronta SHA-256 della chiave, in esadecimale minuscolo (la stessa di ``Get-FileHash`` di PowerShell)."""
+    return hashlib.sha256(chiave.encode("utf-8")).hexdigest()
+
+
+@dataclass
+class Limiti:
+    """Le richieste accettate nell'ultimo minuto, per un taccuino. ``orologio`` serve alle prove."""
+
+    richieste: int
+    proposte: int
+    orologio: object = time.monotonic
+    _richieste: deque = field(default_factory=deque)
+    _proposte: deque = field(default_factory=deque)
+    _blocco: threading.Lock = field(default_factory=threading.Lock)
+
+    def passa(self, proposta: bool) -> str | None:
+        """None se la richiesta passa (e la conta); altrimenti quale limite è stato superato."""
+        with self._blocco:
+            adesso = self.orologio()
+            for coda in (self._richieste, self._proposte):
+                while coda and coda[0] <= adesso - 60:
+                    coda.popleft()
+            if len(self._richieste) >= self.richieste:
+                return "richieste"
+            if proposta and len(self._proposte) >= self.proposte:
+                return "proposte"
+            self._richieste.append(adesso)
+            if proposta:
+                self._proposte.append(adesso)
+            return None
+
+
+def _limite(dati: dict, nome: str, normale: int) -> int:
+    valore = dati.get(nome, normale)
+    if not isinstance(valore, int) or isinstance(valore, bool) or valore < 1:
+        raise ErroreTaccuini(f"nel file dei taccuini «{nome}» deve essere un numero intero da 1 in su.")
+    return valore
+
+
+def leggi_limiti(file: Path) -> tuple[int, int]:
+    """I due limiti del file dei taccuini (richieste e proposte al minuto)."""
+    dati = tomllib.loads(file.read_text(encoding="utf-8-sig"))
+    return (_limite(dati, "richieste_al_minuto", RICHIESTE_AL_MINUTO),
+            _limite(dati, "proposte_al_minuto", PROPOSTE_AL_MINUTO))
+
+
 def leggi_taccuini(file: Path) -> tuple[int, list[tuple[str, servizio.Taccuino]]]:
-    """La porta e le coppie (chiave, taccuino) del file, controllate. Errore se un taccuino è quello di base."""
+    """La porta e le coppie (impronta della chiave, taccuino) del file, controllate. Errore se un taccuino è quello
+    di base. Una voce con ``chiave`` ha la stessa impronta di una voce con ``impronta``."""
     try:
         dati = tomllib.loads(file.read_text(encoding="utf-8-sig"))
     except FileNotFoundError:
@@ -74,12 +139,21 @@ def leggi_taccuini(file: Path) -> tuple[int, list[tuple[str, servizio.Taccuino]]
         chiave, config = voce.get("chiave"), voce.get("config")
         if not isinstance(config, str) or not config:
             raise ErroreTaccuini(f"il taccuino «{nome}» non ha «config», il percorso della sua configurazione.")
-        if (not isinstance(chiave, str) or len(chiave) < LUNGHEZZA_MINIMA_CHIAVE
+        if "impronta" in voce:
+            if chiave is not None:
+                raise ErroreTaccuini(f"il taccuino «{nome}» ha sia «chiave» sia «impronta»: ne serve una sola.")
+            segno = voce["impronta"]
+            if not isinstance(segno, str) or not IMPRONTA_VALIDA.fullmatch(segno):
+                raise ErroreTaccuini(f"l'impronta del taccuino «{nome}» non va: servono 64 cifre esadecimali "
+                                     "minuscole (SHA-256 della chiave).")
+        elif (not isinstance(chiave, str) or len(chiave) < LUNGHEZZA_MINIMA_CHIAVE
                 or not CHIAVE_VALIDA.fullmatch(chiave)):
             raise ErroreTaccuini(
                 f"la chiave del taccuino «{nome}» non va: servono almeno {LUNGHEZZA_MINIMA_CHIAVE} caratteri, solo "
                 "lettere, cifre, - e _. Creala con:  py -c \"import secrets; print(secrets.token_urlsafe(32))\"")
-        if any(hmac.compare_digest(chiave, altra) for altra, _ in coppie):
+        else:
+            segno = impronta(chiave)
+        if any(hmac.compare_digest(segno, altra) for altra, _ in coppie):
             raise ErroreTaccuini(f"il taccuino «{nome}» ha la stessa chiave di un altro: ogni taccuino ha la sua.")
         percorso = Path(config)
         if not percorso.is_absolute():
@@ -92,15 +166,72 @@ def leggi_taccuini(file: Path) -> tuple[int, list[tuple[str, servizio.Taccuino]]
             raise ErroreTaccuini(
                 f"il taccuino «{nome}» è nella cartella {base}, quella della configurazione di base: il server HTTP "
                 "non la serve mai. Toglilo dal file dei taccuini.")
-        coppie.append((chiave, taccuino))
+        if any(altro.nome == nome for _, altro in coppie):
+            raise ErroreTaccuini(f"due taccuini si chiamano «{nome}»: ogni taccuino ha il suo nome.")
+        coppie.append((segno, taccuino))
+    leggi_limiti(file)
     return porta, coppie
+
+
+NOME_VALIDO = re.compile(r"[a-z0-9][a-z0-9-]{0,39}")
+MODELLO_ONLINE = Path(__file__).resolve().parent.parent / "online" / "hypomnema-online.toml"
+ETICHETTE_VUOTE = """\
+# Le etichette di questo taccuino (vedi esempi/etichette.toml nel repository di Hypomnema). Per ora vuote.
+chi = []
+cosa = []
+"""
+
+
+def crea_taccuino(file: Path, nome: str, segno: str) -> Path:
+    """Crea un taccuino online accanto al file dei taccuini (cartella ``<nome>``, configurazione online, quaderno con
+    ``etichette.toml`` vuoto) e aggiunge la sua voce, con la sola impronta della chiave, in fondo al file. La
+    chiave non arriva mai qui. Restituisce la cartella del taccuino. Niente si crea se qualcosa non va."""
+    if not NOME_VALIDO.fullmatch(nome):
+        raise ErroreTaccuini(f"il nome «{nome}» non va: da 1 a 40 caratteri, solo lettere minuscole, cifre e -, "
+                             "e il primo non è un -.")
+    if not IMPRONTA_VALIDA.fullmatch(segno):
+        raise ErroreTaccuini("l'impronta non va: servono 64 cifre esadecimali minuscole (SHA-256 della chiave).")
+    if not file.is_file():
+        raise ErroreTaccuini(f"non trovo il file dei taccuini «{file}».")
+    try:
+        dati = tomllib.loads(file.read_text(encoding="utf-8-sig"))
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError):
+        raise ErroreTaccuini(f"il file dei taccuini «{file}» non è scritto correttamente (TOML in UTF-8).")
+    for voce in dati.get("taccuino", []):
+        if not isinstance(voce, dict):
+            continue
+        if voce.get("nome") == nome:
+            raise ErroreTaccuini(f"c'è già un taccuino che si chiama «{nome}».")
+        altra = voce.get("impronta") or (impronta(voce["chiave"]) if isinstance(voce.get("chiave"), str) else "")
+        if isinstance(altra, str) and hmac.compare_digest(altra, segno):
+            raise ErroreTaccuini("questa chiave è già di un altro taccuino: creane una nuova.")
+    cartella = file.parent / nome
+    if cartella.exists():
+        raise ErroreTaccuini(f"la cartella «{cartella}» c'è già: scegli un altro nome.")
+    base = avvio.configurazione_di_base().parent
+    if avvio._dentro(cartella.resolve(), base.resolve()):
+        raise ErroreTaccuini(f"la cartella «{cartella}» è dentro {base}, quella della configurazione di base: il "
+                             "server HTTP non la serve mai.")
+    (cartella / "quaderno").mkdir(parents=True)
+    config = cartella / "hypomnema.toml"
+    config.write_bytes(MODELLO_ONLINE.read_bytes())
+    with open(cartella / "quaderno" / "etichette.toml", "x", encoding="utf-8", newline="\n") as etichette:
+        etichette.write(ETICHETTE_VUOTE)
+    testo = file.read_bytes()
+    a_capo = "" if not testo or testo.endswith(b"\n") else "\n"
+    aggiunta.aggiungi(file, f'{a_capo}\n[[taccuino]]\nnome = "{nome}"\nconfig = "{nome}/hypomnema.toml"\n'
+                            f'impronta = "{segno}"\n')
+    return cartella
 
 
 class ServerHTTP(ThreadingHTTPServer):
     daemon_threads = True
 
-    def __init__(self, porta: int, coppie: list[tuple[str, servizio.Taccuino]]):
+    def __init__(self, porta: int, coppie: list[tuple[str, servizio.Taccuino]], limiti: tuple[int, int] = (
+            RICHIESTE_AL_MINUTO, PROPOSTE_AL_MINUTO)):
         self.coppie = coppie
+        self.limiti_al_minuto = limiti
+        self.limiti = {id(taccuino): Limiti(*limiti) for _, taccuino in coppie}
         super().__init__((INDIRIZZO, porta), Gestore)
 
     def handle_error(self, request, client_address) -> None:
@@ -132,10 +263,10 @@ class Gestore(BaseHTTPRequestHandler):
                 return None
         else:
             return None
-        trovato = None
-        for chiave, taccuino in self.server.coppie:
-            # Tutte le chiavi, sempre: il tempo della risposta non dice niente su quale chiave quasi va.
-            if hmac.compare_digest(cercata.encode("utf-8"), chiave.encode("utf-8")):
+        trovato, segno = None, impronta(cercata)
+        for altra, taccuino in self.server.coppie:
+            # Tutte le impronte, sempre: il tempo della risposta non dice niente su quale chiave quasi va.
+            if hmac.compare_digest(segno, altra):
                 trovato = taccuino
         return trovato
 
@@ -163,6 +294,9 @@ class Gestore(BaseHTTPRequestHandler):
             self.close_connection = True
             return self._rispondi(413)
         testo = self.rfile.read(lunghezza).decode("utf-8", errors="replace")
+        superato = self.server.limiti[id(taccuino)].passa(_e_una_proposta(testo))
+        if superato is not None:
+            return self._troppe(superato, testo)
         try:
             risposta = servizio.rispondi_al_testo(taccuino, testo)
         except Exception:  # noqa: BLE001 - un errore del programma non deve dire niente fuori
@@ -176,6 +310,24 @@ class Gestore(BaseHTTPRequestHandler):
         corpo = json.dumps(risposta, ensure_ascii=False).encode("utf-8")
         return self._rispondi(200, corpo, intestazioni)
 
+    def _troppe(self, superato: str, testo: str) -> None:
+        if superato == "proposte":
+            messaggio = (f"LIMIT: at most {self.server.limiti_al_minuto[1]} proposals (propose) per minute for this "
+                         "notebook. Nothing was saved. Wait one minute, then propose again, one note at a time. Tell "
+                         "the user: «Ho raggiunto il limite di proposte al minuto: riprovo tra un minuto.»")
+        else:
+            messaggio = (f"LIMIT: at most {self.server.limiti_al_minuto[0]} requests per minute for this notebook. "
+                         "Nothing was done. Wait one minute, then try again. Tell the user: «Ho raggiunto il limite "
+                         "di richieste al minuto del taccuino: riprovo tra un minuto.»")
+        try:
+            richiesta = json.loads(testo)
+            id_richiesta = richiesta.get("id") if isinstance(richiesta, dict) else None
+        except ValueError:
+            id_richiesta = None
+        corpo = json.dumps({"jsonrpc": "2.0", "id": id_richiesta, "error": {"code": -32000, "message": messaggio}},
+                           ensure_ascii=False).encode("utf-8")
+        return self._rispondi(429, corpo, {"Content-Type": "application/json; charset=utf-8", "Retry-After": "60"})
+
     def _non_permesso(self) -> None:
         if self._taccuino() is None:
             self.close_connection = True
@@ -186,10 +338,19 @@ class Gestore(BaseHTTPRequestHandler):
     do_GET = do_DELETE = do_PUT = do_PATCH = do_HEAD = do_OPTIONS = _non_permesso  # noqa: N815
 
 
+def _e_una_proposta(testo: str) -> bool:
+    try:
+        richiesta = json.loads(testo)
+    except ValueError:
+        return False
+    return (isinstance(richiesta, dict) and richiesta.get("method") == "tools/call"
+            and isinstance(richiesta.get("params"), dict) and richiesta["params"].get("name") == "propose")
+
+
 def crea_server(file: Path, porta: int | None = None) -> ServerHTTP:
     """Il server pronto, non ancora avviato (``porta`` serve alle prove: 0 = una porta libera qualsiasi)."""
     porta_del_file, coppie = leggi_taccuini(file)
-    return ServerHTTP(porta_del_file if porta is None else porta, coppie)
+    return ServerHTTP(porta_del_file if porta is None else porta, coppie, leggi_limiti(file))
 
 
 def avvia(file: Path, uscita: TextIO, errori: TextIO) -> int:

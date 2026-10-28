@@ -171,6 +171,7 @@ def _ricevi(contenuto: bytes, origine: str, config: Configurazione, adesso: date
         da_risposta=da_risposta is not None, risposte=risposte, in_pausa=in_pausa,
         archivio=testimone_archivio.leggi_messaggi(config) if config.file_archivio else None,
         diario_chat=testimone_archivio.leggi_risposte(config) if config.file_archivio else None,
+        online=config.online,
     ) if testo else None
     campo = next((c for c in regole.CAMPI_CAMBIAMENTO if _facoltativo(proposta, c) is not None), None)
     if campo is not None:
