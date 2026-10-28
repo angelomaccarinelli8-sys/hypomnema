@@ -8,9 +8,20 @@ Hypomnema e come aggiornarsi.
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
 
 - **La chiave anche in un'intestazione** (I0285): il server HTTP accetta la chiave del taccuino anche
-  nell'intestazione `X-Hypomnema-Key`, con l'indirizzo `/mcp`. Nel connettore personalizzato di claude.ai va in
-  «Intestazioni della richiesta»: l'indirizzo da solo non apre niente. Resta valida la chiave nell'indirizzo
-  (`/<chiave>/mcp`); se ci sono tutte e due devono coincidere, altrimenti 404.
+  nell'intestazione `x-api-key`, con l'indirizzo `/mcp`. Nel connettore personalizzato di claude.ai va in
+  «Request headers» (con «No sign-in»): l'indirizzo da solo non apre niente. Il nome è quello della lista di serie
+  di claude.ai. Resta valida la chiave nell'indirizzo (`/<chiave>/mcp`); se ci sono tutte e due devono coincidere,
+  altrimenti 404.
+- **Sul server solo l'impronta della chiave**: nel file dei taccuini `impronta = "…"` (SHA-256) al posto di
+  `chiave`. Il comando nuovo `notebook-new` (`taccuino-nuovo`) crea un taccuino online ricevendo solo l'impronta.
+- **Due limiti per taccuino**: richieste al minuto (30) e proposte al minuto (10), scritti nel file dei taccuini.
+  Oltre, 429 con un messaggio per Claude.
+- **Taccuini online** (`modalita = "online"`): le note dell'utente sono marcate «author not verified (online, no
+  witness)». Lo sportello e le sue regole non cambiano.
+- **La macchina su Azure** (cartella `online/`): gli script per PowerShell che la creano (solo la porta 443
+  aperta, SSH chiuso), Caddy per HTTPS con certificato gratuito, il servizio che riparte da solo, gli aggiornamenti
+  automatici di Ubuntu, la copia notturna dei taccuini, lo scaricamento delle copie e l'esportazione di un taccuino.
+- La scheda per Claude dice anche: mai dati di salute di altre persone né dati di clienti.
 
 ## 0.11.0 (prototipo, prima parte) — il server MCP sul PC
 

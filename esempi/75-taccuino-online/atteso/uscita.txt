@@ -1,0 +1,34 @@
+$ hypomnema stato
+Configurazione: <cartella di prova>/hypomnema.toml
+Quaderno: <cartella di prova>/quaderno
+Fuso orario: Europe/Rome, scritto nella configurazione: questa macchina è in UTC.
+Etichette: nessun file etichette.toml (nessuna etichetta).
+Testimone: NON C'È (taccuino online): i messaggi arrivano solo a Claude e le note con autore «user» saranno marcate «author not verified (online, no witness)».
+File del testimone: <cartella di prova>/quaderno/testimone.jsonl
+Messaggi registrati: 0
+Ultimo messaggio registrato: nessuno.
+[codice di uscita: 0]
+
+$ hypomnema proponi nota.json
+ACCETTATA: la nota 0001 è stata salvata nel quaderno (note/0001.md).
+Il passaggio è annotato nel registro.
+[codice di uscita: 0]
+
+$ hypomnema cerca peperoncini
+Trovata 1 nota con «peperoncini».
+
+--- Nota F0001 ---
+data: 2026-01-15
+fonte: chat del 15 gennaio 2026 sul progetto dell'orto
+autore: user
+tipo: stated
+natura: fact
+verifica: author not verified (online, no witness)
+testo:
+  Quest'anno voglio provare a coltivare i peperoncini.
+contesto scritto da Claude:
+  Detto nella chat, parlando delle semine di primavera.
+
+Legenda: F fatto · I idea · D decisione · O aperta · T da fare · ✓ chiusa
+[codice di uscita: 0]
+

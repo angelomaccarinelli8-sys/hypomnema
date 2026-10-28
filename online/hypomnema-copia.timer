@@ -1,0 +1,10 @@
+# Ogni notte alle 3 (ora del server, UTC); se la macchina era spenta, appena riparte.
+[Unit]
+Description=Hypomnema, copia notturna dei taccuini
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+
+[Install]
+WantedBy=timers.target

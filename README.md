@@ -351,10 +351,13 @@ nessuna porta di rete.
 - ascolta **solo su 127.0.0.1**: dall'esterno lo raggiunge soltanto un tunnel che accendi tu sul tuo computer
   (per esempio `cloudflared tunnel --url http://127.0.0.1:8765`);
 - **una chiave per taccuino**, nell'indirizzo (`https://<indirizzo del tunnel>/<chiave>/mcp`) oppure
-  nell'intestazione `X-Hypomnema-Key: <chiave>` con l'indirizzo `https://<indirizzo del tunnel>/mcp`: nel modulo
-  «Aggiungi connettore personalizzato» di claude.ai va in «Intestazioni della richiesta», e così l'indirizzo da solo
+  nell'intestazione `x-api-key: <chiave>` con l'indirizzo `https://<indirizzo del tunnel>/mcp`: nel modulo
+  «Aggiungi connettore personalizzato» di claude.ai si sceglie «No sign-in» e la chiave va in «Request headers»
+  (nome `x-api-key`, che è nella lista di serie; la sezione c'è solo su alcuni account). Così l'indirizzo da solo
   non apre niente. Se ci sono tutte e due, devono essere la stessa chiave. Ogni altro indirizzo risponde 404, senza
   dire niente;
+- **due limiti per taccuino** (dalla seconda parte): `richieste_al_minuto` (se manca, 30) e `proposte_al_minuto`
+  (se manca, 10) nel file dei taccuini. Oltre, il server risponde 429 con un messaggio per Claude e non fa niente;
 - la chiave **non si scrive mai**: il server non scrive una riga per ogni richiesta e i suoi messaggi non
   contengono indirizzi;
 - **mai il taccuino della configurazione di base** (`~/Hypomnema`): se il file lo nomina, il server non parte.
@@ -373,6 +376,18 @@ chiave = "incolla qui la chiave"
 La chiave (almeno 32 caratteri: lettere, cifre, `-` e `_`) si crea con
 `py -c "import secrets; print(secrets.token_urlsafe(32))"`. Chi ha la chiave può leggere e proporre note su quel
 taccuino: tienila come una password, e se esce dal tuo controllo cambiala nel file e riavvia il server.
+
+Al posto di `chiave = "…"` si può scrivere `impronta = "…"`, l'impronta SHA-256 della chiave (64 cifre
+esadecimali): il server riconosce la chiave senza averla nel file. È il modo del server online.
+
+### Il server online (dalla 0.11.0, seconda parte)
+
+I file per una macchina Linux su internet (Azure) sono nella cartella `online/`: Caddy fa da HTTPS con un
+certificato gratuito e passa tutto al server HTTP di sempre, che resta su 127.0.0.1. I taccuini online hanno
+`modalita = "online"`: le note dell'utente sono marcate «author not verified (online, no witness)». Un taccuino
+nuovo si crea con `notebook-new` (`taccuino-nuovo`) `--file <file dei taccuini> --name <nome> --fingerprint
+<impronta>`: riceve solo l'impronta, la chiave nasce sul PC di chi lo crea (`online/crea-taccuino-online.ps1`) e
+va negli appunti, mai a schermo. La guida passo passo è in `online/GUIDA.md`.
 
 ## Dove funziona davvero
 

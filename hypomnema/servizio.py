@@ -49,6 +49,9 @@ Proposals (one note = one thing; take the model with `template`):
 - Here there is no witness: the user's notes are saved as «non verificate» (or «riscontrate sull'archivio della
   chat» after `archive`). Say it to the user as it is, never «verificate».
 
+Never put in the notebook other people's health data, or data about clients (the user's or anyone else's): if
+the user asks, say «Questo nel taccuino non lo scrivo: sono dati sensibili di altre persone.»
+
 Use what you find for what it is: a decision is a decision, an idea only a proposal, an inferred note a
 hypothesis. Cite notes by their code («dalla nota T0004.2»). Never invent notes the tools did not return.
 """
