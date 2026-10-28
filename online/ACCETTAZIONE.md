@@ -32,7 +32,7 @@ usarlo, leggi questo foglio. Se sei d'accordo, scrivi in fondo il tuo nome e la 
 - **La tua chiave** (quella che incolli nel connettore) **non la vedo e non la tengo**: nasce sul mio PC davanti a te,
   va negli appunti, la incolli tu e poi gli appunti si svuotano. Sul server c'è solo un'«impronta», con cui non si
   può aprire il taccuino.
-- Il server è una macchina di **Microsoft Azure** in Europa (Paesi Bassi). Microsoft gestisce i computer su cui gira.
+- Il server è una macchina di **Microsoft Azure** in Europa (Svezia). Microsoft gestisce i computer su cui gira.
 - Quello che scrivi passa da **Claude** (Anthropic), come ogni chat: valgono le condizioni del tuo account Claude.
 - Chi ha la tua chiave può leggere e scrivere nel tuo taccuino: tienila come una password. Se pensi che l'abbia
   qualcun altro, dimmelo subito e la blocco.

@@ -1,5 +1,5 @@
 # Caddy per il server online di Hypomnema (0.11.0, seconda parte). Lo copia installa.sh, al posto di DOMINIO
-# mette il nome della macchina (per esempio hypomnema-tester.westeurope.cloudapp.azure.com).
+# mette il nome della macchina (per esempio hypomnema-tester.swedencentral.cloudapp.azure.com).
 # - HTTPS con un certificato gratuito di Let's Encrypt, chiesto e rinnovato da Caddy da solo, passando dalla
 #   porta 443 (la 80 resta chiusa nel firewall di Azure).
 # - Tutto va al server di Hypomnema, che ascolta solo su 127.0.0.1:8765 e risponde 404 a ogni indirizzo che

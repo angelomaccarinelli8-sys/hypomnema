@@ -57,7 +57,7 @@ Compaiono i passi da `1/5` a `5/5`. Il passo 2 e il passo 4 durano qualche minut
 Alla fine deve comparire in verde:
 
 ```
-FATTO. La macchina risponde in HTTPS su https://hypomnema-tester.westeurope.cloudapp.azure.com (404 è giusto: senza chiave non si apre niente).
+FATTO. La macchina risponde in HTTPS su https://hypomnema-tester.swedencentral.cloudapp.azure.com (404 è giusto: senza chiave non si apre niente).
 ```
 
 - Se al passo 2 compare un errore con `SkuNotAvailable` o `QuotaExceeded`: manda il messaggio a Claude.
@@ -101,7 +101,7 @@ sull'account c'è già un connettore personalizzato (per esempio quello del PC d
 2. Apri **Connettori** (Connectors). Se non c'è, cerca **Personalizza → Connettori** (Customize → Connectors).
 3. Clicca **Aggiungi connettore personalizzato** (Add custom connector).
 4. **Nome**: `Hypomnema prova`.
-5. **URL del server MCP remoto**: `https://hypomnema-tester.westeurope.cloudapp.azure.com/mcp`
+5. **URL del server MCP remoto**: `https://hypomnema-tester.swedencentral.cloudapp.azure.com/mcp`
 6. Se il modulo chiede l'**autenticazione** (Authentication), scegli **Nessun accesso** (No sign-in).
 7. Apri **Request headers** (Intestazioni della richiesta). Come nome scegli dalla lista **`x-api-key`**. Nel
    valore **incolla** (Ctrl+V) la chiave. Lascialo **Required** (obbligatorio).

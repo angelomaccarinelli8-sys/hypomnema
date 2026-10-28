@@ -1,7 +1,7 @@
 #!/bin/bash
 # Prepara la macchina online di Hypomnema (0.11.0, seconda parte). Lo lancia crea-macchina.ps1 con
 # «az vm run-command», come root, senza porte aperte. Si può rilanciare: rifà solo ciò che manca.
-#   $1 = il nome della macchina su internet (per esempio hypomnema-tester.westeurope.cloudapp.azure.com)
+#   $1 = il nome della macchina su internet (per esempio hypomnema-tester.swedencentral.cloudapp.azure.com)
 #   $2 = il ramo del repository da usare (di solito main)
 #   $3 = l'utente di amministrazione (può leggere le copie, gruppo adm)
 set -euo pipefail

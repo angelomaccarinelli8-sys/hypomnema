@@ -57,7 +57,7 @@ class TestGuardianoPorte(unittest.TestCase):
         for pezzo in ("--size Standard_B2ats_v2", "--storage-sku Premium_LRS --os-disk-size-gb 64",
                       "Canonical:ubuntu-24_04-lts:server:latest"):
             self.assertIn(pezzo, macchina)
-        self.assertIn('$Regione = "westeurope"', testo("impostazioni.ps1"))
+        self.assertIn('$Regione = "swedencentral"', testo("impostazioni.ps1"))
 
     def test_caddy_e_servizio(self):
         caddy = testo("Caddyfile")
