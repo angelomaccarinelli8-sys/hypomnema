@@ -3,6 +3,36 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.11.0 (prototipo, prima parte) — il server MCP sul PC
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **Hypomnema è un server MCP** (I0265). Il comando nuovo `serve` (`servizio`) dà a Claude gli strumenti `status`,
+  `check`, `recap`, `review`, `tree`, `search`, `labels`, `template`, `propose` e `archive`, con una scheda corta di
+  istruzioni. Ogni strumento è il comando di sempre: lo sportello non cambia. Dopo ogni proposta il server fa da
+  solo `check` e lo restituisce insieme alla risposta dello sportello. Nel registro le note arrivate così hanno
+  «da: (strumento MCP)».
+- **Un taccuino per server.** Il server lavora solo sul taccuino della configurazione che riceve all'avvio: nessuno
+  strumento accetta un percorso o un'altra configurazione.
+- **In Claude Code il server c'è da solo**: il plugin lo registra (`.mcp.json`), accanto alla skill e ai testimoni.
+  Su stdio il server non apre porte di rete (c'è una prova che lo controlla).
+- **Il server HTTP per il tunnel**: `serve --http <file dei taccuini>`, solo libreria standard, in ascolto solo su
+  127.0.0.1, una chiave per taccuino nell'indirizzo (`/<chiave>/mcp`), ogni altro indirizzo 404, la chiave mai
+  scritta da nessuna parte, e mai il taccuino della cartella di base `~/Hypomnema`. Si espone con un tunnel acceso
+  sul proprio PC (per esempio Cloudflare). Vedi il README, «Il server MCP».
+- Il testimone non vede i messaggi che arrivano al server: dove non ci sono gli agganci di Claude Code le note
+  dell'utente restano «non verificate», come nella chat.
+
+Le note già scritte non si toccano e il quaderno della 0.10.0 si legge come prima. Aggiorna tutte e due le copie del
+programma (plugin di Claude Code e `programma-chat`).
+
+```
+claude plugin marketplace update hypomnema
+claude plugin update hypomnema@hypomnema
+```
+
+e su Windows, nella cartella Hypomnema: `git -C programma-chat pull`.
+
 ## 0.10.0 (prototipo) — l'albero delle etichette e la regola dell'integrazione
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*

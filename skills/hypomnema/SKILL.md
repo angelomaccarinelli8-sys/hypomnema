@@ -30,6 +30,10 @@ commands or scripts: its whole value lies in the fact that you do not touch it.
   not apply: in chat there are neither witnesses nor diary. Start from **C0**: if the chat has a
   command line on the user's computer, it writes directly on the real notebook.
 
+**If you have the `hypomnema` tools** (the MCP server, from 0.11.0: `recap`, `search`, `propose`…), use them instead
+of running the programs: same desk, same rules, same answers; `propose` takes the proposal as an object and returns
+the desk's answer followed by `check`. Everything else in this skill stays valid.
+
 **The other files of this skill**, next to this one, read only when they are needed: `chat-mode.md`
 (the chat, C0-C5), `labels.md` (the labels CHI and COSA, in full), `replies.md` (saving your
 replies), `diary.md` (section 6, what was said), `moves.md` (the models of the moves, from 0.10.0).

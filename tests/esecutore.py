@@ -20,7 +20,8 @@ della cartella dell'esempio.
 I percorsi della cartella temporanea (che cambiano da computer a computer, per esempio
 nell'uscita di ``stato``) vengono scritti come ``<cartella di prova>/...``, e quelli della
 cartella dell'esempio come ``<esempio>/...``, con le barre "/" anche su Windows.
-``confronta A B`` confronta due file della cartella dell'esempio.
+``confronta A B`` confronta due file della cartella dell'esempio. ``servizio FILE`` (dalla 0.11.0) avvia il server MCP
+su stdio con le richieste JSON-RPC del file dell'esempio, una per riga.
 
 Se l'esempio ha anche un ``hypomnema-chat.toml`` (dalla 0.6.1, la chat collegata al computer), il
 file va accanto a ``hypomnema.toml`` e le righe che cominciano con ``chat:`` usano quello: due
@@ -36,6 +37,7 @@ il primo comando avviene il 15 gennaio 2026 alle 10:00 (ora italiana),
 ogni comando successivo un minuto dopo.
 """
 
+import contextlib
 import io
 import re
 import shlex
@@ -153,18 +155,24 @@ def _esegui(esempio: Path, lavoro: Path) -> str:
             argomenti = [parti[0], str(esempio / parti[1])]
         elif nome == "changed":
             argomenti = [parti[0], str(lavoro / parti[1])]
+        elif nome == "serve":
+            # Dalla 0.11.0: le richieste al server MCP, una per riga, da un file dell'esempio (come le manderebbe
+            # Claude sull'ingresso standard); le risposte vanno nell'uscita.
+            argomenti = [parti[0]]
+            stdin_finto = io.StringIO((esempio / parti[1]).read_text(encoding="utf-8"))
         elif nome == "compare":
             argomenti = [parti[0], *(str(esempio.resolve() / p) for p in parti[1:])]
         else:
             argomenti = parti
         uscita.write(f"$ hypomnema {riga}\n")
         uscita_comando = io.StringIO() if destinazione else uscita
-        codice = main(
-            ["--config", str(con_config), *argomenti],
-            adesso=ORA_DI_PARTENZA + timedelta(minutes=numero),
-            uscita=uscita_comando,
-            errori=uscita,
-        )
+        with mock.patch("sys.stdin", stdin_finto) if nome == "serve" else contextlib.nullcontext():
+            codice = main(
+                ["--config", str(con_config), *argomenti],
+                adesso=ORA_DI_PARTENZA + timedelta(minutes=numero),
+                uscita=uscita_comando,
+                errori=uscita,
+            )
         if destinazione:
             destinazione.write_text(uscita_comando.getvalue(), encoding="utf-8")
         uscita.write(f"[codice di uscita: {codice}]\n\n")

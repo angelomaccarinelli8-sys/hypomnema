@@ -109,7 +109,8 @@ class TestLingua(ConQuaderno):
         for italiano, inglese in INGLESE.items():
             if italiano in ("testimone", "risposte", "avvio", "protezione", "impronta", "confronta",
                             "cambiati", "archivio", "proponi", "impostazioni-claude", "istantanea",
-                            "grafo"):  # grafo scrive un file: test_riordino.TestGrafo
+                            "grafo",  # grafo scrive un file: test_riordino.TestGrafo
+                            "servizio"):  # il server legge l'ingresso standard: test_servizio
                 continue
             argomenti = ["fico"] if inglese == "search" else ["--last", "1"] if inglese == "diary" else []
             with self.subTest(comando=italiano):
@@ -138,7 +139,7 @@ class TestLingua(ConQuaderno):
                 self.assertIn(f"/hypomnema:{nome}", testo)
 
     def test_versione(self):
-        self.assertEqual(__version__, "0.10.0")
+        self.assertEqual(__version__, "0.11.0")
 
 
 class TestPausaInInglese(ConQuaderno):

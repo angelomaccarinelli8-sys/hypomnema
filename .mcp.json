@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "hypomnema": {
+      "command": "py",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/programma.py", "serve"]
+    }
+  }
+}
