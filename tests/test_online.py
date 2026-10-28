@@ -120,6 +120,29 @@ class TestGuardianoChiavi(unittest.TestCase):
         self.assertIn('ToString("x2")', script)
 
 
+class TestEtichetteEAutore(unittest.TestCase):
+    """Le etichette del tester: controllate sul PC prima di caricarle, mai sopra una lista piena senza conferma; la
+    riga «autore» messa in cima al file dei taccuini solo se manca."""
+
+    def test_carica_etichette(self):
+        script = testo("carica-etichette.ps1")
+        controllo = script.index("py $programma notebook-labels --labels $File")
+        self.assertLess(controllo, script.index('SulServer "carica-etichette.sh"'))
+        self.assertIn('-cne "SI"', script)
+        server = testo("carica-etichette.sh")
+        self.assertIn("notebook-labels", server)
+        self.assertIn('if [ "${3:-no}" = "sostituisci" ]; then opzione=(--replace); fi', server)
+        crea = testo("crea-taccuino-online.ps1")
+        # La lista si controlla prima di creare il taccuino.
+        self.assertLess(crea.index("notebook-labels --labels $Etichette"), crea.index('SulServer "nuovo-taccuino.sh"'))
+
+    def test_autore(self):
+        self.assertIn('$Autore = "Angelo"', testo("impostazioni.ps1"))
+        self.assertIn('bash /opt/hypomnema/online/autore.sh "$autore"', testo("installa.sh"))
+        self.assertIn('bash /opt/hypomnema/online/autore.sh "${2:-}"', testo("aggiorna.sh"))
+        self.assertIn("grep -q '^autore *='", testo("autore.sh"))
+
+
 class TestFileOnline(unittest.TestCase):
     def test_modello_online(self):
         config = configurazione.carica(str(ONLINE / "hypomnema-online.toml"))

@@ -17,6 +17,8 @@ usarlo, leggi questo foglio. Se sei d'accordo, scrivi in fondo il tuo nome e la 
 - Il servizio è in **fase di test**. Le note che scrivi possono **andare perse o rovinarsi**, e il servizio può
   fermarsi o cambiare senza preavviso. Non usarlo come unico posto per cose importanti.
 - Non ci sono garanzie e non c'è assistenza a orari fissi: se qualcosa non va, scrivimi.
+- Hypomnema è in prova ed è un lavoro mio: usalo pure quanto vuoi, ma per favore non copiarlo e non ricostruirlo
+  per offrirlo ad altri.
 
 ## Che cosa NON scrivere nel taccuino
 

@@ -1,10 +1,8 @@
 $ hypomnema stato
-Configurazione: <cartella di prova>/hypomnema.toml
-Quaderno: <cartella di prova>/quaderno
+Taccuino: online (i percorsi sul server non si mostrano).
 Fuso orario: Europe/Rome, scritto nella configurazione: questa macchina è in UTC.
 Etichette: nessun file etichette.toml (nessuna etichetta).
 Testimone: NON C'È (taccuino online): i messaggi arrivano solo a Claude e le note con autore «user» saranno marcate «author not verified (online, no witness)».
-File del testimone: <cartella di prova>/quaderno/testimone.jsonl
 Messaggi registrati: 0
 Ultimo messaggio registrato: nessuno.
 [codice di uscita: 0]

@@ -5,6 +5,7 @@ $Macchina = "hypomnema-tester"        # il nome della macchina
 $Regione = "swedencentral"            # Sweden Central (Svezia): l'unica regione europea con la B2ats v2 per questa sottoscrizione
 $NomeDns = "hypomnema-tester"         # il nome su internet: hypomnema-tester.swedencentral.cloudapp.azure.com
 $Dominio = "$NomeDns.$Regione.cloudapp.azure.com"
+$Autore = "Angelo"                   # chi gestisce il servizio: la scheda per Claude dice di chiedere a lui i dettagli interni
 $Amministratore = "amministratore"    # l'utente di amministrazione della macchina (accesso solo con la chiave SSH)
 $Copie = Join-Path $env:USERPROFILE "Hypomnema\online-copie"   # mai dentro quaderno\
 

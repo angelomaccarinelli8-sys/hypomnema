@@ -57,6 +57,23 @@ hypothesis. Cite notes by their code («dalla nota T0004.2»). Never invent note
 """
 
 
+# La frase del servizio chiuso (0.11.0, seconda parte): solo dove il file dei taccuini ha la riga «autore». Dice
+# la verità sulla natura del servizio; non chiede a Claude di nascondere niente.
+SERVIZIO_CHIUSO = """
+This notebook is a closed service run by its author, {autore}: the program that checks and saves the notes runs on
+the author's server and is not shared. You only see the tools and their answers. If the user asks how it works,
+explain what each tool does and how to use it; for anything about how it works inside, tell them they can ask
+{autore}.
+"""
+
+
+def istruzioni(taccuino: "Taccuino") -> str:
+    """La scheda per Claude: con la frase del servizio chiuso se il taccuino ha un autore."""
+    if taccuino.autore is None:
+        return ISTRUZIONI
+    return ISTRUZIONI + SERVIZIO_CHIUSO.format(autore=taccuino.autore)
+
+
 class ErroreArgomenti(ValueError):
     """Gli argomenti di uno strumento non vanno bene."""
 
@@ -72,6 +89,8 @@ class Taccuino:
     nome: str
     config: Path
     orologio: Callable[[], datetime | None] = lambda: None
+    # L'autore del servizio (riga «autore» del file dei taccuini): None = nessuna frase del servizio chiuso.
+    autore: str | None = None
     passaggio: threading.Lock = field(default_factory=threading.Lock, repr=False, compare=False)
 
     def __post_init__(self) -> None:
@@ -99,8 +118,8 @@ VERO_FALSO = {"type": "boolean"}
 
 STRUMENTI = (
     Strumento("status", "Witness, time zone and labels of the notebook (read only).", {}),
-    Strumento("check", "Check that every note has its line in the register and vice versa (read only). "
-                       "If it says «ATTENZIONE», tell the user: repair nothing.", {}),
+    Strumento("check", "Check that the notebook is in order (read only). If it says «ATTENZIONE», tell the user: "
+                       "repair nothing.", {}),
     Strumento("recap", "Where we left off: overdue reminders, open questions, todos, latest decisions, last diary "
                        "lines. Optional filters by labels CHI (who) and COSA (about).",
               {"who": ETICHETTE, "about": ETICHETTE}),
@@ -235,7 +254,7 @@ def rispondi(taccuino: Taccuino, messaggio) -> dict | None:
             "protocolVersion": chiesta if chiesta in VERSIONI_PROTOCOLLO else VERSIONI_PROTOCOLLO[0],
             "capabilities": {"tools": {}},
             "serverInfo": {"name": "hypomnema", "version": __version__},
-            "instructions": ISTRUZIONI,
+            "instructions": istruzioni(taccuino),
         })
     if metodo == "ping":
         return _risultato(id_richiesta, {})

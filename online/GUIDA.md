@@ -149,6 +149,53 @@ Poi è lui che fa il punto 4 sul suo account (incolla lui la chiave). Quando ha 
 resta sul tuo PC: era solo negli appunti. Sul server c'è solo la sua impronta, con la quale nessuno può aprire il
 taccuino. Prima, fagli leggere e accettare il foglio `ACCETTAZIONE.md`.
 
+### Le sue etichette (dal questionario)
+
+Il file `etichette.toml` lo scrivi tu, o lo detta lui (mai Claude da solo), per esempio in
+`%USERPROFILE%\Hypomnema\scambio\etichette-tester.toml`, salvato in **UTF-8** (Blocco note: «Salva con nome»,
+Codifica «UTF-8»). Il modello commentato è `esempi\etichette.toml`.
+
+**Controllarlo prima** (non scrive niente da nessuna parte):
+
+```
+py programma.py notebook-labels --labels $env:USERPROFILE\Hypomnema\scambio\etichette-tester.toml
+```
+
+Deve comparire `Etichette scritte bene: … CHI, … COSA, … rami con sotto-rami.` Se compare `ERRORE`, il messaggio dice
+quale riga correggere.
+
+**Tutto insieme**: taccuino nuovo e sue etichette (la lista si controlla prima di creare il taccuino):
+
+```
+powershell -ExecutionPolicy Bypass -File .\online\crea-taccuino-online.ps1 -Nome <nome> -Etichette $env:USERPROFILE\Hypomnema\scambio\etichette-tester.toml
+```
+
+**Solo le etichette**, in un taccuino che c'è già:
+
+```
+powershell -ExecutionPolicy Bypass -File .\online\carica-etichette.ps1 -Nome <nome> -File $env:USERPROFILE\Hypomnema\scambio\etichette-tester.toml
+```
+
+Alla fine: `Etichette caricate nel taccuino «…»` e `FATTO.` Se il taccuino ha già una lista con delle etichette, lo
+script si ferma: per sostituirla aggiungi `-Sostituisci` e scrivi `SI` quando lo chiede. La lista di prima non si
+cancella: resta sul server accanto alla nuova, con la data nel nome. Non serve riavviare niente.
+
+### Riserva, se lo script non va
+
+Sempre dalla cartella del repository, una riga alla volta (al posto di `<nome>` il nome del taccuino):
+
+```
+py programma.py notebook-labels --labels $env:USERPROFILE\Hypomnema\scambio\etichette-tester.toml
+$lista = [Convert]::ToBase64String([IO.File]::ReadAllBytes("$env:USERPROFILE\Hypomnema\scambio\etichette-tester.toml"))
+az vm run-command invoke --resource-group hypomnema-online --name hypomnema-tester --command-id RunShellScript --scripts "@online\carica-etichette.sh" --parameters <nome> $lista no --query "value[0].message" --output tsv
+```
+
+L'ultima riga deve rispondere con `Etichette caricate nel taccuino «<nome>»`. Al posto di `no`, `sostituisci` vale
+come la conferma per sostituire una lista piena.
+
+Se anche questo non va, le etichette si aggiungono dopo: il taccuino funziona anche senza, e le note già scritte
+prendono le COSA dal loro testo appena la lista c'è.
+
 ## 8. Ogni tanto
 
 - **Scaricare le copie** dei taccuini sul PC (in `%USERPROFILE%\Hypomnema\online-copie`, mai dentro `quaderno\`):
@@ -164,6 +211,9 @@ taccuino. Prima, fagli leggere e accettare il foglio `ACCETTAZIONE.md`.
   ```
   powershell -ExecutionPolicy Bypass -File .\online\aggiorna-server.ps1
   ```
+  Finché il lavoro non è unito, aggiungi `-Ramo claude/elegant-fermi-fqx31z`. L'aggiornamento mette anche, una volta
+  sola, la riga `autore = "Angelo"` in cima al file dei taccuini del server (il nome è in `online\impostazioni.ps1`):
+  da lì la scheda per Claude dice che il taccuino è un servizio chiuso e che sui dettagli interni si chiede a te.
 
 ## 9. Spegnere tutto
 

@@ -461,8 +461,8 @@ def _controlla_etichette(valori: dict, etichette) -> list[str]:
         if campo not in valori:
             continue
         if etichette is None:
-            motivi.append(f"there are no labels in this notebook, so «{campo}» cannot be used: the user lists them "
-                          f"in the file {lista_etichette.NOME_FILE} inside the notebook folder.")
+            motivi.append(f"there are no labels in this notebook yet, so «{campo}» cannot be used: the user chooses "
+                          "the labels, and they are added to the notebook's list of labels.")
             continue
         scelte = lista_etichette.separa(valori[campo])
         ammesse = etichette.ammesse(campo)
@@ -495,8 +495,8 @@ def _controlla_sotto_ramo(valori, autore, note_esistenti, lista) -> list[str]:
     altre = "".join(f" Also in this sub-branch: {', '.join(s.base for s, _ in trovate[1:])}." if trovate[1:] else "")
     return [f"this idea already has its note ({storia.base}, sub-branch {ramo}/{sotto}): propose it as an integration "
             f"of {storia.base} («integrates»: «{storia.base}», with only the new words in «text», no «kind» and no "
-            f"«about»).{altre} If they are really different ideas, the sub-branches in {lista_etichette.NOME_FILE} "
-            "need more precise words: only the user writes them."]
+            f"«about»).{altre} If they are really different ideas, tell the user: the sub-branches of the labels must be "
+            "made more precise, and only the user can do it."]
 
 
 def _etichette_della_proposta(valori) -> tuple[str, ...] | None:

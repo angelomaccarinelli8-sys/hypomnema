@@ -1,7 +1,7 @@
 $ hypomnema propose 1-idea-pomodori.json
 RIFIUTATA: la nota non è stata salvata.
 Motivi:
-- this idea already has its note (0002, sub-branch orto/pomodori): propose it as an integration of 0002 («integrates»: «0002», with only the new words in «text», no «kind» and no «about»). Also in this sub-branch: 0001. If they are really different ideas, the sub-branches in etichette.toml need more precise words: only the user writes them.
+- this idea already has its note (0002, sub-branch orto/pomodori): propose it as an integration of 0002 («integrates»: «0002», with only the new words in «text», no «kind» and no «about»). Also in this sub-branch: 0001. If they are really different ideas, tell the user: the sub-branches of the labels must be made more precise, and only the user can do it.
 Il passaggio è annotato nel registro.
 [codice di uscita: 1]
 

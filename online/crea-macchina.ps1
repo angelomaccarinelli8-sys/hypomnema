@@ -23,7 +23,7 @@ az network nsg rule create --resource-group $Gruppo --nsg-name (Firewall) --name
 Controlla "l'apertura della porta 443"
 
 Write-Host "4/5 La preparazione della macchina: programmi, Caddy, Hypomnema (ci vogliono alcuni minuti)"
-$risposta = SulServer "installa.sh" @($Dominio, $Ramo, $Amministratore)
+$risposta = SulServer "installa.sh" @($Dominio, $Ramo, $Amministratore, $Autore)
 if ($risposta -notmatch "PRONTO") {
     Write-Host $risposta
     Write-Host "ERRORE: la preparazione non è finita. Manda a Claude le righe qui sopra." -ForegroundColor Red

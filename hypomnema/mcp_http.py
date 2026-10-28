@@ -20,6 +20,8 @@ online, dove la chiave non arriva mai (nasce sul PC di chi crea il taccuino, ved
 Il file dei taccuini lo scrive l'utente, fuori dal repository::
 
     porta = 8765
+    autore = "Angelo"          # facoltativa: chi gestisce il servizio; con questa riga la scheda per Claude dice
+                               # che il taccuino è un servizio chiuso e che sui dettagli interni si chiede a lui
     richieste_al_minuto = 30   # facoltativa, se manca vale 30
     proposte_al_minuto = 10    # facoltativa, se manca vale 10
 
@@ -43,9 +45,10 @@ from collections import deque
 from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+from datetime import datetime
 from typing import TextIO
 
-from hypomnema import aggiunta, avvio, configurazione, servizio
+from hypomnema import aggiunta, avvio, configurazione, etichette, servizio
 from hypomnema.configurazione import tomllib
 
 INDIRIZZO = "127.0.0.1"
@@ -124,6 +127,11 @@ def leggi_taccuini(file: Path) -> tuple[int, list[tuple[str, servizio.Taccuino]]
     except (UnicodeDecodeError, tomllib.TOMLDecodeError):
         # Senza dettagli: il messaggio di errore potrebbe citare un pezzo del file, cioè una chiave.
         raise ErroreTaccuini(f"il file dei taccuini «{file}» non è scritto correttamente (TOML in UTF-8).")
+    autore = dati.get("autore")
+    if autore is not None and (not isinstance(autore, str) or not autore.strip() or "\n" in autore
+                               or len(autore) > 60):
+        raise ErroreTaccuini("nel file dei taccuini «autore» deve essere un nome su una riga, per esempio "
+                             "autore = \"Angelo\" (oppure va tolta).")
     porta = dati.get("porta")
     if not isinstance(porta, int) or isinstance(porta, bool) or not 1024 <= porta <= 65535:
         raise ErroreTaccuini("nel file dei taccuini serve «porta = …», un numero da 1024 a 65535 (per esempio 8765).")
@@ -159,7 +167,7 @@ def leggi_taccuini(file: Path) -> tuple[int, list[tuple[str, servizio.Taccuino]]
         if not percorso.is_absolute():
             percorso = file.parent / percorso
         try:
-            taccuino = servizio.Taccuino(nome, percorso)
+            taccuino = servizio.Taccuino(nome, percorso, autore=autore.strip() if autore else None)
         except configurazione.ErroreConfigurazione as errore:
             raise ErroreTaccuini(f"taccuino «{nome}»: {errore}")
         if avvio._dentro(taccuino.cartella_quaderno.resolve(), base.resolve()) or avvio._dentro(taccuino.config, base):
@@ -222,6 +230,66 @@ def crea_taccuino(file: Path, nome: str, segno: str) -> Path:
     aggiunta.aggiungi(file, f'{a_capo}\n[[taccuino]]\nnome = "{nome}"\nconfig = "{nome}/hypomnema.toml"\n'
                             f'impronta = "{segno}"\n')
     return cartella
+
+
+def controlla_etichette(testo: str) -> "etichette.Etichette":
+    """La lista delle etichette scritta in ``testo``, controllata con le stesse regole dello sportello. Errore
+    (``ErroreTaccuini``) se è scritta male: il messaggio non dice dove sta il file."""
+    import tempfile
+    with tempfile.TemporaryDirectory() as cartella:
+        (Path(cartella) / etichette.NOME_FILE).write_text(testo, encoding="utf-8", newline="\n")
+        try:
+            lista = etichette.leggi(Path(cartella))
+        except etichette.ErroreEtichette as errore:
+            raise ErroreTaccuini(str(errore).replace(f"«{Path(cartella) / etichette.NOME_FILE}»", "")
+                                 .replace("  ", " ").replace(" Non ho scritto niente.", ""))
+    if not lista.chi and not lista.cosa:
+        raise ErroreTaccuini("la lista non ha nessuna etichetta: servono «chi» o «cosa».")
+    return lista
+
+
+def carica_etichette(file: Path, nome: str, testo: str, sostituisci: bool, adesso: datetime) -> Path | None:
+    """Scrive la lista delle etichette nel quaderno del taccuino ``nome`` (0.11.0, seconda parte). La lista si
+    controlla prima. Se ce n'è già una con delle etichette, serve ``sostituisci``. La lista che c'era non si cancella
+    mai: resta accanto, con la data nel nome (la si restituisce). Le liste le scrive l'utente, mai Claude."""
+    controlla_etichette(testo)
+    if not NOME_VALIDO.fullmatch(nome):
+        raise ErroreTaccuini(f"il nome «{nome}» non va: solo lettere minuscole, cifre e -.")
+    if not file.is_file():
+        raise ErroreTaccuini(f"non trovo il file dei taccuini «{file}».")
+    try:
+        dati = tomllib.loads(file.read_text(encoding="utf-8-sig"))
+    except (UnicodeDecodeError, tomllib.TOMLDecodeError):
+        raise ErroreTaccuini(f"il file dei taccuini «{file}» non è scritto correttamente (TOML in UTF-8).")
+    voce = next((v for v in dati.get("taccuino", []) if isinstance(v, dict) and v.get("nome") == nome), None)
+    if voce is None or not isinstance(voce.get("config"), str):
+        raise ErroreTaccuini(f"non c'è un taccuino che si chiama «{nome}».")
+    percorso = Path(voce["config"])
+    if not percorso.is_absolute():
+        percorso = file.parent / percorso
+    try:
+        quaderno = configurazione.carica(str(percorso)).cartella_quaderno
+    except configurazione.ErroreConfigurazione as errore:
+        raise ErroreTaccuini(f"taccuino «{nome}»: {errore}")
+    bersaglio = etichette.file_di(quaderno)
+    vecchio = None
+    if bersaglio.exists():
+        try:
+            prima = etichette.leggi(quaderno)
+        except etichette.ErroreEtichette:
+            prima = None
+        if prima is None or prima.chi or prima.cosa:
+            if not sostituisci:
+                raise ErroreTaccuini(f"il taccuino «{nome}» ha già una lista di etichette con qualcosa dentro: per "
+                                     "sostituirla serve la conferma (--replace). Quella di adesso resterebbe accanto.")
+        vecchio = bersaglio.with_name(f"etichette-fino-al-{adesso.strftime('%Y-%m-%d-%H%M%S')}.toml")
+        if vecchio.exists():
+            raise ErroreTaccuini("c'è già una copia della lista con la stessa ora: riprova tra un secondo.")
+        bersaglio.rename(vecchio)
+    quaderno.mkdir(parents=True, exist_ok=True)
+    with open(bersaglio, "x", encoding="utf-8", newline="\n") as nuovo:
+        nuovo.write(testo.replace("\r\n", "\n"))
+    return vecchio
 
 
 class ServerHTTP(ThreadingHTTPServer):

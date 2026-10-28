@@ -4,10 +4,12 @@
 #   $1 = il nome della macchina su internet (per esempio hypomnema-tester.swedencentral.cloudapp.azure.com)
 #   $2 = il ramo del repository da usare (di solito main)
 #   $3 = l'utente di amministrazione (può leggere le copie, gruppo adm)
+#   $4 = l'autore del servizio (riga «autore» del file dei taccuini)
 set -euo pipefail
 dominio="$1"
 ramo="${2:-main}"
 amministratore="${3:-}"
+autore="${4:-}"
 export DEBIAN_FRONTEND=noninteractive
 
 echo "1/6 Programmi: python3, git, caddy, aggiornamenti automatici"
@@ -56,6 +58,7 @@ richieste_al_minuto = 30
 proposte_al_minuto = 10
 FINE
 fi
+bash /opt/hypomnema/online/autore.sh "$autore"
 
 echo "5/6 Caddy (HTTPS) e il servizio di Hypomnema"
 sed "s/^DOMINIO {/$dominio {/" /opt/hypomnema/online/Caddyfile > /etc/caddy/Caddyfile

@@ -56,6 +56,7 @@ INGLESE = {
     "archivio": "archive", "avvio": "start", "protezione": "protect", "impostazioni-claude": "claude-settings",
     "revisione": "review", "etichette": "labels", "riscontri": "matches", "schemi": "patterns", "grafo": "graph",
     "albero": "tree", "modello": "template", "servizio": "serve", "taccuino-nuovo": "notebook-new",
+    "taccuino-etichette": "notebook-labels",
 }
 # Gli agganci di Claude Code: non devono mai uscire con il codice 2 per un comando scritto male.
 AGGANCI = ("witness", "replies", "start", "protect")
@@ -215,6 +216,18 @@ def _parser() -> argparse.ArgumentParser:
                                                                            "cifre e -)")
     nuovo.add_argument("--fingerprint", "--impronta", dest="impronta", required=True,
                        help="l'impronta SHA-256 della chiave (64 cifre esadecimali): la chiave non passa di qui")
+    etichette_online = comandi.add_parser(
+        "notebook-labels", aliases=["taccuino-etichette"],
+        help="server online (0.11.0, seconda parte): controlla una lista di etichette e, con --file e --name, la "
+             "scrive nel taccuino (la lista di prima resta accanto)",
+    )
+    etichette_online.add_argument("--labels", "--etichette", dest="lista", metavar="FILE", required=True,
+                                  help="il file etichette.toml scritto dall'utente")
+    etichette_online.add_argument("--file", dest="taccuini", metavar="FILE",
+                                  help="il file dei taccuini del server (senza: solo il controllo)")
+    etichette_online.add_argument("--name", "--nome", dest="nome", help="il nome del taccuino")
+    etichette_online.add_argument("--replace", "--sostituisci", dest="sostituisci", action="store_true",
+                                  help="sostituisce una lista che ha già delle etichette")
     comandi.add_parser(
         "start", aliases=["avvio"], help="inizio sessione (lo lancia Claude Code): crea la configurazione la prima volta e avvisa"
     )
@@ -316,7 +329,7 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO, entrata: bytes
         print(f"ACCETTATA: {cosa} è stata salvata nel quaderno ({relativo}).", file=uscita)
     if esito.accettata:
         print("Il passaggio è annotato nel registro.", file=uscita)
-        _stampa_suggerimento(esito, uscita)
+        _stampa_suggerimento(esito, uscita, config.online)
         return 0
     print("RIFIUTATA: la nota non è stata salvata." if not esito.scritte
           else "RIFIUTATA: il resto del cambiamento non è stato salvato.", file=uscita)
@@ -326,7 +339,7 @@ def _proponi(argomenti, config, adesso: datetime, uscita: TextIO, entrata: bytes
         # (per esempio un finto "ACCETTATA") può comparire nella risposta che legge Claude.
         print(f"- {registro.su_una_riga(motivo)}", file=uscita)
     print("Il passaggio è annotato nel registro.", file=uscita)
-    _stampa_suggerimento(esito, uscita)
+    _stampa_suggerimento(esito, uscita, config.online)
     return 1
 
 
@@ -335,9 +348,10 @@ COME_SUONA = {"decision": "una decisione", "idea": "un'idea", "todo": "una cosa 
               "open": "una questione aperta", "fact": "un fatto"}
 
 
-def _stampa_suggerimento(esito, uscita: TextIO) -> None:
+def _stampa_suggerimento(esito, uscita: TextIO, online: bool = False) -> None:
     """Dalla 0.9.0: il tipo che suona meglio secondo gli schemi dell'utente; dalla 0.10.0 il fatto che c'è già nello
-    stesso sotto-ramo. Solo suggerimenti: non cambiano niente."""
+    stesso sotto-ramo. Solo suggerimenti: non cambiano niente. Online (0.11.0, seconda parte) il suggerimento del tipo
+    non cita le sequenze di parole: dice cosa fare, non come il programma l'ha trovato."""
     if esito.integrazione is not None:
         numero, sotto = esito.integrazione
         print(f"SUGGERIMENTO (non cambia niente): there is already fact {numero} in this sub-branch ({sotto}): is this "
@@ -345,6 +359,10 @@ def _stampa_suggerimento(esito, uscita: TextIO) -> None:
     if esito.suggerimento is None:
         return
     tipo, trovate, proposto = esito.suggerimento
+    if online:
+        print(f"SUGGERIMENTO (non cambia niente): forse è {COME_SUONA[tipo]} ({tipo}). È giusto il tipo {proposto}? "
+              "Per cambiarlo serve updates.", file=uscita)
+        return
     citate = ", ".join(f"«{s}»" for s in trovate)
     print(f"SUGGERIMENTO (non cambia niente): suona come {COME_SUONA[tipo]} ({tipo}: {citate}). È giusto il tipo "
           f"{proposto}? Per cambiarlo serve updates.", file=uscita)
@@ -719,9 +737,25 @@ def _stato(argomenti, config, adesso: datetime, uscita: TextIO) -> int:
         righe += _stato_risposte(config)
     if config.file_archivio is not None:
         righe += _stato_archivio(config)
+    if config.online:
+        righe = _senza_percorsi(righe, config)
     for riga in righe:
         print(riga, file=uscita)
     return 0
+
+
+def _senza_percorsi(righe: list[str], config) -> list[str]:
+    """Lo stato di un taccuino online (0.11.0, seconda parte): niente percorsi del server. Le righe che sono solo un
+    percorso spariscono; negli altri messaggi il percorso del taccuino diventa «<taccuino>»."""
+    cartella = config.cartella_quaderno.parent
+    tolte = ("Configurazione:", "Quaderno:", "File del testimone:", "File dell'archivio:", "File del diario della chat:")
+    pulite = ["Taccuino: online (i percorsi sul server non si mostrano)."]
+    for riga in righe:
+        if riga.startswith(tolte):
+            continue
+        pulite.append(riga.replace(str(config.cartella_quaderno), "<taccuino>/quaderno").replace(str(cartella),
+                                                                                                "<taccuino>"))
+    return pulite
 
 
 def _riscontri(argomenti, config, uscita: TextIO) -> int:
@@ -1189,6 +1223,39 @@ def _taccuino_nuovo(argomenti, uscita: TextIO) -> int:
     return 0
 
 
+def _taccuino_etichette(argomenti, adesso: datetime, uscita: TextIO) -> int:
+    """La lista delle etichette di un taccuino online (0.11.0, seconda parte): senza --file solo il controllo."""
+    from hypomnema import mcp_http
+
+    if (argomenti.taccuini is None) != (argomenti.nome is None):
+        print("ERRORE: --file e --name vanno insieme (senza tutti e due: solo il controllo).", file=uscita)
+        return 2
+    try:
+        testo = Path(argomenti.lista).read_bytes().decode("utf-8-sig")
+    except FileNotFoundError:
+        print(f"ERRORE: non trovo il file «{argomenti.lista}».", file=uscita)
+        return 2
+    except UnicodeDecodeError:
+        print("ERRORE: il file delle etichette non è salvato in UTF-8: salvalo in UTF-8.", file=uscita)
+        return 2
+    try:
+        lista = mcp_http.controlla_etichette(testo)
+        if argomenti.taccuini is None:
+            print(f"Etichette scritte bene: {len(lista.chi)} CHI, {len(lista.cosa)} COSA, {len(lista.rami)} rami con "
+                  "sotto-rami.", file=uscita)
+            return 0
+        vecchio = mcp_http.carica_etichette(Path(argomenti.taccuini), argomenti.nome, testo, argomenti.sostituisci,
+                                            adesso)
+    except mcp_http.ErroreTaccuini as errore:
+        print(f"ERRORE: {errore} Non ho cambiato niente.", file=uscita)
+        return 2
+    print(f"Etichette caricate nel taccuino «{argomenti.nome}»: {len(lista.chi)} CHI, {len(lista.cosa)} COSA, "
+          f"{len(lista.rami)} rami con sotto-rami.", file=uscita)
+    if vecchio is not None:
+        print(f"La lista di prima resta accanto: {vecchio.name}.", file=uscita)
+    return 0
+
+
 def _servizio(argomenti, adesso: datetime | None, uscita: TextIO, errori: TextIO) -> int:
     """Il server MCP (dalla 0.11.0). Su stdio serve il taccuino della configurazione (``--config``, la variabile o
     quella di base); con ``--http`` i taccuini del file indicato. Gli errori vanno su ``errori``: l'uscita è del
@@ -1283,6 +1350,8 @@ def main(
         return _impronta(argomenti, uscita)
     if comando == "notebook-new":
         return _taccuino_nuovo(argomenti, uscita)
+    if comando == "notebook-labels":
+        return _taccuino_etichette(argomenti, adesso, uscita)
     if comando == "serve":
         return _servizio(argomenti, adesso if adesso_fisso else None, uscita, errori)
     try:

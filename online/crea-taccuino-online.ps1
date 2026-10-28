@@ -1,13 +1,24 @@
 ﻿# Crea un taccuino sul server online (0.11.0, seconda parte), per esempio «prova» o quello di un tester.
-# Uso:  powershell -ExecutionPolicy Bypass -File .\online\crea-taccuino-online.ps1 -Nome prova [-NellIndirizzo]
+# Uso:  powershell -ExecutionPolicy Bypass -File .\online\crea-taccuino-online.ps1 -Nome prova [-NellIndirizzo] [-Etichette <file>]
 #
 # La chiave nasce QUI, sul PC, solo in memoria. Al server arriva soltanto la sua impronta (SHA-256): sul server la
 # chiave non c'è, e nemmeno l'amministratore può leggerla. La chiave non compare mai a schermo: alla fine va negli
 # appunti, una volta sola, per incollarla nel connettore di claude.ai. Poi gli appunti si svuotano.
 # -NellIndirizzo: negli appunti va l'indirizzo con la chiave dentro (https://.../<chiave>/mcp), per gli account
 # che nel modulo del connettore non hanno «Request headers».
-param([Parameter(Mandatory = $true)][string]$Nome, [switch]$NellIndirizzo)
+# -Etichette: la lista delle etichette (etichette.toml scritto dall'utente), controllata PRIMA di creare il taccuino e
+# caricata subito dopo con carica-etichette.ps1.
+param([Parameter(Mandatory = $true)][string]$Nome, [switch]$NellIndirizzo, [string]$Etichette)
 . (Join-Path $PSScriptRoot "impostazioni.ps1")
+
+if ($Etichette) {
+    Write-Host "0/3 Controllo la lista delle etichette sul PC"
+    py (Join-Path (Split-Path $PSScriptRoot -Parent) "programma.py") notebook-labels --labels $Etichette
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ERRORE: la lista delle etichette non va: correggila prima. Non ho creato niente." -ForegroundColor Red
+        exit 1
+    }
+}
 
 if ($Nome -cnotmatch '^[a-z0-9][a-z0-9-]{0,39}$') {
     Write-Host "ERRORE: il nome può avere solo lettere minuscole, cifre e - (per esempio prova)." -ForegroundColor Red
@@ -44,6 +55,13 @@ if ($strumenti -lt 1) {
     exit 1
 }
 Write-Host "   Risponde: $strumenti strumenti." -ForegroundColor Green
+if ($Etichette) {
+    & (Join-Path $PSScriptRoot "carica-etichette.ps1") -Nome $Nome -File $Etichette
+    if ($LASTEXITCODE -ne 0) {
+        Write-Host "ATTENZIONE: il taccuino è creato ma le etichette no. La chiave arriva lo stesso negli appunti;" -ForegroundColor Yellow
+        Write-Host "dopo, rilancia solo carica-etichette.ps1 -Nome $Nome -File <file>."
+    }
+}
 
 Write-Host "3/3 La chiave negli appunti"
 if ($NellIndirizzo) {

@@ -22,6 +22,18 @@ Hypomnema e come aggiornarsi.
   aperta, SSH chiuso), Caddy per HTTPS con certificato gratuito, il servizio che riparte da solo, gli aggiornamenti
   automatici di Ubuntu, la copia notturna dei taccuini, lo scaricamento delle copie e l'esportazione di un taccuino.
 - La scheda per Claude dice anche: mai dati di salute di altre persone né dati di clienti.
+- **Il servizio chiuso: dire meno, non nascondere.** Con la riga `autore = "…"` nel file dei taccuini la scheda per
+  Claude dice la verità sulla natura del servizio: è un servizio chiuso del suo autore, Claude vede solo gli
+  strumenti, sui dettagli interni si chiede all'autore. Nessuna istruzione di nascondere o di negare. Senza la riga
+  (server di casa, Claude Code) la scheda non cambia. Gli script del server online mettono la riga da soli.
+- Le descrizioni e i messaggi dicono cosa fare, non come decide il programma: `check` («the notebook is in order»),
+  il rifiuto delle etichette quando la lista manca, la coda del rifiuto della regola dell'integrazione. **Solo nei
+  taccuini online** il suggerimento del tipo non cita le sequenze di parole e `status` non mostra i percorsi del
+  server; a casa e in Claude Code restano come prima.
+- **Le etichette del tester**: il comando nuovo `notebook-labels` (`taccuino-etichette`) controlla una lista di
+  etichette con le regole dello sportello e la scrive in un taccuino online; mai sopra una lista con dentro qualcosa
+  senza `--replace`, e la lista di prima resta accanto con la data nel nome. Gli script `carica-etichette.ps1` e
+  `crea-taccuino-online.ps1 -Etichette` la controllano sul PC prima di caricarla.
 
 ## 0.11.0 (prototipo, prima parte) — il server MCP sul PC
 

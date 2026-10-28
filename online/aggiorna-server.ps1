@@ -3,7 +3,7 @@
 param([string]$Ramo = "main")
 . (Join-Path $PSScriptRoot "impostazioni.ps1")
 
-$risposta = SulServer "aggiorna.sh" @($Ramo)
+$risposta = SulServer "aggiorna.sh" @($Ramo, $Autore)
 Write-Host $risposta
 if ($risposta -notmatch "Programma aggiornato") {
     Write-Host "ERRORE: l'aggiornamento non è riuscito." -ForegroundColor Red

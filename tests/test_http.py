@@ -485,6 +485,161 @@ class TestTaccuinoNuovo(ConCartella):
         self.assertFalse((base / "prova").exists())
 
 
+class TestEtichetteDelTaccuino(ConCartella):
+    """Pezzo 4: la lista delle etichette del tester, scritta dall'utente, controllata e caricata nel taccuino online;
+    mai sopra una lista con dentro qualcosa senza conferma, e la lista di prima resta accanto."""
+
+    LISTA = 'chi = ["Anna"]\ncosa = ["orto", "bilancio"]\n\n[rami.orto]\npomodori = ["pomodori", "pomodoro"]\n'
+
+    def setUp(self):
+        super().setUp()
+        self.server = self.cartella / "server"
+        self.server.mkdir()
+        self.file = self.server / "taccuini.toml"
+        self.file.write_text("porta = 8765\n", encoding="utf-8")
+        mcp_http.crea_taccuino(self.file, "prova", mcp_http.impronta(CHIAVE_A))
+        self.quaderno = self.server / "prova" / "quaderno"
+
+    def lancia(self, testo, *argomenti, ora=0):
+        from datetime import datetime, timedelta, timezone
+        from hypomnema.cli import main
+        lista = self.cartella / "lista.toml"
+        lista.write_bytes(testo.encode("utf-8"))
+        uscita = io.StringIO()
+        adesso = datetime(2026, 10, 29, 10, 0, 0, tzinfo=timezone.utc) + timedelta(seconds=ora)
+        codice = main(["notebook-labels", "--labels", str(lista), *argomenti], adesso=adesso, uscita=uscita,
+                      errori=uscita)
+        return codice, uscita.getvalue()
+
+    def test_solo_controllo(self):
+        self.assertEqual(self.lancia(self.LISTA), (0, "Etichette scritte bene: 1 CHI, 2 COSA, 1 rami con sotto-rami.\n"))
+        codice, testo = self.lancia('cosa = ["orto", "orto"]\n')
+        self.assertEqual(codice, 2)
+        self.assertIn("è ripetuta", testo)
+        self.assertNotIn("tmp", testo)
+        codice, testo = self.lancia('cosa = [\n')
+        self.assertEqual(codice, 2)
+        self.assertIn("non è scritto correttamente", testo)
+        self.assertEqual(self.lancia("chi = []\n")[0], 2)
+        self.assertEqual(self.lancia(self.LISTA, "--file", str(self.file))[0], 2)  # --file senza --name
+
+    def test_carica_sopra_la_lista_vuota_e_tiene_quella_di_prima(self):
+        codice, testo = self.lancia(self.LISTA, "--file", str(self.file), "--name", "prova")
+        self.assertEqual(codice, 0, testo)
+        self.assertIn("Etichette caricate nel taccuino «prova»: 1 CHI, 2 COSA", testo)
+        self.assertIn("etichette-fino-al-2026-10-29-100000.toml", testo)
+        self.assertEqual((self.quaderno / "etichette.toml").read_text(encoding="utf-8"), self.LISTA)
+        self.assertEqual((self.quaderno / "etichette-fino-al-2026-10-29-100000.toml").read_text(encoding="utf-8"),
+                         mcp_http.ETICHETTE_VUOTE)
+        # Lo sportello del taccuino la usa subito.
+        _, coppie = mcp_http.leggi_taccuini(self.file)
+        from hypomnema import servizio
+        etichette, _ = servizio.chiama(coppie[0][1], "labels", {})
+        self.assertIn("bilancio", etichette)
+
+    def test_mai_sopra_una_lista_piena_senza_conferma(self):
+        self.lancia(self.LISTA, "--file", str(self.file), "--name", "prova")
+        altra = 'cosa = ["casa"]\n'
+        codice, testo = self.lancia(altra, "--file", str(self.file), "--name", "prova", ora=5)
+        self.assertEqual(codice, 2)
+        self.assertIn("ha già una lista di etichette con qualcosa dentro", testo)
+        self.assertIn("Non ho cambiato niente", testo)
+        self.assertEqual((self.quaderno / "etichette.toml").read_text(encoding="utf-8"), self.LISTA)
+        codice, testo = self.lancia(altra, "--file", str(self.file), "--name", "prova", "--sostituisci", ora=5)
+        self.assertEqual(codice, 0, testo)
+        self.assertEqual((self.quaderno / "etichette.toml").read_text(encoding="utf-8"), altra)
+        self.assertEqual((self.quaderno / "etichette-fino-al-2026-10-29-100005.toml").read_text(encoding="utf-8"),
+                         self.LISTA)
+        self.assertEqual(sorted(p.name for p in self.quaderno.glob("etichette*.toml")),
+                         ["etichette-fino-al-2026-10-29-100000.toml", "etichette-fino-al-2026-10-29-100005.toml",
+                          "etichette.toml"])
+
+    def test_lista_sbagliata_o_taccuino_che_non_c_e(self):
+        prima = (self.quaderno / "etichette.toml").read_bytes()
+        for testo, argomenti, atteso in (
+                ('cosa = ["a,b"]\n', ("--name", "prova"), "virgola"),
+                (self.LISTA, ("--name", "altro"), "non c'è un taccuino che si chiama «altro»"),
+                (self.LISTA, ("--name", "../prova"), "non va")):
+            with self.subTest(atteso=atteso):
+                codice, uscita = self.lancia(testo, "--file", str(self.file), *argomenti)
+                self.assertEqual(codice, 2)
+                self.assertIn(atteso, uscita)
+        self.assertEqual((self.quaderno / "etichette.toml").read_bytes(), prima)
+        self.assertEqual(len(list(self.quaderno.glob("etichette*.toml"))), 1)
+
+    def test_fine_riga_di_windows(self):
+        codice, _ = self.lancia(self.LISTA.replace("\n", "\r\n"), "--file", str(self.file), "--name", "prova")
+        self.assertEqual(codice, 0)
+        self.assertEqual((self.quaderno / "etichette.toml").read_bytes(), self.LISTA.encode("utf-8"))
+
+
+class TestServizioChiuso(ConCartella):
+    """Il servizio chiuso: la frase onesta nella scheda solo con la riga «autore»; online lo stato senza percorsi e il
+    suggerimento del tipo senza le sequenze di parole."""
+
+    def scheda(self, *altre):
+        file = file_taccuini(self.cartella, [("secondo", self.config_a, CHIAVE_A)], altre=altre)
+        _, coppie = mcp_http.leggi_taccuini(file)
+        from hypomnema import servizio
+        risposta = servizio.rispondi(coppie[0][1], {"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}})
+        return risposta["result"]["instructions"]
+
+    def test_frase_solo_con_l_autore(self):
+        from hypomnema import servizio
+        self.assertEqual(self.scheda(), servizio.ISTRUZIONI)
+        scheda = self.scheda('autore = "Angelo"')
+        self.assertTrue(scheda.startswith(servizio.ISTRUZIONI))
+        self.assertIn("This notebook is a closed service run by its author, Angelo:", scheda)
+        self.assertIn("tell them they can ask\nAngelo.", scheda)
+        # La frase non chiede di nascondere, negare o mentire.
+        frase = scheda[len(servizio.ISTRUZIONI):].lower()
+        for parola in ("hide", "deny", "lie", "secret", "reveal", "do not tell", "don't tell", "refuse", "never"):
+            self.assertNotRegex(frase, rf"\b{parola}\b")
+
+    def test_autore_scritto_male(self):
+        for riga in ('autore = ""', "autore = 3", 'autore = "a\\nb"'):
+            with self.subTest(riga=riga):
+                with self.assertRaises(mcp_http.ErroreTaccuini) as preso:
+                    mcp_http.leggi_taccuini(file_taccuini(self.cartella, [("secondo", self.config_a, CHIAVE_A)],
+                                                          altre=(riga,)))
+                self.assertIn("«autore»", str(preso.exception))
+
+    def test_stato_online_senza_percorsi(self):
+        server = self.cartella / "server"
+        server.mkdir()
+        file = server / "taccuini.toml"
+        file.write_text("porta = 8765\n", encoding="utf-8")
+        self.assertIsNotNone(mcp_http.crea_taccuino(file, "prova", mcp_http.impronta(CHIAVE_A)))
+        _, coppie = mcp_http.leggi_taccuini(file)
+        from hypomnema import servizio
+        stato, _ = servizio.chiama(coppie[0][1], "status", {})
+        self.assertTrue(stato.startswith("Taccuino: online (i percorsi sul server non si mostrano).\n"))
+        self.assertNotIn(str(self.cartella), stato)
+        self.assertNotIn("/", stato.replace("Europe/Rome", ""))
+        # Anche l'errore delle etichette scritte male non dice dove sta il taccuino.
+        (server / "prova" / "quaderno" / "etichette.toml").write_text("cosa = [\n", encoding="utf-8")
+        stato, _ = servizio.chiama(coppie[0][1], "status", {})
+        self.assertIn("Etichette: ERRORE", stato)
+        self.assertNotIn(str(self.cartella), stato)
+        self.assertIn("<taccuino>/quaderno", stato)
+
+    def test_suggerimento_del_tipo(self):
+        from types import SimpleNamespace
+        from hypomnema.cli import _stampa_suggerimento
+        esito = SimpleNamespace(integrazione=None, suggerimento=("decision", ["ho deciso di", "abbiamo deciso"], "idea"))
+        a_casa, online = io.StringIO(), io.StringIO()
+        _stampa_suggerimento(esito, a_casa)
+        _stampa_suggerimento(esito, online, online=True)
+        self.assertIn("«ho deciso di»", a_casa.getvalue())
+        self.assertEqual(online.getvalue(), "SUGGERIMENTO (non cambia niente): forse è una decisione (decision). È "
+                                            "giusto il tipo idea? Per cambiarlo serve updates.\n")
+
+    def test_check_dice_cosa_fa_non_come(self):
+        from hypomnema import servizio
+        self.assertEqual(servizio.PER_NOME["check"].descrizione, "Check that the notebook is in order (read only). If "
+                                                                "it says «ATTENZIONE», tell the user: repair nothing.")
+
+
 class TestLaChiaveNonSiScriveMai(ConCartella):
     """Un processo vero, con le sue uscite: richieste buone, sbagliate e malformate; la chiave non compare mai."""
 

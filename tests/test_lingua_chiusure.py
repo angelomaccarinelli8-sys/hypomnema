@@ -111,7 +111,8 @@ class TestLingua(ConQuaderno):
                             "cambiati", "archivio", "proponi", "impostazioni-claude", "istantanea",
                             "grafo",  # grafo scrive un file: test_riordino.TestGrafo
                             "servizio",  # il server legge l'ingresso standard: test_servizio
-                            "taccuino-nuovo"):  # crea cartelle: test_http.TestTaccuinoNuovo
+                            "taccuino-nuovo",  # crea cartelle: test_http.TestTaccuinoNuovo
+                            "taccuino-etichette"):  # ha argomenti obbligatori: test_http.TestEtichetteDelTaccuino
                 continue
             argomenti = ["fico"] if inglese == "search" else ["--last", "1"] if inglese == "diary" else []
             with self.subTest(comando=italiano):
