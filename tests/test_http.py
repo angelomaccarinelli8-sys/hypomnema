@@ -224,6 +224,61 @@ class TestServerHTTP(ConServer):
         self.assertEqual((scritto_err.getvalue(), scritto_out.getvalue()), ("", ""))
 
 
+class TestChiaveNellIntestazione(ConServer):
+    """I0285: la chiave anche nell'intestazione X-Hypomnema-Key, con l'indirizzo /mcp che da solo non apre niente."""
+
+    def con_intestazione(self, percorso: str, chiave, metodo: str = "POST"):
+        corpo = {"jsonrpc": "2.0", "id": 1, "method": "tools/list"} if metodo == "POST" else None
+        intestazioni = {} if chiave is None else {mcp_http.INTESTAZIONE_CHIAVE: chiave}
+        return self.richiesta(metodo, percorso, corpo, intestazioni)
+
+    def test_intestazione_apre_il_suo_taccuino(self):
+        stato, _, corpo = self.con_intestazione("/mcp", CHIAVE_B)
+        self.assertEqual(stato, 200)
+        self.assertEqual(len(json.loads(corpo)["result"]["tools"]), 10)
+        proposta = {"jsonrpc": "2.0", "id": 2, "method": "tools/call",
+                    "params": {"name": "propose", "arguments": {"proposal": NOTA}}}
+        stato, _, _ = self.richiesta("POST", "/mcp", proposta, {"x-hypomnema-key": CHIAVE_B})  # maiuscole indifferenti
+        self.assertEqual(stato, 200)
+        self.assertTrue((self.config_b.parent / "quaderno" / "note" / "0001.md").is_file())
+        self.assertFalse((self.config_a.parent / "quaderno" / "note").exists())
+
+    def test_senza_chiave_giusta_404(self):
+        for chiave in (None, "", CHIAVE_A[:-1], CHIAVE_A + "x", "sbagliata"):
+            with self.subTest(chiave=chiave):
+                self.assertEqual(self.con_intestazione("/mcp", chiave)[0::2], (404, b""))
+        # L'intestazione non apre indirizzi diversi da /mcp.
+        for percorso in ("/", "/mcp/", "/altro/mcp", "/.well-known/oauth-protected-resource"):
+            with self.subTest(percorso=percorso):
+                self.assertEqual(self.con_intestazione(percorso, CHIAVE_A)[0::2], (404, b""))
+
+    def test_indirizzo_e_intestazione_devono_coincidere(self):
+        self.assertEqual(self.con_intestazione(f"/{CHIAVE_A}/mcp", CHIAVE_A)[0], 200)
+        self.assertEqual(self.con_intestazione(f"/{CHIAVE_A}/mcp", CHIAVE_B)[0::2], (404, b""))
+
+    def test_due_intestazioni_404(self):
+        connessione = http.client.HTTPConnection("127.0.0.1", self.porta, timeout=30)
+        connessione.putrequest("POST", "/mcp")
+        connessione.putheader(mcp_http.INTESTAZIONE_CHIAVE, CHIAVE_A)
+        connessione.putheader(mcp_http.INTESTAZIONE_CHIAVE, CHIAVE_B)
+        connessione.putheader("Content-Length", "2")
+        connessione.endheaders(b"{}")
+        risposta = connessione.getresponse()
+        self.assertEqual((risposta.status, risposta.read()), (404, b""))
+        connessione.close()
+
+    def test_con_intestazione_solo_post(self):
+        stato, intestazioni, _ = self.con_intestazione("/mcp", CHIAVE_A, "GET")
+        self.assertEqual((stato, intestazioni["Allow"]), (405, "POST"))
+
+    def test_niente_righe_neanche_con_intestazione(self):
+        scritto_err, scritto_out = io.StringIO(), io.StringIO()
+        with redirect_stderr(scritto_err), redirect_stdout(scritto_out):
+            self.con_intestazione("/mcp", CHIAVE_A)
+            self.con_intestazione("/mcp", CHIAVE_A + "x")
+        self.assertEqual((scritto_err.getvalue(), scritto_out.getvalue()), ("", ""))
+
+
 class TestLaChiaveNonSiScriveMai(ConCartella):
     """Un processo vero, con le sue uscite: richieste buone, sbagliate e malformate; la chiave non compare mai."""
 

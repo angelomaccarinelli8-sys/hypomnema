@@ -3,6 +3,15 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.11.0 (prototipo, seconda parte, in corso) — il taccuino online
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **La chiave anche in un'intestazione** (I0285): il server HTTP accetta la chiave del taccuino anche
+  nell'intestazione `X-Hypomnema-Key`, con l'indirizzo `/mcp`. Nel connettore personalizzato di claude.ai va in
+  «Intestazioni della richiesta»: l'indirizzo da solo non apre niente. Resta valida la chiave nell'indirizzo
+  (`/<chiave>/mcp`); se ci sono tutte e due devono coincidere, altrimenti 404.
+
 ## 0.11.0 (prototipo, prima parte) — il server MCP sul PC
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*

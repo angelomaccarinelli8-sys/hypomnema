@@ -350,8 +350,11 @@ nessuna porta di rete.
 
 - ascolta **solo su 127.0.0.1**: dall'esterno lo raggiunge soltanto un tunnel che accendi tu sul tuo computer
   (per esempio `cloudflared tunnel --url http://127.0.0.1:8765`);
-- **una chiave per taccuino**, nell'indirizzo: `https://<indirizzo del tunnel>/<chiave>/mcp`. Ogni altro
-  indirizzo risponde 404, senza dire niente;
+- **una chiave per taccuino**, nell'indirizzo (`https://<indirizzo del tunnel>/<chiave>/mcp`) oppure
+  nell'intestazione `X-Hypomnema-Key: <chiave>` con l'indirizzo `https://<indirizzo del tunnel>/mcp`: nel modulo
+  «Aggiungi connettore personalizzato» di claude.ai va in «Intestazioni della richiesta», e così l'indirizzo da solo
+  non apre niente. Se ci sono tutte e due, devono essere la stessa chiave. Ogni altro indirizzo risponde 404, senza
+  dire niente;
 - la chiave **non si scrive mai**: il server non scrive una riga per ogni richiesta e i suoi messaggi non
   contengono indirizzi;
 - **mai il taccuino della configurazione di base** (`~/Hypomnema`): se il file lo nomina, il server non parte.

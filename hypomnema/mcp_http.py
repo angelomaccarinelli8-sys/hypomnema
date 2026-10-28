@@ -3,7 +3,9 @@ libreria standard, sullo stesso cuore del trasporto stdio (``servizio``).
 
 Regole fisse (non sono impostazioni):
 - ascolta **solo su 127.0.0.1**: dall'esterno lo raggiunge soltanto il tunnel che l'utente accende sul suo PC;
-- **una chiave per taccuino**, nell'indirizzo: ``/<chiave>/mcp``. Ogni altro indirizzo (anche quelli che un client
+- **una chiave per taccuino**, nell'indirizzo (``/<chiave>/mcp``) oppure, dalla 0.11.0 seconda parte (I0285),
+  nell'intestazione ``X-Hypomnema-Key: <chiave>`` con l'indirizzo ``/mcp``: così l'indirizzo da solo non apre
+  niente. Se ci sono tutte e due, devono essere la stessa chiave. Ogni altro indirizzo (anche quelli che un client
   prova per cercare un login, come ``/.well-known/oauth-protected-resource``) risponde 404 subito, senza corpo;
 - **la chiave non si scrive mai**: niente righe per richiesta (``log_message`` spento), niente percorsi nei
   messaggi, errori interni senza dettagli;
@@ -37,6 +39,8 @@ from hypomnema.configurazione import tomllib
 INDIRIZZO = "127.0.0.1"
 LUNGHEZZA_MINIMA_CHIAVE = 32
 CHIAVE_VALIDA = re.compile(r"[A-Za-z0-9_-]+")
+# L'intestazione con la chiave (I0285): nel modulo del connettore di claude.ai, «Intestazioni della richiesta».
+INTESTAZIONE_CHIAVE = "X-Hypomnema-Key"
 # Una richiesta più grande è rifiutata (413): una proposta o una copia dell'archivio stanno molto sotto.
 LIMITE_RICHIESTA = 4 * 1024 * 1024
 ATTESA_SECONDI = 30
@@ -115,12 +119,23 @@ class Gestore(BaseHTTPRequestHandler):
 
     def _taccuino(self) -> servizio.Taccuino | None:
         parti = self.path.split("?", 1)[0].split("/")
-        if len(parti) != 3 or parti[0] != "" or parti[2] != "mcp":
+        intestazione = self.headers.get_all(INTESTAZIONE_CHIAVE) or []
+        if len(intestazione) > 1:
+            return None
+        if parti == ["", "mcp"] and intestazione:
+            cercata = intestazione[0].strip()
+        elif len(parti) == 3 and parti[0] == "" and parti[2] == "mcp":
+            cercata = parti[1]
+            # Chiave nell'indirizzo e nell'intestazione: valgono solo se sono la stessa.
+            if intestazione and not hmac.compare_digest(intestazione[0].strip().encode("utf-8"),
+                                                        cercata.encode("utf-8")):
+                return None
+        else:
             return None
         trovato = None
         for chiave, taccuino in self.server.coppie:
             # Tutte le chiavi, sempre: il tempo della risposta non dice niente su quale chiave quasi va.
-            if hmac.compare_digest(parti[1].encode("utf-8"), chiave.encode("utf-8")):
+            if hmac.compare_digest(cercata.encode("utf-8"), chiave.encode("utf-8")):
                 trovato = taccuino
         return trovato
 
@@ -192,7 +207,8 @@ def avvia(file: Path, uscita: TextIO, errori: TextIO) -> int:
     for _, taccuino in server.coppie:
         print(f"Taccuino servito: {taccuino.nome} ({taccuino.cartella_quaderno}).", file=uscita)
     print(f"Il tunnel punta a http://{INDIRIZZO}:{porta}; l'indirizzo da dare a Claude è "
-          "https://<indirizzo del tunnel>/<chiave>/mcp (la chiave è nel file dei taccuini: qui non si scrive).",
+          "https://<indirizzo del tunnel>/<chiave>/mcp, oppure https://<indirizzo del tunnel>/mcp con la chiave "
+          f"nell'intestazione {INTESTAZIONE_CHIAVE} (la chiave è nel file dei taccuini: qui non si scrive).",
           file=uscita)
     print("Per fermarlo: Ctrl+C.", file=uscita)
     uscita.flush()
