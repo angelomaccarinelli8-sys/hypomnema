@@ -60,6 +60,8 @@ class Configurazione:
     testimone_attivo: bool
     # True nella configurazione per la chat di Claude, dove il testimone non esiste.
     in_chat: bool
+    # True nei taccuini online (dalla 0.11.0, seconda parte): come la chat, ma la dicitura dice «online».
+    online: bool
     # Il testimone delle risposte di Claude (sezione [risposte], facoltativa: se manca è spento).
     sezione_risposte: bool
     risposte_attive: bool
@@ -177,16 +179,18 @@ def carica(percorso: str | None = None) -> Configurazione:
         )
 
     # Facoltativa: c'è solo nella configurazione per la chat. Senza, tutto resta come prima.
+    # Dalla 0.11.0 (seconda parte) anche "online": un taccuino servito su internet, che vale come la chat.
     modalita = testimone.get("modalita")
-    if modalita is not None and modalita != "chat":
+    if modalita is not None and modalita not in ("chat", "online"):
         raise ErroreConfigurazione(
             f"nel file «{file}» l'impostazione «modalita» della sezione [testimone] può valere solo "
-            '"chat" (configurazione per la chat di Claude); altrimenti va tolta.'
+            '"chat" (configurazione per la chat di Claude) o "online" (taccuino servito su internet); '
+            "altrimenti va tolta."
         )
-    in_chat = modalita == "chat"
+    in_chat = modalita in ("chat", "online")
     if in_chat and attivo:
         raise ErroreConfigurazione(
-            f"nel file «{file}» c'è modalita = \"chat\" ma il testimone è acceso: nella chat di Claude "
+            f"nel file «{file}» c'è modalita = \"{modalita}\" ma il testimone è acceso: nella chat di Claude "
             "il testimone non esiste, quindi serve attivo = false."
         )
 
@@ -321,6 +325,7 @@ def carica(percorso: str | None = None) -> Configurazione:
         cifre_numero_nota=cifre,
         testimone_attivo=attivo,
         in_chat=in_chat,
+        online=modalita == "online",
         sezione_risposte=risposte is not None,
         risposte_attive=risposte_attive,
         file_risposte=quaderno / file_risposte_nome if file_risposte_nome else None,

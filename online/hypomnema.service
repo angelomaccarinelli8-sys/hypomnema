@@ -1,0 +1,24 @@
+# Il server di Hypomnema sulla macchina online (0.11.0, seconda parte). Lo copia installa.sh.
+# Riparte da solo se si ferma e all'avvio della macchina. Ascolta solo su 127.0.0.1 (lo dice il programma).
+[Unit]
+Description=Hypomnema, server MCP dei taccuini online (solo 127.0.0.1)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=hypomnema
+Group=hypomnema
+Environment=HOME=/srv/hypomnema/casa
+Environment=PYTHONUNBUFFERED=1
+WorkingDirectory=/srv/hypomnema
+ExecStart=/usr/bin/python3 /opt/hypomnema/programma.py serve --http /srv/hypomnema/taccuini/taccuini.toml
+Restart=always
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/srv/hypomnema
+
+[Install]
+WantedBy=multi-user.target

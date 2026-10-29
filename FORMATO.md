@@ -203,6 +203,8 @@ resta com'è.
 | Testimone spento, nota di Claude con citazione | `- verification: quote not verified (witness off)` |
 | Chat di Claude (`modalita = "chat"`), `author: user` | `- verification: author not verified (chat, no witness)` |
 | Chat di Claude (`modalita = "chat"`), nota di Claude con citazione | `- verification: quote not verified (chat, no witness)` |
+| Taccuino online (`modalita = "online"`, dalla 0.11.0 seconda parte), `author: user` | `- verification: author not verified (online, no witness)` |
+| Taccuino online, nota di Claude con citazione, oppure con `from_reply` | `- verification: quote not verified (online, no witness)` oppure `- verification: reply not verified (online, no witness)` |
 | Chat con l'archivio (`[archivio]`), `author: user`, testo trovato nella copia dell'archivio | `- verification: text matched in the chat archive <indirizzo>, message of turn <numero> (<data e ora>, copied by Claude)` |
 | Chat con l'archivio, nota di Claude con citazione trovata nell'archivio, o con `from_reply` trovata nel diario della chat | `- verification: quote matched in the chat archive …` oppure `- verification: text matched in the chat archive …, reply of turn …` |
 | Testimoni in pausa (`/hypomnema:pause`), `author: user` | `- verification: author not verified (witnesses paused)` |

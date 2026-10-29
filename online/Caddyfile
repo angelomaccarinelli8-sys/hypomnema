@@ -1,0 +1,16 @@
+# Caddy per il server online di Hypomnema (0.11.0, seconda parte). Lo copia installa.sh, al posto di DOMINIO
+# mette il nome della macchina (per esempio hypomnema-tester.swedencentral.cloudapp.azure.com).
+# - HTTPS con un certificato gratuito di Let's Encrypt, chiesto e rinnovato da Caddy da solo, passando dalla
+#   porta 443 (la 80 resta chiusa nel firewall di Azure).
+# - Tutto va al server di Hypomnema, che ascolta solo su 127.0.0.1:8765 e risponde 404 a ogni indirizzo che
+#   non è /mcp o /<chiave>/mcp.
+# - Nessuna riga per richiesta: in questo file non c'è la direttiva «log», quindi Caddy non scrive gli indirizzi
+#   chiesti (che possono contenere una chiave) né i corpi delle richieste (che contengono le note).
+# - L'amministrazione di Caddy resta quella di serie, solo su localhost:2019: serve agli aggiornamenti di Ubuntu
+#   per ricaricarlo.
+DOMINIO {
+	request_body {
+		max_size 4MB
+	}
+	reverse_proxy 127.0.0.1:8765
+}

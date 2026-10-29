@@ -1,0 +1,29 @@
+# Configurazione di un taccuino ONLINE (dalla 0.11.0, seconda parte): un taccuino servito dal server HTTP di
+# Hypomnema su internet. La copia il comando  notebook-new  (taccuino-nuovo)  nella cartella del taccuino nuovo.
+# I percorsi relativi partono dalla cartella che contiene questo file.
+
+[quaderno]
+cartella = "quaderno"
+cartella_note = "note"
+file_registro = "registro.md"
+cifre_numero_nota = 4
+# Il server è in UTC: i taccuini online usano questo fuso (è un'impostazione, si può cambiare).
+fuso = "Europe/Rome"
+
+[testimone]
+# Online il testimone non esiste: i messaggi arrivano solo a Claude. Con modalita = "online" le note con
+# autore "utente" sono marcate "author not verified (online, no witness)".
+attivo = false
+modalita = "online"
+file = "testimone.jsonl"
+prefisso_privato = "#privato"
+segno_citazione = ">"
+
+[recap]
+discorsi_aperti = 5
+todo = 5
+decisioni = 5
+voci_diario = 10
+
+[revisione]
+giorni = 30

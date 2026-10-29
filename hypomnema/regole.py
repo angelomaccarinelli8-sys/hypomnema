@@ -461,8 +461,8 @@ def _controlla_etichette(valori: dict, etichette) -> list[str]:
         if campo not in valori:
             continue
         if etichette is None:
-            motivi.append(f"there are no labels in this notebook, so «{campo}» cannot be used: the user lists them "
-                          f"in the file {lista_etichette.NOME_FILE} inside the notebook folder.")
+            motivi.append(f"there are no labels in this notebook yet, so «{campo}» cannot be used: the user chooses "
+                          "the labels, and they are added to the notebook's list of labels.")
             continue
         scelte = lista_etichette.separa(valori[campo])
         ammesse = etichette.ammesse(campo)
@@ -495,8 +495,8 @@ def _controlla_sotto_ramo(valori, autore, note_esistenti, lista) -> list[str]:
     altre = "".join(f" Also in this sub-branch: {', '.join(s.base for s, _ in trovate[1:])}." if trovate[1:] else "")
     return [f"this idea already has its note ({storia.base}, sub-branch {ramo}/{sotto}): propose it as an integration "
             f"of {storia.base} («integrates»: «{storia.base}», with only the new words in «text», no «kind» and no "
-            f"«about»).{altre} If they are really different ideas, the sub-branches in {lista_etichette.NOME_FILE} "
-            "need more precise words: only the user writes them."]
+            f"«about»).{altre} If they are really different ideas, tell the user: the sub-branches of the labels must be "
+            "made more precise, and only the user can do it."]
 
 
 def _etichette_della_proposta(valori) -> tuple[str, ...] | None:
@@ -561,6 +561,7 @@ def _riscontro(copiati: list[Messaggio] | None, testo: str, segno: str, cosa: st
 # dicitura scritta nella nota.
 SENZA_TESTIMONE = "witness off"
 SENZA_TESTIMONE_IN_CHAT = "chat, no witness"
+SENZA_TESTIMONE_ONLINE = "online, no witness"
 SENZA_RISPOSTE = "replies witness off"
 SENZA_TESTIMONE_IN_PAUSA = "witnesses paused"
 
@@ -569,23 +570,25 @@ def verifica(
     autore: str, testo: str, citazione: str | None, messaggi: list[Messaggio] | None, segno: str,
     in_chat: bool = False, da_risposta: bool = False, risposte: list[Messaggio] | None = None,
     in_pausa: bool = False, archivio: list[Messaggio] | None = None, diario_chat: list[Messaggio] | None = None,
+    online: bool = False,
 ) -> str | None:
     """La dicitura "verification" da scrivere nella nota accettata (None = nessuna dicitura).
 
     Tre livelli: verificato dal testimone («found»), riscontrato sull'archivio della chat
     («matched», con l'indirizzo della chat), non verificato («not verified»).
     """
+    in_chat_o_online = SENZA_TESTIMONE_ONLINE if online else SENZA_TESTIMONE_IN_CHAT
     if da_risposta:
         riscontro = _riscontro(diario_chat, testo, segno, "text matched", "reply")
         if risposte is None and riscontro:
             return riscontro
         if risposte is None:
-            perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_RISPOSTE
+            perche = in_chat_o_online if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_RISPOSTE
             return f"reply not verified ({perche})"
         trovato = trova_citazione(risposte, testo, segno)
         return f"text found in Claude's reply of {trovato.messaggio.quando}"
     if messaggi is None:
-        perche = SENZA_TESTIMONE_IN_CHAT if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_TESTIMONE
+        perche = in_chat_o_online if in_chat else SENZA_TESTIMONE_IN_PAUSA if in_pausa else SENZA_TESTIMONE
         if autore == "user":
             return _riscontro(archivio, testo, segno, "text matched", "message") or f"author not verified ({perche})"
         if citazione is not None:

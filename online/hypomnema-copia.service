@@ -1,0 +1,8 @@
+# La copia di sicurezza dei taccuini online (0.11.0, seconda parte): un archivio compresso nuovo in
+# /var/backups/hypomnema, mai sopra uno che c'è già. Le copie vecchie non si cancellano.
+[Unit]
+Description=Hypomnema, copia notturna dei taccuini
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash /opt/hypomnema/online/copia.sh

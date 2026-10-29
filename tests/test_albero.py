@@ -174,8 +174,9 @@ class TestRegolaDellIntegrazione(ConAlbero):
         motivi = self.motivi(kind="idea", text="Nell'orto i pomodori sotto la rete.")
         self.assertEqual(motivi, "this idea already has its note (0001, sub-branch orto/pomodori): propose it as an "
                                  "integration of 0001 («integrates»: «0001», with only the new words in «text», no "
-                                 "«kind» and no «about»). If they are really different ideas, the sub-branches in "
-                                 "etichette.toml need more precise words: only the user writes them.")
+                                 "«kind» and no «about»). If they are really different ideas, tell the user: the "
+                                 "sub-branches of the labels must be made more precise, and only the user can do "
+                                 "it.")
         # La proposta giusta passa: le parole nuove in fondo alla 0001.
         self.assertEqual(self.accettata(integrates="0001", text="Nell'orto i pomodori sotto la rete."), "0001.1")
 

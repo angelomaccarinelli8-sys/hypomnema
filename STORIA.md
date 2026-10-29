@@ -3,6 +3,38 @@
 Le versioni pubblicate su GitHub, dalla più recente. Ogni versione dice cosa cambia per chi usa
 Hypomnema e come aggiornarsi.
 
+## 0.11.0 (prototipo, seconda parte, in corso) — il taccuino online
+
+*Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*
+
+- **La chiave anche in un'intestazione** (I0285): il server HTTP accetta la chiave del taccuino anche
+  nell'intestazione `x-api-key`, con l'indirizzo `/mcp`. Nel connettore personalizzato di claude.ai va in
+  «Request headers» (con «No sign-in»): l'indirizzo da solo non apre niente. Il nome è quello della lista di serie
+  di claude.ai. Resta valida la chiave nell'indirizzo (`/<chiave>/mcp`); se ci sono tutte e due devono coincidere,
+  altrimenti 404.
+- **Sul server solo l'impronta della chiave**: nel file dei taccuini `impronta = "…"` (SHA-256) al posto di
+  `chiave`. Il comando nuovo `notebook-new` (`taccuino-nuovo`) crea un taccuino online ricevendo solo l'impronta.
+- **Due limiti per taccuino**: richieste al minuto (30) e proposte al minuto (10), scritti nel file dei taccuini.
+  Oltre, 429 con un messaggio per Claude.
+- **Taccuini online** (`modalita = "online"`): le note dell'utente sono marcate «author not verified (online, no
+  witness)». Lo sportello e le sue regole non cambiano.
+- **La macchina su Azure** (cartella `online/`): gli script per PowerShell che la creano (solo la porta 443
+  aperta, SSH chiuso), Caddy per HTTPS con certificato gratuito, il servizio che riparte da solo, gli aggiornamenti
+  automatici di Ubuntu, la copia notturna dei taccuini, lo scaricamento delle copie e l'esportazione di un taccuino.
+- La scheda per Claude dice anche: mai dati di salute di altre persone né dati di clienti.
+- **Il servizio chiuso: dire meno, non nascondere.** Con la riga `autore = "…"` nel file dei taccuini la scheda per
+  Claude dice la verità sulla natura del servizio: è un servizio chiuso del suo autore, Claude vede solo gli
+  strumenti, sui dettagli interni si chiede all'autore. Nessuna istruzione di nascondere o di negare. Senza la riga
+  (server di casa, Claude Code) la scheda non cambia. Gli script del server online mettono la riga da soli.
+- Le descrizioni e i messaggi dicono cosa fare, non come decide il programma: `check` («the notebook is in order»),
+  il rifiuto delle etichette quando la lista manca, la coda del rifiuto della regola dell'integrazione. **Solo nei
+  taccuini online** il suggerimento del tipo non cita le sequenze di parole e `status` non mostra i percorsi del
+  server; a casa e in Claude Code restano come prima.
+- **Le etichette del tester**: il comando nuovo `notebook-labels` (`taccuino-etichette`) controlla una lista di
+  etichette con le regole dello sportello e la scrive in un taccuino online; mai sopra una lista con dentro qualcosa
+  senza `--replace`, e la lista di prima resta accanto con la data nel nome. Gli script `carica-etichette.ps1` e
+  `crea-taccuino-online.ps1 -Etichette` la controllano sul PC prima di caricarla.
+
 ## 0.11.0 (prototipo, prima parte) — il server MCP sul PC
 
 *Da pubblicare: il testo qui sotto è la nota di rilascio proposta.*

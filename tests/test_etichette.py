@@ -80,8 +80,8 @@ class TestSenzaLista(ConEtichette):
     lista = None
 
     def test_senza_file_nessuna_etichetta(self):  # E5
-        self.assertIn("there are no labels in this notebook, so «about» cannot be used: the user lists them in the "
-                      "file etichette.toml inside the notebook folder.",
+        self.assertIn("there are no labels in this notebook yet, so «about» cannot be used: the user chooses the "
+                      "labels, and they are added to the notebook's list of labels.",
                       self.motivi(kind="fact", about="orto", text="x"))
         # Senza etichette tutto resta come prima.
         self.assertEqual(self.accettata(kind="fact", text="Senza etichette."), "0001")
