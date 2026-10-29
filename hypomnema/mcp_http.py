@@ -348,9 +348,20 @@ class Gestore(BaseHTTPRequestHandler):
         if corpo and self.command != "HEAD":
             self.wfile.write(corpo)
 
+    def _scarta_corpo(self) -> None:
+        """Legge e butta il corpo della richiesta (entro il limite di sempre) prima di un 404: su Windows chiudere la
+        connessione con dati non letti la interrompe (RST) e il client non riceve la risposta."""
+        try:
+            lunghezza = int(self.headers.get("Content-Length", "0"))
+        except ValueError:
+            return
+        if 0 < lunghezza <= LIMITE_RICHIESTA:
+            self.rfile.read(lunghezza)
+
     def do_POST(self) -> None:  # noqa: N802 - il nome è quello di http.server
         taccuino = self._taccuino()
         if taccuino is None:
+            self._scarta_corpo()
             self.close_connection = True
             return self._rispondi(404)
         try:
